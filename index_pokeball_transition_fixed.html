@@ -2,1725 +2,561 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Battle + Capture (Harder)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Desert Poké Capture Mini‑Game</title>
   <style>
-    html, body { height:100%; margin:0; background:#061018; overflow:hidden; }
-    #stage { position:fixed; inset:0; overflow:hidden; }
-    canvas { position:absolute; inset:0; width:100vw; height:100vh; display:block; touch-action:none; }
-
-    .pokeLayer{ position:absolute; inset:0; pointer-events:none; z-index: 5; }
-    .poke{
-      position:absolute;
-      transform-origin: 50% 100%;
-      filter: drop-shadow(0 10px 12px rgba(0,0,0,.35));
-      opacity: 0; transition: opacity .18s ease;
-      image-rendering: auto;
+    :root {
+      --ui-bg: rgba(16, 12, 8, 0.55);
+      --ui-border: rgba(255, 255, 255, 0.2);
+      --text: #fff5de;
+      --danger: #ff6b6b;
+      --ok: #72ef9a;
     }
-    .poke.ready{ opacity: 1; }
 
-    .hud{
-      position:fixed; left:12px; right:12px; top:10px;
-      display:flex; gap:8px; flex-wrap:wrap; align-items:center;
-      pointer-events:none; user-select:none;
-      font: 800 13px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      color: rgba(245,250,255,.92);
-      text-shadow: 0 2px 10px rgba(0,0,0,.55);
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #1e170f; }
+
+    #stage { position: fixed; inset: 0; }
+    canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+    .sprite-layer { position: absolute; inset: 0; pointer-events: none; }
+    .sprite {
+      position: absolute;
+      image-rendering: auto;
+      transform-origin: center bottom;
+      filter: drop-shadow(0 12px 18px rgba(0,0,0,.4));
+    }
+
+    #playerSprite {
+      width: min(24vw, 230px);
+      left: 9%;
+      bottom: 16%;
+    }
+
+    #enemySprite {
+      width: min(17vw, 150px);
+      right: 14%;
+      bottom: 23%;
+      transform: scaleX(-1);
+    }
+
+    .hud {
+      position: fixed;
+      left: 10px;
+      right: 10px;
+      top: 10px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 8px;
       z-index: 20;
     }
-    .pill{
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.12);
-      backdrop-filter: blur(8px);
+
+    .chip {
+      padding: 9px 11px;
       border-radius: 999px;
-      padding: 8px 10px;
+      background: var(--ui-bg);
+      border: 1px solid var(--ui-border);
+      color: var(--text);
+      backdrop-filter: blur(4px);
+      font: 700 13px/1.2 system-ui, sans-serif;
+      text-shadow: 0 2px 10px rgba(0,0,0,.55);
     }
 
-    .ui{
-      position:fixed; left:0; right:0; bottom:0;
-      padding: 14px 14px 18px;
-      display:flex; justify-content:center;
-      z-index: 30;
-    }
-    .grid{
-      width:min(560px, 100%);
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px;
-    }
-    button{
-      -webkit-tap-highlight-color: transparent;
-      font: 900 16px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      padding: 14px 12px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.08);
-      color: rgba(245,250,255,.95);
-      box-shadow: 0 12px 30px rgba(0,0,0,.35);
-      backdrop-filter: blur(8px);
-      touch-action: manipulation;
-    }
-    button:active{ transform: translateY(1px); }
-    button[disabled]{ opacity:.45; }
-
-    .overlay{
-      position:fixed; inset:0;
-      display:none;
-      align-items:flex-end;
-      justify-content:center;
-      z-index: 40;
-      background: rgba(0,0,0,.45);
-    }
-    .panel{
-      width:min(620px, 100%);
-      background: rgba(10,16,24,.88);
-      border: 1px solid rgba(255,255,255,.14);
-      border-bottom: none;
-      border-radius: 18px 18px 0 0;
-      padding: 14px 14px 18px;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 -20px 50px rgba(0,0,0,.55);
-    }
-    .panel h3{
-      margin: 0 0 10px;
-      font: 1000 16px/1.1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      color: rgba(245,250,255,.95);
-    }
-    .items{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px;
-      margin-bottom: 10px;
-    }
-    .card{
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.07);
+    .controls {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 14px;
+      width: min(900px, calc(100vw - 20px));
+      z-index: 22;
+      background: var(--ui-bg);
+      border: 1px solid var(--ui-border);
+      border-radius: 16px;
       padding: 12px;
-      display:flex;
-      gap:10px;
-      align-items:center;
-      cursor:pointer;
-      user-select:none;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .card:active{ transform: translateY(1px); }
-    .icon{
-      width:44px; height:44px; border-radius: 12px;
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.12);
-      display:flex; align-items:center; justify-content:center;
-      flex: 0 0 auto;
-    }
-    .meta{ display:flex; flex-direction:column; gap:4px; min-width:0; }
-    .name{ font: 1000 14px/1 system-ui; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .desc{ font: 750 12px/1.25 system-ui; opacity:.85; }
-    .qty{ margin-left:auto; font: 1000 14px/1 system-ui; opacity:.9; }
-
-    .row{ display:flex; gap:10px; justify-content:space-between; align-items:center; margin-top: 8px; }
-    .smallbtn{
-      font: 1000 14px/1 system-ui;
-      padding: 12px 12px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.08);
-      color: rgba(245,250,255,.95);
-      width: 100%;
-    }
-
-    .result{
-      position:fixed; inset:0;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      z-index: 50;
-      background: rgba(0,0,0,.58);
-    }
-    .resultBox{
-      width:min(520px, calc(100% - 28px));
-      background: rgba(10,16,24,.90);
-      border: 1px solid rgba(255,255,255,.14);
-      border-radius: 18px;
-      padding: 18px;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 30px 80px rgba(0,0,0,.65);
-      color: rgba(245,250,255,.95);
-      text-align:center;
-    }
-    .resultTitle{ font: 1100 22px/1.1 system-ui; margin: 0 0 8px; }
-    .resultText{ font: 800 14px/1.35 system-ui; opacity:.92; margin: 0 0 14px; }
-
-    /* Start screen */
-    .start{
-      position:fixed; inset:0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      z-index: 60;
-      background: radial-gradient(1200px 800px at 50% 30%, rgba(120,220,255,.20), rgba(0,0,0,.70));
+      color: var(--text);
       backdrop-filter: blur(6px);
     }
-    .startBox{
-      width:min(560px, calc(100% - 28px));
-      background: rgba(10,16,24,.86);
-      border: 1px solid rgba(255,255,255,.14);
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .slider-wrap { display: grid; gap: 6px; }
+    .label { font: 800 13px/1.2 system-ui, sans-serif; }
+    .value { color: #ffdb7a; }
+
+    input[type="range"] { width: 100%; }
+
+    button {
+      border: 1px solid var(--ui-border);
+      background: rgba(255,255,255,0.1);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font: 900 14px/1 system-ui, sans-serif;
+      cursor: pointer;
+      min-width: 130px;
+    }
+
+    button:disabled { opacity: 0.45; cursor: default; }
+
+    .status {
+      margin-top: 10px;
+      min-height: 18px;
+      font: 700 13px/1.3 system-ui, sans-serif;
+      color: #f9e8b8;
+    }
+
+    #loader {
+      margin-top: 8px;
+      display: none;
+      gap: 6px;
+      align-items: center;
+    }
+
+    #loaderTrack {
+      flex: 1;
+      height: 10px;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--ui-border);
+      background: rgba(0,0,0,0.25);
+    }
+
+    #loaderFill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #ffbe55, #ff5a5a);
+      transition: width 0.1s linear;
+    }
+
+    .result {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 40;
+      background: rgba(0,0,0,.56);
+    }
+
+    .result-box {
+      width: min(520px, calc(100vw - 24px));
+      background: rgba(30, 20, 10, 0.9);
+      border: 1px solid var(--ui-border);
       border-radius: 18px;
       padding: 18px;
-      box-shadow: 0 30px 80px rgba(0,0,0,.65);
-      color: rgba(245,250,255,.95);
-      text-align:left;
+      color: var(--text);
+      text-align: center;
+      font-family: system-ui, sans-serif;
     }
-    .startTitle{ font: 1100 22px/1.1 system-ui; margin:0 0 10px; }
-    .startText{ font: 800 14px/1.35 system-ui; opacity:.92; margin:0 0 14px; }
-    .startRow{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
-    .select{
-      appearance:none;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.08);
-      color: rgba(245,250,255,.95);
-      padding: 12px 12px;
-      font: 900 14px/1 system-ui;
-      min-width: 180px;
-    }
-  
-    /* ===== Pokeball transition ===== */
-    #pokeTransition{
-      position:fixed; inset:0;
-      pointer-events:none;
-      z-index: 80;
-      display:none;
-      overflow:hidden;
-    }
-    #pokeTransition.on{ display:block; }
-    #pokeTransition .pt-bg{
-      position:absolute; inset:0;
-      background: radial-gradient(900px 700px at 50% 35%, rgba(255,255,255,.22), rgba(0,0,0,.85));
-      opacity:0;
-      transition: opacity .18s ease;
-    }
-    #pokeTransition.on .pt-bg{ opacity:1; }
 
-    #pokeTransition .pt-half{
-      position:absolute; left:-10vw; right:-10vw;
-      height:60vh;
-      will-change: transform;
-      filter: drop-shadow(0 30px 60px rgba(0,0,0,.55));
+    #pokeballTransition {
+      position: fixed;
+      inset: 0;
+      z-index: 35;
+      pointer-events: none;
+      display: none;
     }
-    #pokeTransition .pt-top{
-      top:-8vh;
-      background:
-        radial-gradient(900px 500px at 50% 80%, rgba(255,255,255,.26), rgba(255,255,255,0) 55%),
-        linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.25)),
-        linear-gradient(180deg, #ff2f2f, #c21010);
+
+    #pokeballTransition.active { display: block; }
+
+    .half {
+      position: absolute;
+      left: -12vw;
+      right: -12vw;
+      height: 58vh;
+      transition: transform 0.36s cubic-bezier(.2,.85,.2,1);
+      filter: drop-shadow(0 18px 40px rgba(0,0,0,.5));
+    }
+
+    .top-half {
+      top: -9vh;
+      transform: translateY(-120%);
       border-bottom-left-radius: 999px;
       border-bottom-right-radius: 999px;
-      transform: translateY(-120%);
+      background: linear-gradient(180deg, #ff7878, #d81010 65%);
     }
-    #pokeTransition .pt-bot{
-      bottom:-8vh;
-      background:
-        radial-gradient(900px 500px at 50% 20%, rgba(255,255,255,.18), rgba(255,255,255,0) 55%),
-        linear-gradient(0deg, rgba(255,255,255,.12), rgba(0,0,0,.22)),
-        linear-gradient(0deg, #f3f6ff, #cbd5e1);
+
+    .bottom-half {
+      bottom: -9vh;
+      transform: translateY(120%);
       border-top-left-radius: 999px;
       border-top-right-radius: 999px;
-      transform: translateY(120%);
+      background: linear-gradient(0deg, #ffffff, #e4e4e4 70%);
     }
-    #pokeTransition .pt-band{
-      position:absolute; left:-10vw; right:-10vw;
-      top:50%; height: 10vh;
+
+    .belt {
+      position: absolute;
+      left: -12vw;
+      right: -12vw;
+      top: 50%;
+      height: 9vh;
       transform: translateY(-50%) scaleX(0);
-      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(0,0,0,.25)), #0f1116;
-      box-shadow: 0 12px 40px rgba(0,0,0,.55);
-      will-change: transform;
-    }
-    #pokeTransition .pt-btn{
-      position:absolute; left:50%; top:50%;
-      width:min(18vh, 120px); height:min(18vh, 120px);
-      transform: translate(-50%,-50%) scale(0);
-      border-radius: 999px;
-      background: radial-gradient(circle at 30% 28%, rgba(255,255,255,.85), rgba(255,255,255,.05) 55%), #f3f6ff;
-      border: 10px solid #0f1116;
-      box-shadow: 0 18px 60px rgba(0,0,0,.60);
-      will-change: transform, filter;
-      overflow:hidden;
-    }
-    #pokeTransition .pt-btn-inner{
-      position:absolute; inset:0;
-      border-radius:999px;
-      background:
-        radial-gradient(circle at 35% 30%, rgba(255,255,255,.95), rgba(255,255,255,0) 50%),
-        radial-gradient(circle at 50% 50%, rgba(120,220,255,.55), rgba(120,220,255,0) 62%);
-      opacity: 0;
-    }
-    #pokeTransition .pt-sparkles{
-      position:absolute; inset:0;
-      background:
-        radial-gradient(8px 8px at 20% 35%, rgba(255,255,255,.85), rgba(255,255,255,0) 70%),
-        radial-gradient(10px 10px at 75% 28%, rgba(255,255,255,.80), rgba(255,255,255,0) 70%),
-        radial-gradient(7px 7px at 60% 70%, rgba(255,255,255,.75), rgba(255,255,255,0) 70%),
-        radial-gradient(9px 9px at 35% 78%, rgba(255,255,255,.80), rgba(255,255,255,0) 70%);
-      opacity:0;
-      transform: scale(1.06);
-      will-change: opacity, transform;
+      transform-origin: center;
+      background: #161616;
+      transition: transform 0.2s ease;
     }
 
-    @keyframes ptCloseTop   { from{ transform: translateY(-120%);} to{ transform: translateY(0%);} }
-    @keyframes ptCloseBot   { from{ transform: translateY(120%);}  to{ transform: translateY(0%);} }
-    @keyframes ptBandIn     { from{ transform: translateY(-50%) scaleX(0);} to{ transform: translateY(-50%) scaleX(1);} }
-    @keyframes ptBtnPop     { 0%{ transform: translate(-50%,-50%) scale(0);} 60%{ transform: translate(-50%,-50%) scale(1.08);} 100%{ transform: translate(-50%,-50%) scale(1);} }
-    @keyframes ptSpark      { 0%{opacity:0; transform: scale(1.06);} 100%{opacity:1; transform: scale(1);} }
-
-    @keyframes ptOpenTop    { from{ transform: translateY(0%);} to{ transform: translateY(-120%);} }
-    @keyframes ptOpenBot    { from{ transform: translateY(0%);} to{ transform: translateY(120%);} }
-    @keyframes ptBandOut    { from{ transform: translateY(-50%) scaleX(1);} to{ transform: translateY(-50%) scaleX(0);} }
-    @keyframes ptBtnAway    { from{ transform: translate(-50%,-50%) scale(1);} to{ transform: translate(-50%,-50%) scale(0);} }
-
-    #pokeTransition.closing .pt-top{ animation: ptCloseTop .28s cubic-bezier(.2,.9,.2,1) forwards; }
-    #pokeTransition.closing .pt-bot{ animation: ptCloseBot .28s cubic-bezier(.2,.9,.2,1) forwards; }
-    #pokeTransition.closing .pt-band{ animation: ptBandIn .22s .10s cubic-bezier(.2,.9,.2,1) forwards; }
-    #pokeTransition.closing .pt-btn{  animation: ptBtnPop .22s .18s cubic-bezier(.2,.9,.2,1) forwards; }
-    #pokeTransition.closing .pt-sparkles{ animation: ptSpark .22s .18s ease forwards; }
-    #pokeTransition.closing .pt-btn-inner{ opacity:1; transition: opacity .12s .20s ease; }
-
-    #pokeTransition.opening .pt-top{ animation: ptOpenTop .30s .10s cubic-bezier(.2,.9,.2,1) forwards; }
-    #pokeTransition.opening .pt-bot{ animation: ptOpenBot .30s .10s cubic-bezier(.2,.9,.2,1) forwards; }
-    #pokeTransition.opening .pt-band{ animation: ptBandOut .18s ease forwards; }
-    #pokeTransition.opening .pt-btn{  animation: ptBtnAway .18s ease forwards; }
-    #pokeTransition.opening .pt-sparkles{ opacity:0; transition: opacity .12s ease; }
-
+    #pokeballTransition.closed .top-half,
+    #pokeballTransition.closed .bottom-half { transform: translateY(0%); }
+    #pokeballTransition.closed .belt { transform: translateY(-50%) scaleX(1); }
   </style>
 </head>
 <body>
-<div id="stage">
-  <canvas id="c"></canvas>
-
-  <div class="pokeLayer">
-    <!-- ТВОЙ покемон (как просил), разворачиваем в коде -->
-    <img id="playerImg" class="poke" alt="player" referrerpolicy="no-referrer"
-         src="https://play.pokemonshowdown.com/sprites/ani/charizard.gif">
-    <!-- Противник: будем ставить динамически (Showdown gif по имени) -->
-    <img id="enemyImg" class="poke" alt="enemy" referrerpolicy="no-referrer" src="">
+  <div id="stage">
+    <canvas id="gameCanvas"></canvas>
+    <div class="sprite-layer">
+      <img id="playerSprite" class="sprite" src="https://play.pokemonshowdown.com/sprites/ani-back/charizard.gif" alt="player pokemon" referrerpolicy="no-referrer">
+      <img id="enemySprite" class="sprite" src="https://play.pokemonshowdown.com/sprites/ani/sandslash.gif" alt="enemy pokemon" referrerpolicy="no-referrer">
+    </div>
   </div>
-</div>
 
   <div class="hud">
-    <div class="pill">Режим: <b id="mode">—</b></div>
-    <div class="pill">Сложность: <b id="diffLabel">Normal</b></div>
-    <div class="pill">A HP: <b id="ahp">0</b>/<b id="amax">0</b> • B HP: <b id="bhp">0</b>/<b id="bmax">0</b></div>
-    <div class="pill">Противник: <b id="enemyName">—</b></div>
+    <div class="chip">Локация: <b>Пустыня Сиен</b></div>
+    <div class="chip">Покемон: <b id="enemyName">Sandslash</b></div>
+    <div class="chip">HP цели: <b id="enemyHp">100</b>%</div>
+    <div class="chip">Результат броска: <b id="captureChance">0</b>%</div>
   </div>
 
-  <div class="ui" id="battleUI" style="display:none">
-    <div class="grid">
-      <button id="btnAttack">Атака</button>
-      <button id="btnDefend">Защита</button>
-      <button id="btnInv">Инвентарь</button>
-      <button id="btnRun">Сдаться</button>
-    </div>
-  </div>
-
-  <div class="overlay" id="invOverlay">
-    <div class="panel">
-      <h3>Инвентарь • Выбери шар</h3>
-      <div class="items" id="items"></div>
-      <div class="row">
-        <button class="smallbtn" id="invBack">Назад</button>
+  <div class="controls">
+    <div class="controls-grid">
+      <div class="slider-wrap">
+        <div class="label">Радиус прицеливания: <span id="radiusValue" class="value">160</span> px</div>
+        <input id="radiusSlider" type="range" min="80" max="260" step="5" value="160">
       </div>
+      <button id="weakenBtn">Ослабить цель</button>
+      <button id="throwBtn">Кинуть покебол</button>
     </div>
+
+    <div id="loader">
+      <span style="font:700 12px system-ui;">Загрузка скриптов ловли…</span>
+      <div id="loaderTrack"><div id="loaderFill"></div></div>
+      <span id="loaderPct" style="font:700 12px system-ui; width:40px; text-align:right;">0%</span>
+    </div>
+
+    <div class="status" id="status">Подготовься к броску. Чем больше радиус — тем легче попасть.</div>
   </div>
 
-  <div class="result" id="resultOverlay">
-    <div class="resultBox">
-      <h2 class="resultTitle" id="resultTitle">Результат</h2>
-      <p class="resultText" id="resultText">...</p>
-      <button class="smallbtn" id="restartBtn">Начать сначала</button>
-    </div>
+  <div id="pokeballTransition" aria-hidden="true">
+    <div class="half top-half"></div>
+    <div class="half bottom-half"></div>
+    <div class="belt"></div>
   </div>
 
-  <div class="start" id="startOverlay">
-    <div class="startBox">
-      <h2 class="startTitle">Battle + Capture</h2>
-      <p class="startText">
-        В бою появляются случайные противники (15 штук в пуле). Ловля стала сложнее: шар может “сносить”,
-        а чем меньше круг — тем прямее полёт. Masterball-0 всё равно читерит и наводится в цель.
-      </p>
-      <div class="startRow">
-        <label style="display:flex; gap:10px; align-items:center;">
-          <span style="font:900 14px system-ui; opacity:.92;">Сложность ловли</span>
-          <select id="diffSel" class="select">
-            <option value="EASY">Easy</option>
-            <option value="NORMAL" selected>Normal</option>
-            <option value="HARD">Hard</option>
-          </select>
-        </label>
-        <button id="btnStart" style="min-width:220px;">Запустить</button>
-      </div>
+  <div class="result" id="result">
+    <div class="result-box">
+      <h2 id="resultTitle">Поймано!</h2>
+      <p id="resultText">Поздравляем!</p>
+      <button id="restartBtn">Новый противник</button>
     </div>
   </div>
-
-
-  <!-- Pokemon-style transition (pokeball shutter) -->
-  <div id="pokeTransition" aria-hidden="true">
-    <div class="pt-bg"></div>
-    <div class="pt-half pt-top"></div>
-    <div class="pt-half pt-bot"></div>
-    <div class="pt-band"></div>
-    <div class="pt-btn">
-      <div class="pt-btn-inner"></div>
-    </div>
-    <div class="pt-sparkles"></div>
-  </div>
-
 
 <script>
 (() => {
-  const canvas = document.getElementById('c');
-  const ctx = canvas.getContext('2d', { alpha:false });
+  const pokemonPool = ["Sandslash", "Cubone", "Trapinch", "Hippopotas", "Sandshrew", "Numel"];
+  const spriteBase = "https://play.pokemonshowdown.com/sprites/ani/";
 
-  const playerImg = document.getElementById('playerImg');
-  const enemyImg  = document.getElementById('enemyImg');
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
 
-  const modeEl = document.getElementById('mode');
-  const diffLabel = document.getElementById('diffLabel');
-  const enemyNameEl = document.getElementById('enemyName');
+  const enemySprite = document.getElementById("enemySprite");
+  const enemyNameEl = document.getElementById("enemyName");
+  const enemyHpEl = document.getElementById("enemyHp");
+  const captureChanceEl = document.getElementById("captureChance");
+  const radiusSlider = document.getElementById("radiusSlider");
+  const radiusValue = document.getElementById("radiusValue");
+  const throwBtn = document.getElementById("throwBtn");
+  const weakenBtn = document.getElementById("weakenBtn");
+  const statusEl = document.getElementById("status");
 
-  const ahpEl = document.getElementById('ahp');
-  const amaxEl = document.getElementById('amax');
-  const bhpEl = document.getElementById('bhp');
-  const bmaxEl = document.getElementById('bmax');
+  const loader = document.getElementById("loader");
+  const loaderFill = document.getElementById("loaderFill");
+  const loaderPct = document.getElementById("loaderPct");
 
-  const battleUI = document.getElementById('battleUI');
-  const invOverlay = document.getElementById('invOverlay');
-  const resultOverlay = document.getElementById('resultOverlay');
-  const resultTitle = document.getElementById('resultTitle');
-  const resultText = document.getElementById('resultText');
+  const transition = document.getElementById("pokeballTransition");
+  const result = document.getElementById("result");
+  const resultTitle = document.getElementById("resultTitle");
+  const resultText = document.getElementById("resultText");
+  const restartBtn = document.getElementById("restartBtn");
 
-  const btnAttack = document.getElementById('btnAttack');
-  const btnDefend = document.getElementById('btnDefend');
-  const btnInv = document.getElementById('btnInv');
-  const btnRun = document.getElementById('btnRun');
+  let w = 0;
+  let h = 0;
+  let dpr = 1;
+  let radius = Number(radiusSlider.value);
+  let enemyHp = 100;
+  let runningThrow = false;
+  let rngSeed = Math.random() * 9999;
+  let activeBall = null;
 
-  const itemsWrap = document.getElementById('items');
-  const invBack = document.getElementById('invBack');
-  const restartBtn = document.getElementById('restartBtn');
-
-  const startOverlay = document.getElementById('startOverlay');
-  const btnStart = document.getElementById('btnStart');
-  const diffSel = document.getElementById('diffSel');
-
-  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-  const lerp=(a,b,t)=>a+(b-a)*t;
-  const len=(x,y)=>Math.hypot(x,y);
-  const rnd=(a,b)=>a+Math.random()*(b-a);
-
-  // ===== Difficulty =====
-  const DIFF = {
-    EASY:   { ringSpeedMul: 0.85, driftMul: 0.75, catchMul: 1.12, label:"Easy"   },
-    NORMAL: { ringSpeedMul: 1.00, driftMul: 1.00, catchMul: 1.00, label:"Normal" },
-    HARD:   { ringSpeedMul: 1.22, driftMul: 1.35, catchMul: 0.88, label:"Hard"   },
-  };
-  let difficultyKey = "NORMAL";
-
-  // ===== Balls (multipliers from main-series references; simplified conditions) =====
-  const BALLS = {
-    POKE:   { key:"POKE",   name:"Pokéball",    mult:1.00, homing:false, magic:false, qty: Infinity,  desc:"База • 1×" },
-    GREAT:  { key:"GREAT",  name:"Great Ball",  mult:1.50, homing:false, magic:false, qty: 25,        desc:"Шанс • 1.5×" },
-    ULTRA:  { key:"ULTRA",  name:"Ultra Ball",  mult:2.00, homing:false, magic:false, qty: 15,        desc:"Шанс • 2×" },
-    NET:    { key:"NET",    name:"Net Ball",    mult:3.50, homing:false, magic:false, qty: 10,        desc:"Шанс • 3.5×" },
-    DUSK:   { key:"DUSK",   name:"Dusk Ball",   mult:3.00, homing:false, magic:false, qty: 10,        desc:"Шанс • 3×" },
-    REPEAT: { key:"REPEAT", name:"Repeat Ball", mult:3.00, homing:false, magic:false, qty: 10,        desc:"Шанс • 3×" },
-    QUICK:  { key:"QUICK",  name:"Quick Ball",  mult:1.00, homing:false, magic:false, qty: 10,        desc:"1-й бросок • 5×" },
-    TIMER:  { key:"TIMER",  name:"Timer Ball",  mult:1.00, homing:false, magic:false, qty: 10,        desc:"Растёт по попыткам • до 4×" },
-    MASTER: { key:"MASTER", name:"Masterball-0",mult:999,  homing:true,  magic:true,  qty: 100,       desc:"100% + автонаведение" },
+  const state = {
+    enemyX: 0,
+    enemyY: 0,
+    enemyR: 42,
+    ballX: 0,
+    ballY: 0,
+    ballVX: 0,
+    ballVY: 0,
+    ballR: 16,
+    trail: []
   };
 
-  // Simple icons (SVG strings)
-  const ICONS = {
-    POKE:   ballSVG("#ff2f2f","#111217","#f3f6ff",null),
-    GREAT:  greatSVG(),
-    ULTRA:  ultraSVG(),
-    NET:    netSVG(),
-    DUSK:   duskSVG(),
-    REPEAT: repeatSVG(),
-    QUICK:  quickSVG(),
-    TIMER:  timerSVG(),
-    MASTER: masterSVG()
-  };
-
-  function ballSVG(top, belt, base, extra){
-    return `
-    <svg width="34" height="34" viewBox="0 0 64 64">
-      <circle cx="32" cy="32" r="28" fill="${base}" stroke="rgba(0,0,0,.35)" stroke-width="4"/>
-      <path d="M4 32a28 28 0 0 1 56 0H4Z" fill="${top}"/>
-      <rect x="4" y="28" width="56" height="8" fill="${belt}"/>
-      <circle cx="32" cy="32" r="8.5" fill="${base}" stroke="${belt}" stroke-width="4"/>
-      <circle cx="32" cy="32" r="3.4" fill="#cbd5e1"/>
-      ${extra || ""}
-    </svg>`;
-  }
-  function masterSVG(){
-    return ballSVG("#7c3aed","#111217","#f3f6ff",`
-      <circle cx="22" cy="18" r="4" fill="#ffb703"/>
-      <circle cx="42" cy="18" r="4" fill="#ffb703"/>
-    `);
-  }
-  function greatSVG(){
-    return `
-    <svg width="34" height="34" viewBox="0 0 64 64">
-      <circle cx="32" cy="32" r="28" fill="#f3f6ff" stroke="rgba(0,0,0,.35)" stroke-width="4"/>
-      <path d="M4 32a28 28 0 0 1 56 0H4Z" fill="#2563eb"/>
-      <path d="M18 17h10l4 6-4 6H18l-4-6 4-6Z" fill="#ff2f2f"/>
-      <path d="M46 17H36l-4 6 4 6h10l4-6-4-6Z" fill="#ff2f2f"/>
-      <rect x="4" y="28" width="56" height="8" fill="#111217"/>
-      <circle cx="32" cy="32" r="8.5" fill="#f3f6ff" stroke="#111217" stroke-width="4"/>
-      <circle cx="32" cy="32" r="3.4" fill="#cbd5e1"/>
-    </svg>`;
-  }
-  function ultraSVG(){
-    return `
-    <svg width="34" height="34" viewBox="0 0 64 64">
-      <circle cx="32" cy="32" r="28" fill="#f3f6ff" stroke="rgba(0,0,0,.35)" stroke-width="4"/>
-      <path d="M4 32a28 28 0 0 1 56 0H4Z" fill="#0f172a"/>
-      <path d="M10 18h12l2 4-2 4H10l-2-4 2-4Z" fill="#facc15"/>
-      <path d="M54 18H42l-2 4 2 4h12l2-4-2-4Z" fill="#facc15"/>
-      <rect x="4" y="28" width="56" height="8" fill="#111217"/>
-      <circle cx="32" cy="32" r="8.5" fill="#f3f6ff" stroke="#111217" stroke-width="4"/>
-      <circle cx="32" cy="32" r="3.4" fill="#cbd5e1"/>
-    </svg>`;
-  }
-  function netSVG(){
-    return ballSVG("#22c55e","#111217","#f3f6ff",`
-      <path d="M16 18l32 28M48 18L16 46" stroke="rgba(0,0,0,.35)" stroke-width="4" />
-      <path d="M20 22l24 20M44 22L20 42" stroke="rgba(255,255,255,.75)" stroke-width="2" />
-    `);
-  }
-  function duskSVG(){
-    return ballSVG("#1f2937","#111217","#f3f6ff",`
-      <circle cx="32" cy="18" r="6" fill="#a855f7"/>
-      <circle cx="22" cy="18" r="4" fill="#60a5fa"/>
-      <circle cx="42" cy="18" r="4" fill="#60a5fa"/>
-    `);
-  }
-  function repeatSVG(){
-    return ballSVG("#ff2f2f","#111217","#f3f6ff",`
-      <circle cx="32" cy="16" r="8" fill="#ffffff" opacity="0.85"/>
-      <circle cx="32" cy="16" r="4" fill="#ffcc00" opacity="0.95"/>
-    `);
-  }
-  function quickSVG(){
-    return ballSVG("#f59e0b","#111217","#f3f6ff",`
-      <path d="M20 18h24" stroke="#111217" stroke-width="4" />
-      <path d="M24 14l-4 8h6l-4 10 12-14h-6l4-8z" fill="#111217" opacity=".9"/>
-    `);
-  }
-  function timerSVG(){
-    return ballSVG("#ef4444","#111217","#f3f6ff",`
-      <circle cx="32" cy="16" r="7" fill="#111217" opacity=".9"/>
-      <path d="M32 16v-4" stroke="#f3f6ff" stroke-width="3" stroke-linecap="round"/>
-      <path d="M32 16l4 3" stroke="#f3f6ff" stroke-width="3" stroke-linecap="round"/>
-    `);
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = window.innerWidth;
+    h = window.innerHeight;
+    canvas.width = Math.floor(w * dpr);
+    canvas.height = Math.floor(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    state.enemyX = w * 0.74;
+    state.enemyY = h * 0.58;
   }
 
-  const S = { w:0,h:0,dpr:1,t:0,state:"",message:"",msgT:0,lock:false,selectedBall:"POKE",started:false };
-  const bgCache = { battle:null, capture:null };
-  const world = {
-    wind: 0,
-    windPhase: rnd(0, Math.PI * 2),
-    clouds: Array.from({length: 10}, (_, i) => ({
-      x: rnd(-240, 1200),
-      y: 24 + i * 30 + rnd(-12, 12),
-      rx: rnd(90, 150),
-      ry: rnd(34, 62),
-      speed: rnd(0.8, 1.6),
-      layer: rnd(0.6, 1.5),
-      alpha: rnd(0.12, 0.24)
-    })),
-    gusts: []
-  };
-  const captureAnim = { active:false, timer:0, shakes:0, maxShakes:3, success:false, chance:0 };
+  function noise(t) { return Math.sin(t) * 0.5 + Math.sin(t * 0.7 + 12.2) * 0.3 + Math.sin(t * 1.31 + 4.6) * 0.2; }
 
-  function refreshButtons(){
-    const disabled = S.lock || S.state !== "BATTLE";
-    btnAttack.disabled = disabled;
-    btnDefend.disabled = disabled;
-    btnInv.disabled = disabled;
-    btnRun.disabled = disabled;
-  }
+  function drawBackground(t) {
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.72);
+    skyGrad.addColorStop(0, "#f3b06a");
+    skyGrad.addColorStop(0.45, "#e89f61");
+    skyGrad.addColorStop(1, "#d18749");
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, w, h);
 
-  function setState(st){
-    S.state = st;
-    modeEl.textContent = st;
-    battleUI.style.display = (st === "BATTLE") ? "flex" : "none";
-    invOverlay.style.display = (st === "INVENTORY") ? "flex" : "none";
-    resultOverlay.style.display = (st === "RESULT") ? "flex" : "none";
-
-    if (st === "CAPTURE"){
-      playerImg.style.display = "none";
-      enemyImg.style.display = "block";
-    } else if (st === "BATTLE"){
-      playerImg.style.display = "block";
-      enemyImg.style.display = "block";
-    } else {
-      playerImg.style.display = "none";
-      enemyImg.style.display = "none";
-    }
-    refreshButtons();
-  }
-
-  function resize(){
-    S.dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-    const w = Math.floor(window.innerWidth);
-    const h = Math.floor(window.innerHeight);
-    canvas.width = Math.floor(w * S.dpr);
-    canvas.height = Math.floor(h * S.dpr);
-    canvas.style.width = w + "px";
-    canvas.style.height = h + "px";
-    ctx.setTransform(S.dpr,0,0,S.dpr,0,0);
-    S.w = w; S.h = h;
-    bgCache.battle = null;
-    bgCache.capture = null;
-
-    aim.maxPull = Math.min(240, Math.max(150, S.h * 0.28));
-    ball.r0 = Math.min(28, Math.max(18, S.w * 0.045));
-    layoutSprites();
-  }
-  window.addEventListener('resize', resize);
-
-  function markReady(img){ img.classList.add('ready'); }
-  playerImg.addEventListener('load', () => markReady(playerImg));
-  enemyImg.addEventListener('load', () => markReady(enemyImg));
-
-  // ===== Random enemy pool (15 ids) =====
-  const ENEMY_IDS = [1,4,7,10,16,19,25,37,39,52,54,58,66,92,133];
-  // We'll fetch names from PokeAPI, then use Showdown gif by name
-  const enemyPool = []; // {id,name,showdownUrl, difficulty}
-  let currentEnemy = null;
-
-  async function initEnemyPool(){
-    const jobs = ENEMY_IDS.map(async (id) => {
-      try{
-        const r = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
-        const j = await r.json();
-        const name = (j.name || `pokemon-${id}`).toLowerCase();
-        const url = `https://play.pokemonshowdown.com/sprites/ani/${name}.gif`;
-        // Per-pokemon catch difficulty (0.9 easy .. 1.35 hard)
-        const diff = clamp(0.90 + (id % 7) * 0.07 + rnd(-0.05,0.05), 0.90, 1.35);
-        return { id, name, url, diff };
-      } catch(e){
-        // fallback
-        const name = `pokemon-${id}`;
-        return { id, name, url:"", diff:1.10 };
-      }
-    });
-    const res = await Promise.all(jobs);
-    enemyPool.length = 0;
-    for (const x of res) enemyPool.push(x);
-  }
-
-  function pickRandomEnemy(){
-    const e = enemyPool[Math.floor(Math.random() * enemyPool.length)];
-    currentEnemy = e;
-    enemyNameEl.textContent = `${e.name} (сложн. ${e.diff.toFixed(2)})`;
-    // set sprite
-    enemyImg.src = e.url || "";
-    enemyImg.classList.remove('ready');
-
-    const hpBase = 42 + (e.id % 13) * 2;          // 42..66
-    const atkBase = 9 + (e.id % 9);              // 9..17
-    const defBase = 4 + (e.id % 7);              // 4..10
-    wild.hpMax = hpBase;
-    wild.hp = hpBase;
-    wild.atk = atkBase;
-    wild.def = defBase;
-    wild.catchBase = clamp(0.20 - (e.diff-1.0)*0.10, 0.08, 0.22); // base capture (harder = lower)
-    resetCapture();
-    layoutSprites();
-  }
-
-  // ===== Battle model =====
-  const player = { name:"Покемон A", hpMax:60, hp:60, atk:16, def:7, shielded:false };
-  const wild   = { name:"Дикий B", hpMax:45, hp:45, atk:10, def:5, shielded:false, catchBase:0.18 };
-
-  // Inventory quantities
-  const inv = {};
-  for (const k in BALLS) inv[k] = BALLS[k].qty;
-
-  function syncHUD(){
-    ahpEl.textContent = Math.max(0, Math.floor(player.hp));
-    amaxEl.textContent = player.hpMax;
-    bhpEl.textContent = Math.max(0, Math.floor(wild.hp));
-    bmaxEl.textContent = wild.hpMax;
-    renderInventoryUI();
-  }
-  function say(text){ S.message = text; S.msgT = 1.35; }
-
-
-  
-  // ===== Pokeball transition helper (normal opening) =====
-  const pt = document.getElementById('pokeTransition');
-  let ptBusy = false;
-
-  function playPokeTransition(onMid){
-    if (!pt || ptBusy) { try{ onMid?.(); }catch(e){} return Promise.resolve(); }
-    ptBusy = true;
-
-    // Show CLOSED Pokéball instantly
-    pt.classList.remove('opening');
-    pt.classList.add('on');
-
-    // tiny flash on the center button
-    const btnInner = pt.querySelector('.pt-btn-inner');
-    if (btnInner){
-      btnInner.style.opacity = "0";
-      setTimeout(()=>{ btnInner.style.opacity = "1"; }, 70);
+    for (let i = 0; i < 4; i++) {
+      const y = h * (0.28 + i * 0.11);
+      const alpha = 0.09 - i * 0.015;
+      ctx.fillStyle = `rgba(255,240,210,${Math.max(alpha, 0.02)})`;
+      ctx.fillRect(0, y, w, 20 + i * 4);
     }
 
-    // Switch scene while "closed"
-    try { onMid?.(); } catch(e){}
-
-    // Next frame: OPEN like a normal Pokéball (reveal new scene)
-    return new Promise((resolve) => {
-      requestAnimationFrame(() => {
-        pt.classList.add('opening');
-        setTimeout(() => {
-          pt.classList.remove('on','opening');
-          ptBusy = false;
-          resolve();
-        }, 520);
-      });
-    });
-  }
-
-
-
-  function dmgFormula(att, def){
-    const base = att - def * 0.6 + rnd(-2, 2);
-    return Math.max(2, Math.round(base)); // немного пожёстче
-  }
-  function applyDamage(target, amount){ target.hp = Math.max(0, target.hp - amount); }
-  function wait(ms){ return new Promise(res => setTimeout(res, ms)); }
-
-  function setLock(value){
-    S.lock = value;
-    refreshButtons();
-  }
-
-  async function playerAttack(){
-    if (S.lock || S.state !== "BATTLE") return;
-    setLock(true);
-    say(`${player.name} атакует!`);
-    await wait(240);
-
-    let dmg = dmgFormula(player.atk, wild.def);
-    if (wild.shielded){
-      dmg = Math.max(1, Math.round(dmg * 0.55));
-      wild.shielded = false;
-      say(`Щит дикого сработал! Урон ${dmg}.`);
-      await wait(220);
-    } else {
-      say(`${wild.name} получает ${dmg} урона.`);
-      await wait(220);
-    }
-
-    applyDamage(wild, dmg);
-    syncHUD();
-    await wait(320);
-
-    if (wild.hp <= 0){
-      endResult("Победа!", `${player.name} победил. Нажми “Начать сначала”, чтобы сгенерить нового противника.`);
-      return;
-    }
-    await wildTurn();
-  }
-
-  async function playerDefend(){
-    if (S.lock || S.state !== "BATTLE") return;
-    setLock(true);
-    player.shielded = true;
-    say(`${player.name} в защите!`);
-    await wait(360);
-    await wildTurn();
-  }
-
-  async function wildTurn(){
-    say(`${wild.name} думает...`);
-    await wait(460);
-
-    const hpRatio = wild.hp / wild.hpMax;
-    const defendChance = (hpRatio < 0.33) ? 0.52 : 0.30;
-    const doDefend = Math.random() < defendChance;
-
-    if (doDefend){
-      wild.shielded = true;
-      say(`${wild.name} ставит защиту!`);
-      await wait(520);
-      setLock(false);
-      return;
-    }
-
-    say(`${wild.name} атакует!`);
-    await wait(240);
-
-    let dmg = dmgFormula(wild.atk, player.def);
-    if (player.shielded){
-      dmg = Math.max(1, Math.round(dmg * 0.55));
-      player.shielded = false;
-      say(`Твой щит сработал! Урон ${dmg}.`);
-      await wait(220);
-    } else {
-      say(`${player.name} получает ${dmg} урона.`);
-      await wait(220);
-    }
-
-    applyDamage(player, dmg);
-    syncHUD();
-    await wait(340);
-
-    if (player.hp <= 0){
-      endResult("Поражение!", `${player.name} проиграл. Начни сначала.`);
-      return;
-    }
-    setLock(false);
-  }
-
-  function endResult(title, text){
-    setLock(true);
-    setState("RESULT");
-    resultTitle.textContent = title;
-    resultText.textContent = text;
-  }
-
-  function resetAll({newEnemy=true} = {}){
-    player.hpMax = 60; player.hp = 60; player.atk = 16; player.def = 7; player.shielded = false;
-
-    for (const k in BALLS) inv[k] = BALLS[k].qty; // reset balls
-    S.selectedBall = "POKE";
-
-    setDifficulty(difficultyKey);
-
-    if (newEnemy) pickRandomEnemy();
-    wild.shielded = false;
-
-    setLock(false);
-    say("Бой начался!");
-    resetCapture();
-    setState("BATTLE");
-    syncHUD();
-    layoutSprites();
-  }
-
-  // ===== Inventory UI =====
-  function renderInventoryUI(){
-    itemsWrap.innerHTML = "";
-    const order = ["POKE","GREAT","ULTRA","NET","DUSK","REPEAT","QUICK","TIMER","MASTER"];
-
-    for (const key of order){
-      const b = BALLS[key];
-      const qty = inv[key];
-      const qtyText = (qty === Infinity) ? "∞" : String(qty);
-
-      const card = document.createElement("div");
-      card.className = "card";
-      card.innerHTML = `
-        <div class="icon" aria-hidden="true">${ICONS[key]}</div>
-        <div class="meta">
-          <div class="name">${b.name}</div>
-          <div class="desc">${b.desc}</div>
-        </div>
-        <div class="qty">${qtyText}</div>
-      `;
-
-      const disabled = (qty !== Infinity && qty <= 0);
-      if (disabled) card.style.opacity = "0.45";
-
-      card.addEventListener("click", () => startCaptureWith(key));
-      itemsWrap.appendChild(card);
-    }
-  }
-
-  function openInventory(){
-    if (S.lock || S.state !== "BATTLE") return;
-    setState("INVENTORY");
-  }
-  function closeInventory(){
-    if (S.state !== "INVENTORY") return;
-    setState("BATTLE");
-  }
-
-  // ===== Capture math & physics =====
-  function capNearY(){ return S.h * 0.86; }
-  function capFarGroundY(){ return S.h * 0.62; }
-  function scaleAtZ(z){ return lerp(1.0, 0.40, z); }
-  function yAtZ(z){ return lerp(capNearY(), capFarGroundY(), z); }
-
-  const creatureC = { x:0, y:0, x0:0, sway:0 };
-  function targetCenter(){ return { x: creatureC.x, y: creatureC.y - 62 }; }
-
-  const ring = { phase:0, rMax: 110, rMin: 30, speed:0.90, curR:90 };
-
-  const ball = {
-    x:0, y:0, z:0,
-    vx:0, vy:0, vz:0,
-    spin:0, w:0,
-    flying:false,
-    r0:22,
-    trail:[],
-    magic:[],
-    attempts: 0,
-    wind: 0
-  };
-
-  const aim = { active:false, startX:0, startY:0, curX:0, curY:0, points:[], maxPull:180 };
-  const P = { g: 1500, air: 0.994, curveDrag: 0.09 };
-
-  function setDifficulty(key){
-    difficultyKey = key in DIFF ? key : "NORMAL";
-    diffLabel.textContent = DIFF[difficultyKey].label;
-  }
-
-  function resetCapture(){
-    creatureC.sway = rnd(0, Math.PI*2);
-    creatureC.x0 = S.w*0.5 + rnd(-S.w*0.10, S.w*0.10);
-    creatureC.x = creatureC.x0;
-    creatureC.y = capFarGroundY();
-
-    resetBallSoft();
-
-    ring.phase = 0;
-    aim.active = false;
-    aim.points = [];
-    captureAnim.active = false;
-    captureAnim.shakes = 0;
-    captureAnim.timer = 0;
-  }
-
-  function resetBallSoft(){
-    ball.x = S.w*0.5;
-    ball.z = 0;
-    ball.y = yAtZ(0);
-    ball.vx = ball.vy = ball.vz = 0;
-    ball.spin = 0;
-    ball.w = 0;
-    ball.flying = false;
-    ball.trail = [];
-    ball.magic = [];
-    ball.attempts = 0;
-    ball.wind = 0;
-  }
-
-  function pointerPos(e){
-    const r = canvas.getBoundingClientRect();
-    return { x: (e.clientX - r.left), y: (e.clientY - r.top) };
-  }
-
-  function canStartAim(p){
-    if (S.state !== "CAPTURE") return false;
-    if (ball.flying) return false;
-    if (captureAnim.active) return false;
-    return len(p.x - ball.x, p.y - ball.y) <= ball.r0 * 1.7;
-  }
-
-  function startAim(p){
-    if (!canStartAim(p)) return;
-    aim.active = true;
-    aim.startX = p.x; aim.startY = p.y;
-    aim.curX = p.x; aim.curY = p.y;
-    aim.points = [{x:p.x,y:p.y,t:performance.now()}];
-    if (navigator.vibrate) navigator.vibrate(6);
-  }
-
-  function moveAim(p){
-    if (!aim.active) return;
-    aim.curX = p.x; aim.curY = p.y;
-    const now = performance.now();
-    aim.points.push({x:p.x,y:p.y,t:now});
-    if (aim.points.length > 12) aim.points.shift();
-  }
-
-  function endAim(){
-    if (!aim.active) return;
-    aim.active = false;
-
-    const dx = aim.curX - aim.startX;
-    const dy = aim.curY - aim.startY;
-    if (dy > -18){ return; }
-
-    const pull = clamp(-dy, 0, aim.maxPull);
-    const power = pull / aim.maxPull;
-
-    ball.vz = lerp(0.95, 1.45, power);
-    ball.vy = lerp(-520, -980, power);
-    ball.vx = clamp(dx * 3.2, -760, 760);
-
-    // curve
-    let curve = 0;
-    const pts = aim.points;
-    if (pts.length >= 6){
-      for (let i=2;i<pts.length;i++){
-        const a = pts[i-2], b = pts[i-1], c = pts[i];
-        const abx = b.x - a.x, aby = b.y - a.y;
-        const bcx = c.x - b.x, bcy = c.y - b.y;
-        curve += (abx*bcy - aby*bcx);
-      }
-      curve = clamp(curve / 18000, -1, 1);
-    }
-    ball.w = curve * lerp(6, 14, power);
-    ball.vx += curve * lerp(120, 260, power);
-
-    const ringFactor = clamp((ring.curR - ring.rMin) / (ring.rMax - ring.rMin), 0, 1);
-    const diff = DIFF[difficultyKey];
-    const perMon = currentEnemy ? currentEnemy.diff : 1.10;
-
-    const drift = (0.35 + 0.95 * ringFactor) * diff.driftMul * perMon;
-    ball.vx += rnd(-220, 220) * drift;
-    ball.vy += rnd(-90, 90)  * drift;
-
-    ball.wind = rnd(-1, 1) * (0.8 + 1.8 * ringFactor) * diff.driftMul * perMon;
-
-    ball.flying = true;
-    ball.attempts += 1;
-
-    const b = BALLS[S.selectedBall];
-    if (b.homing){
-      const t = targetCenter();
-      const toX = t.x - ball.x;
-      const toY = t.y - ball.y;
-      const L = Math.max(1, Math.hypot(toX, toY));
-      const nx = toX / L;
-      const ny = toY / L;
-      const speed = lerp(950, 1350, power);
-      ball.vx = nx * speed;
-      ball.vy = ny * speed * 0.95;
-      ball.vz = 1.25;
-      say(`${b.name}: авто-наведение!`);
-    } else {
-      say("Бросок!");
-    }
-  }
-
-  function getBallMultiplier(){
-    const key = S.selectedBall;
-    if (key === "MASTER") return 999;
-    if (key === "QUICK")  return (ball.attempts <= 1) ? 5.0 : 1.0;
-    if (key === "TIMER")  return clamp(1.0 + (ball.attempts-1) * 0.35, 1.0, 4.0);
-    return BALLS[key].mult;
-  }
-
-  function captureChance({accuracy, label, spinAbs}){
-    const diff = DIFF[difficultyKey];
-    const perMon = currentEnemy ? currentEnemy.diff : 1.10;
-
-    const hpFactor = 1 - (wild.hp / wild.hpMax);
-    const ringBonus = (label==="Excellent") ? 0.16 : (label==="Great" ? 0.10 : 0.05);
-    const curveBonus = Math.min(0.10, (spinAbs/12) * 0.10);
-    const accuracyBonus = accuracy * 0.42;
-
-    const base = wild.catchBase;
-    const mult = getBallMultiplier();
-
-    let p = (base + hpFactor*0.32 + accuracyBonus + ringBonus + curveBonus);
-    p *= mult;
-    p *= diff.catchMul;
-    p *= (1.0 / perMon);
-
-    return clamp(p, 0.03, 0.92);
-  }
-
-
-
-  function beginCaptureResolve({chance, label}){
-    const t = targetCenter();
-    ball.flying = false;
-    ball.z = 1;
-    ball.x = t.x;
-    ball.y = t.y;
-    ball.vx = ball.vy = ball.vz = 0;
-
-    captureAnim.active = true;
-    captureAnim.timer = 0.38;
-    captureAnim.shakes = 0;
-    captureAnim.maxShakes = 3;
-    captureAnim.success = Math.random() < chance;
-    captureAnim.chance = chance;
-
-    say(`${label}! Покебол удерживает цель...`);
-  }
-
-  function backToBattleFail(){
-    // Pokemon-style "snap back to battle" transition
-    setTimeout(() => {
-      playPokeTransition(() => {
-        setState("BATTLE");
-        setLock(false);
-        say("Не поймал… бой продолжается!");
-        layoutSprites();
-      });
-    }, 120);
-  }
-
-  function startCaptureWith(ballKey){
-    if (S.state !== "INVENTORY") return;
-
-    const qty = inv[ballKey];
-    if (qty !== Infinity && qty <= 0){
-      say("Этих шаров нет.");
-      closeInventory();
-      return;
-    }
-    if (qty !== Infinity) inv[ballKey] -= 1;
-
-    S.selectedBall = ballKey;
-    syncHUD();
-
-    // Pokemon-style "dive into capture" transition
-    const b = BALLS[ballKey];
-
-    // Hide inventory immediately so it doesn't sit above transition
-    invOverlay.style.display = "none";
-
-    playPokeTransition(() => {
-      setState("CAPTURE");
-      say(b.homing ? `${b.name}: авто-наведение в цель!` : `${b.name}: лови момент круга!`);
-      resetBallSoft();
-      layoutSprites();
-    });
-  }
-
-
-  function updateWorld(dt){
-    world.windPhase += dt * 0.45;
-    const diff = DIFF[difficultyKey];
-    world.wind = (Math.sin(world.windPhase) * 0.55 + Math.sin(world.windPhase * 2.6) * 0.25) * diff.driftMul;
-
-    for (const c of world.clouds){
-      c.x += (15 + 24 * c.speed + Math.abs(world.wind) * 18) * c.layer * dt;
-      if (c.x - c.rx > S.w + 120){
-        c.x = -c.rx - rnd(20, 220);
-        c.y = 24 + rnd(0, S.h * 0.30);
-      }
-    }
-
-    if (Math.random() < dt * (3.2 + Math.abs(world.wind) * 2)){
-      world.gusts.push({
-        x: rnd(-40, S.w + 60),
-        y: rnd(S.h * 0.08, S.h * 0.7),
-        vx: 110 + rnd(60, 180) + Math.abs(world.wind) * 120,
-        vy: rnd(-10, 10),
-        life: rnd(0.4, 0.8),
-        age: 0,
-        len: rnd(28, 62)
-      });
-      if (world.gusts.length > 44) world.gusts.shift();
-    }
-    for (let i = world.gusts.length - 1; i >= 0; i--){
-      const g = world.gusts[i];
-      g.age += dt;
-      g.x += g.vx * dt;
-      g.y += g.vy * dt;
-      if (g.age >= g.life || g.x > S.w + 160) world.gusts.splice(i, 1);
-    }
-  }
-
-  function stepCapture(dt){
-    const diff = DIFF[difficultyKey];
-
-    creatureC.sway += dt * (2.0 + (currentEnemy ? currentEnemy.diff*0.6 : 0.6));
-    const wander = Math.sin(creatureC.sway) * (S.w * 0.05);
-    creatureC.x = clamp(creatureC.x0 + wander * 0.35, S.w*0.25, S.w*0.75);
-    creatureC.y = capFarGroundY();
-
-    const perMon = currentEnemy ? currentEnemy.diff : 1.10;
-
-    const wiggle = 0.85 + 0.55*(0.5+0.5*Math.sin(S.t*0.7+1.2));
-    ring.speed = 0.72 * wiggle * diff.ringSpeedMul * perMon;
-    ring.phase = (ring.phase + dt * ring.speed) % 1;
-    ring.curR = lerp(ring.rMax, ring.rMin, ring.phase);
-
-    for (let i = ball.magic.length-1; i>=0; i--){
-      const p = ball.magic[i];
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      p.vx *= Math.pow(0.96, dt*60);
-      p.vy *= Math.pow(0.96, dt*60);
-      p.a = Math.max(0, p.a - dt*2.2);
-      if (p.a <= 0) ball.magic.splice(i,1);
-    }
-
-    const b = BALLS[S.selectedBall];
-
-    if (ball.flying){
-      ball.z += ball.vz * dt;
-
-      ball.vy += P.g * dt;
-      const air = Math.pow(P.air, dt*60);
-      ball.vx *= air; ball.vy *= air;
-      ball.vz *= Math.pow(0.992, dt*60);
-
-      ball.vx += ball.wind * (dt*60) * 3.1;
-
-      if (!b.homing){
-        ball.vx += (ball.w * P.curveDrag) * (dt*60) * (0.15 + ball.z*0.55);
-      } else {
-        const t = targetCenter();
-        ball.vx += (t.x - ball.x) * 0.26 * (dt*60);
-        ball.vy += (t.y - ball.y) * 0.26 * (dt*60);
-
-        if (b.magic && Math.random() < 0.9){
-          const s = scaleAtZ(ball.z);
-          ball.magic.push({
-            x: ball.x + rnd(-10,10)*s,
-            y: ball.y + rnd(-10,10)*s,
-            vx: rnd(-90,90)*s,
-            vy: rnd(-90,90)*s,
-            r: rnd(3,8)*s,
-            a: 0.90
-          });
-        }
-      }
-
-      ball.x += ball.vx * dt;
-      ball.y += ball.vy * dt;
-      ball.spin += ball.w * dt;
-
-      ball.trail.push({x:ball.x,y:ball.y,z:ball.z,t:S.t});
-      if (ball.trail.length > 28) ball.trail.shift();
-
-      if (ball.z >= 0.90 && ball.z <= 1.14){
-        const t = targetCenter();
-        const cr = 62;
-        const br = ball.r0 * scaleAtZ(ball.z);
-        const d = Math.hypot(ball.x - t.x, ball.y - t.y);
-
-        if (b.homing){
-          if (d <= cr*2.2 || ball.z >= 1.02){
-            ball.flying = false;
-            say("Пойман!");
-            endResult("Пойман!", `${b.name} поймал ${currentEnemy ? currentEnemy.name : "дикого"} (100%).`);
-            return;
-          }
-        } else {
-          const strict = 1.0 / (diff.catchMul * (1.0/perMon));
-          const hitRadius = (br + cr) / clamp(strict, 0.85, 1.35);
-
-          if (d <= hitRadius){
-            const ringR = ring.curR;
-            let label = "Nice";
-            if (ringR < cr*0.55) label = "Excellent";
-            else if (ringR < cr*0.78) label = "Great";
-
-            const accuracy = clamp(1 - (d / (cr * 1.05)), 0, 1);
-            const chance = captureChance({accuracy, label, spinAbs: Math.abs(ball.w)});
-            const pct = Math.round(chance*100);
-            say(`${label}! (${pct}%)`);
-            beginCaptureResolve({chance, label});
-          }
-        }
-      }
-
-      const out = (ball.z > 1.40 || ball.y > S.h + 120 || ball.x < -200 || ball.x > S.w + 200);
-      if (out){
-        ball.flying = false;
-        if (b.homing){
-          endResult("Пойман!", `${b.name} всё равно поймал (автонаведение).`);
-        } else {
-          say("Промах");
-          backToBattleFail();
-        }
-      }
-    } else if (!captureAnim.active) {
-      ball.z = 0;
-      ball.x = S.w*0.5;
-      ball.y = yAtZ(0);
-    }
-
-    if (captureAnim.active){
-      captureAnim.timer -= dt;
-      if (captureAnim.timer <= 0){
-        captureAnim.shakes += 1;
-        ball.spin += (captureAnim.shakes % 2 === 0 ? -1 : 1) * 0.28;
-        if (captureAnim.shakes < captureAnim.maxShakes){
-          say(`Покебол дрожит... ${captureAnim.shakes}/${captureAnim.maxShakes}`);
-          captureAnim.timer = 0.36 + rnd(0.07, 0.18);
-        } else {
-          captureAnim.active = false;
-          const pct = Math.round(captureAnim.chance * 100);
-          if (captureAnim.success){
-            endResult("Пойман!", `Ты поймал ${currentEnemy ? currentEnemy.name : "дикого"} (${BALLS[S.selectedBall].name}). Шанс был ${pct}%.`);
-          } else {
-            say(`Вырвался! (${pct}%)`);
-            backToBattleFail();
-          }
-        }
-      }
-    }
-
-    layoutSprites();
-  }
-
-  // ===== Drawing =====
-  function roundRect(x,y,w,h,r){
-    r = Math.min(r, w/2, h/2);
+    const dune1 = ctx.createLinearGradient(0, h * 0.46, 0, h);
+    dune1.addColorStop(0, "#d99a53");
+    dune1.addColorStop(1, "#b27334");
+    ctx.fillStyle = dune1;
     ctx.beginPath();
-    ctx.moveTo(x+r, y);
-    ctx.arcTo(x+w, y, x+w, y+h, r);
-    ctx.arcTo(x+w, y+h, x, y+h, r);
-    ctx.arcTo(x, y+h, x, y, r);
-    ctx.arcTo(x, y, x+w, y, r);
-    ctx.closePath();
-  }
-
-  function drawMessage(){
-    if (S.msgT <= 0) return;
-    const a = clamp(S.msgT/0.18,0,1) * clamp(S.msgT/1.35,0,1);
-    ctx.save();
-    ctx.globalAlpha = a;
-    ctx.font = "900 16px system-ui, -apple-system, Segoe UI, Roboto, Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    const x = S.w*0.5;
-    const y = S.h*0.20;
-    const w = ctx.measureText(S.message).width + 26;
-    const h = 38;
-
-    roundRect(x-w/2, y-h/2, w, h, 999);
-    ctx.fillStyle = "rgba(0,0,0,0.30)";
+    ctx.moveTo(0, h * 0.62);
+    for (let x = 0; x <= w; x += 10) {
+      const y = h * 0.62 + Math.sin(x * 0.01 + t * 0.001) * 20;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
     ctx.fill();
 
-    roundRect(x-w/2, y-h/2-2, w, h, 999);
-    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.fillStyle = "#935a2a";
+    ctx.beginPath();
+    ctx.moveTo(0, h * 0.76);
+    for (let x = 0; x <= w; x += 12) {
+      const y = h * 0.76 + Math.sin(x * 0.012 + t * 0.0015 + 2) * 24;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
     ctx.fill();
-
-    ctx.fillStyle = "rgba(18,20,24,0.92)";
-    ctx.fillText(S.message, x, y-2);
-    ctx.restore();
   }
 
-  function drawBattleBG(){
-    if (!bgCache.battle){
-      const g = ctx.createLinearGradient(0,0,0,S.h);
-      g.addColorStop(0, "#7ecbff");
-      g.addColorStop(0.45, "#bfe9ff");
-      g.addColorStop(1, "#2a7a5a");
-      const fg = ctx.createLinearGradient(0, S.h * 0.82 - 140, 0, S.h);
-      fg.addColorStop(0, "rgba(65,200,120,1)");
-      fg.addColorStop(1, "rgba(18,110,70,1)");
-      bgCache.battle = { sky:g, field:fg };
-    }
-
-    ctx.fillStyle = bgCache.battle.sky;
-    ctx.fillRect(0,0,S.w,S.h);
-
-    ctx.save();
-    for (const c of world.clouds){
-      if (c.y > S.h * 0.33) continue;
-      ctx.globalAlpha = c.alpha;
-      ctx.beginPath();
-      ctx.ellipse(c.x, c.y, c.rx, c.ry, 0, 0, Math.PI*2);
-      ctx.fillStyle = "rgba(255,255,255,0.95)";
-      ctx.fill();
-    }
-    ctx.restore();
-
-    const gy = S.h * 0.82;
-    ctx.fillStyle = bgCache.battle.field;
-    ctx.fillRect(0, gy-80, S.w, S.h-(gy-80));
-
-    ctx.save();
-    ctx.strokeStyle = "rgba(255,255,255,0.25)";
+  function drawReticle() {
+    ctx.strokeStyle = "rgba(255, 248, 224, 0.85)";
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(0, gy-140);
-    ctx.lineTo(S.w, gy-140);
+    ctx.arc(state.enemyX, state.enemyY, radius, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.restore();
 
-    drawWindTrails();
+    ctx.setLineDash([8, 10]);
+    ctx.strokeStyle = "rgba(255, 226, 155, 0.8)";
+    ctx.beginPath();
+    ctx.arc(state.enemyX, state.enemyY, radius * 0.5, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
   }
 
-  function drawCaptureBG(){
-    if (!bgCache.capture){
-      const g = ctx.createLinearGradient(0,0,0,S.h);
-      g.addColorStop(0, "#6dbfff");
-      g.addColorStop(0.55, "#cfefff");
-      g.addColorStop(1, "#2f8a62");
-      const field = ctx.createLinearGradient(0, capFarGroundY()-120, 0, S.h);
-      field.addColorStop(0, "rgba(95,220,140,1)");
-      field.addColorStop(0.65, "rgba(35,150,90,1)");
-      field.addColorStop(1, "rgba(18,110,70,1)");
-      bgCache.capture = { sky:g, field };
-    }
-
-    ctx.fillStyle = bgCache.capture.sky;
-    ctx.fillRect(0,0,S.w,S.h);
-
-    ctx.save();
-    for (const c of world.clouds){
-      ctx.globalAlpha = c.alpha * 0.95;
+  function drawBall() {
+    if (!activeBall) return;
+    for (const p of state.trail) {
+      ctx.fillStyle = `rgba(255,245,220,${p.a})`;
       ctx.beginPath();
-      ctx.ellipse(c.x, c.y, c.rx, c.ry, 0, 0, Math.PI*2);
-      ctx.fillStyle = "rgba(255,255,255,0.95)";
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
       ctx.fill();
     }
-    ctx.restore();
 
-    const farY = capFarGroundY();
-    ctx.fillStyle = bgCache.capture.field;
-    ctx.fillRect(0, farY-80, S.w, S.h-(farY-80));
-
+    const x = state.ballX;
+    const y = state.ballY;
     ctx.save();
-    ctx.strokeStyle = "rgba(255,255,255,0.24)";
-    ctx.lineWidth = 2;
+    ctx.translate(x, y);
+    ctx.fillStyle = "#ffffff";
     ctx.beginPath();
-    ctx.moveTo(0, farY);
-    ctx.lineTo(S.w, farY);
-    ctx.stroke();
-    ctx.restore();
-
-    drawWindTrails();
-  }
-
-  function drawWindTrails(){
-    if (!world.gusts.length) return;
-    ctx.save();
-    ctx.lineCap = "round";
-    for (const g of world.gusts){
-      const a = clamp(1 - g.age / g.life, 0, 1);
-      ctx.globalAlpha = a * 0.35;
-      ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(g.x, g.y);
-      ctx.lineTo(g.x + g.len, g.y + Math.sin((g.x + S.t * 200) * 0.01) * 6);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  function drawHPBar(x,y,w,h,hp,hpMax,name,shielded){
-    ctx.save();
-    ctx.font = "900 13px system-ui, -apple-system, Segoe UI, Roboto, Arial";
-    ctx.fillStyle = "rgba(10,14,18,.92)";
-    ctx.textAlign = "left";
-    ctx.fillText(name + (shielded ? " 🛡" : ""), x, y-8);
-
-    roundRect(x,y,w,h,8);
-    ctx.fillStyle = "rgba(0,0,0,0.12)";
+    ctx.arc(0, 0, state.ballR, 0, Math.PI * 2);
     ctx.fill();
 
-    const ratio = clamp(hp / hpMax, 0, 1);
-    const fw = w * ratio;
-    const grad = ctx.createLinearGradient(x,0,x+w,0);
-    grad.addColorStop(0, "rgba(120,220,255,0.90)");
-    grad.addColorStop(1, "rgba(120,255,160,0.90)");
-    ctx.fillStyle = grad;
-    roundRect(x,y,fw,h,8);
+    ctx.fillStyle = "#da1919";
+    ctx.beginPath();
+    ctx.arc(0, 0, state.ballR, Math.PI, Math.PI * 2);
     ctx.fill();
 
-    ctx.textAlign = "right";
-    ctx.fillStyle = "rgba(10,14,18,0.82)";
-    ctx.fillText(`${Math.floor(hp)}/${hpMax}`, x+w, y+h+16);
-    ctx.restore();
-  }
-
-  function drawRing(){
-    const t = targetCenter();
-    const rNow = ring.curR;
-
-    ctx.save();
-    ctx.translate(t.x, t.y);
-
+    ctx.fillStyle = "#151515";
+    ctx.fillRect(-state.ballR, -2, state.ballR * 2, 4);
     ctx.beginPath();
-    ctx.arc(0,0, 104, 0, Math.PI*2);
-    ctx.strokeStyle = "rgba(255,255,255,0.14)";
+    ctx.arc(0, 0, 6, 0, Math.PI * 2);
+    ctx.fillStyle = "#f8f8f8";
+    ctx.fill();
+    ctx.strokeStyle = "#151515";
     ctx.lineWidth = 3;
     ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(0,0, rNow, 0, Math.PI*2);
-    ctx.strokeStyle = "rgba(120,220,255,0.90)";
-    ctx.lineWidth = 4;
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(0,0, rNow, 0, Math.PI*2);
-    ctx.strokeStyle = "rgba(120,220,255,0.18)";
-    ctx.lineWidth = 12;
-    ctx.stroke();
-
-    ctx.font = "900 12px system-ui";
-    ctx.fillStyle = "rgba(255,255,255,0.85)";
-    ctx.textAlign = "center";
-    ctx.fillText("Меньше круг = ровнее полёт", 0, 132);
-
     ctx.restore();
   }
 
-  function drawTrail(){
-    ctx.save();
-    for (let i=0;i<ball.trail.length;i++){
-      const p = ball.trail[i];
-      const age = S.t - p.t;
-      const a = clamp(1 - age/0.30, 0, 1);
-      if (!a) continue;
-      const rr = ball.r0 * scaleAtZ(p.z) * (0.55 + i/ball.trail.length * 0.25);
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, rr, 0, Math.PI*2);
-      const col = (S.selectedBall === "MASTER") ? `rgba(190,110,255,${0.24*a})` : `rgba(200,235,255,${0.16*a})`;
-      ctx.fillStyle = col;
-      ctx.fill();
-    }
-    ctx.restore();
+  function computeChance(distance) {
+    const radiusFactor = Math.min(1, Math.max(0.25, radius / 200));
+    const hitFactor = Math.max(0, 1 - distance / radius);
+    const hpFactor = Math.max(0.25, (100 - enemyHp) / 100 + 0.25);
+    const chance = Math.min(95, Math.round(100 * (hitFactor * 0.6 + radiusFactor * 0.15 + hpFactor * 0.25)));
+    return chance;
   }
 
-  function drawMasterMagic(){
-    if (S.selectedBall !== "MASTER") return;
-    ctx.save();
-    ctx.globalCompositeOperation = "lighter";
-    for (const p of ball.magic){
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r*2.4, 0, Math.PI*2);
-      ctx.fillStyle = `rgba(175,90,255,${p.a*0.22})`;
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
-      ctx.fillStyle = `rgba(230,190,255,${p.a*0.60})`;
-      ctx.fill();
-    }
-    ctx.restore();
+  function setEnemy(name) {
+    enemyNameEl.textContent = name;
+    enemySprite.src = `${spriteBase}${name.toLowerCase()}.gif`;
+    enemyHp = 100;
+    enemyHpEl.textContent = enemyHp;
+    captureChanceEl.textContent = "0";
+    statusEl.textContent = "Новый враг появился. Ослабь цель и настрой радиус для точного броска.";
   }
 
-  function drawAimGuide(){
-    if (!aim.active) return;
-    const dy = aim.curY - aim.startY;
-    const pull = clamp(-dy, 0, aim.maxPull);
-    const power = pull / aim.maxPull;
-
-    ctx.save();
-    ctx.lineWidth = 5;
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(aim.startX, aim.startY);
-    ctx.lineTo(aim.curX, aim.curY);
-    ctx.strokeStyle = `rgba(255,90,90,${0.18 + 0.55*power})`;
-    ctx.stroke();
-    ctx.restore();
+  async function scriptLoading() {
+    loader.style.display = "flex";
+    loaderFill.style.width = "0%";
+    loaderPct.textContent = "0%";
+    for (let p = 0; p <= 100; p += 10) {
+      loaderFill.style.width = `${p}%`;
+      loaderPct.textContent = `${p}%`;
+      await new Promise(r => setTimeout(r, 40));
+    }
+    loader.style.display = "none";
   }
 
-  function drawBall(x,y,r,spin){
-    if (r <= 0.5) return;
-
-    const key = S.selectedBall;
-    const top = (key==="POKE") ? "#ff2f2f" :
-                (key==="GREAT") ? "#2563eb" :
-                (key==="ULTRA") ? "#0f172a" :
-                (key==="NET") ? "#22c55e" :
-                (key==="DUSK") ? "#1f2937" :
-                (key==="REPEAT") ? "#ff2f2f" :
-                (key==="QUICK") ? "#f59e0b" :
-                (key==="TIMER") ? "#ef4444" :
-                "#7c3aed";
-    const accents = (key==="ULTRA") ? "#facc15" : (key==="MASTER") ? "#ffb703" : "#ff2f2f";
-
-    ctx.save();
-    ctx.translate(x,y);
-    ctx.rotate(spin);
-
-    ctx.globalAlpha = clamp(scaleAtZ(ball.z), 0.35, 1);
-    ctx.beginPath();
-    ctx.ellipse(0, r*0.95, r*0.9, r*0.28, 0, 0, Math.PI*2);
-    ctx.fillStyle = "rgba(0,0,0,0.22)";
-    ctx.fill();
-    ctx.globalAlpha = 1;
-
-    ctx.beginPath();
-    ctx.arc(0,0,r,0,Math.PI*2);
-    const shell = ctx.createRadialGradient(-r*0.35, -r*0.4, r*0.2, 0,0,r*1.2);
-    shell.addColorStop(0, "#ffffff");
-    shell.addColorStop(0.55, "#f3f6ff");
-    shell.addColorStop(1, "#cbd5e1");
-    ctx.fillStyle = shell;
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(0,0,r*0.98, Math.PI, 0, false);
-    ctx.lineTo(r,0);
-    ctx.arc(0,0,r*0.98, 0, Math.PI, true);
-    ctx.closePath();
-    const topG = ctx.createRadialGradient(-r*0.35, -r*0.65, r*0.2, 0, -r*0.25, r*1.2);
-    topG.addColorStop(0, "rgba(255,255,255,0.22)");
-    topG.addColorStop(0.55, top);
-    topG.addColorStop(1, "rgba(0,0,0,0.25)");
-    ctx.fillStyle = topG;
-    ctx.fill();
-
-    if (key==="MASTER"){
-      ctx.beginPath(); ctx.arc(-r*0.35, -r*0.62, r*0.13, 0, Math.PI*2); ctx.fillStyle = accents; ctx.fill();
-      ctx.beginPath(); ctx.arc(r*0.35, -r*0.62, r*0.13, 0, Math.PI*2);  ctx.fillStyle = accents; ctx.fill();
-    }
-
-    ctx.beginPath();
-    ctx.rect(-r, -r*0.12, r*2, r*0.24);
-    ctx.fillStyle = "rgba(15,15,18,0.95)";
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(0,0,r*0.26,0,Math.PI*2);
-    ctx.fillStyle = "rgba(245,248,255,0.95)";
-    ctx.fill();
-    ctx.strokeStyle = "rgba(15,15,18,0.95)";
-    ctx.lineWidth = Math.max(2, r*0.11);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(0,0,r*0.10,0,Math.PI*2);
-    ctx.fillStyle = "rgba(180,190,205,0.95)";
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(0,0,r,0,Math.PI*2);
-    ctx.strokeStyle = "rgba(0,0,0,0.45)";
-    ctx.lineWidth = Math.max(2, r*0.12);
-    ctx.stroke();
-
-    if (key==="MASTER"){
-      ctx.save();
-      ctx.globalCompositeOperation = "lighter";
-      ctx.beginPath();
-      ctx.arc(0,0,r*1.35,0,Math.PI*2);
-      ctx.fillStyle = "rgba(160,80,255,0.18)";
-      ctx.fill();
-      ctx.restore();
-    }
-
-    ctx.restore();
+  function openTransition() {
+    transition.classList.add("active");
+    transition.classList.add("closed");
   }
 
-  // ===== DOM sprites layout =====
-  function setSprite(img, cx, feetY, size, flip){
-    // Keep original aspect ratio (fixes "stretched" sprites)
-    const nw = img.naturalWidth || 1;
-    const nh = img.naturalHeight || 1;
-    const w = size;
-    const h = size * (nh / nw);
-
-    img.style.width = w + "px";
-    img.style.height = h + "px";
-    img.style.left = (cx - w/2) + "px";
-    img.style.top  = (feetY - h) + "px";
-    img.style.transform = `scaleX(${flip ? -1 : 1})`;
+  function closeTransition() {
+    transition.classList.remove("closed");
+    setTimeout(() => transition.classList.remove("active"), 400);
   }
 
-  function layoutSprites(){
-    const gy = S.h * 0.82;
+  async function throwBall() {
+    if (runningThrow) return;
+    runningThrow = true;
+    throwBtn.disabled = true;
+    weakenBtn.disabled = true;
 
-    if (S.state === "BATTLE"){
-      const leftX = S.w * 0.24;
-      const rightX = S.w * 0.76;
-      const size = Math.min(190, S.w*0.34);
+    await scriptLoading();
+    openTransition();
 
-      setSprite(playerImg, leftX, gy - 10 + Math.sin(S.t*2.2)*3, size, true);
-      setSprite(enemyImg, rightX, gy - 10 + Math.sin(S.t*2.0+1)*3, size, true);
+    state.ballX = w * 0.2;
+    state.ballY = h * 0.72;
+    const dx = state.enemyX - state.ballX;
+    const dy = state.enemyY - state.ballY;
+
+    const spread = (260 - radius) * 0.09;
+    const sway = noise(rngSeed += 0.6) * spread;
+    state.ballVX = dx * 0.04 + sway;
+    state.ballVY = dy * 0.04 - 7;
+    state.trail = [];
+
+    activeBall = true;
+    const gravity = 0.23;
+
+    let hit = false;
+    for (let frame = 0; frame < 110; frame++) {
+      state.ballX += state.ballVX;
+      state.ballY += state.ballVY;
+      state.ballVY += gravity;
+      state.ballVX *= 0.993;
+
+      if (state.trail.length > 22) state.trail.shift();
+      state.trail.push({ x: state.ballX, y: state.ballY, r: 2 + Math.random() * 2, a: 0.12 + Math.random() * 0.22 });
+
+      const d = Math.hypot(state.ballX - state.enemyX, state.ballY - state.enemyY);
+      if (d < radius * 0.48) {
+        hit = true;
+        const chance = computeChance(d);
+        captureChanceEl.textContent = chance;
+        const success = Math.random() * 100 < chance;
+        await new Promise(r => setTimeout(r, 200));
+        activeBall = false;
+        closeTransition();
+        await new Promise(r => setTimeout(r, 250));
+        showResult(success, chance);
+        break;
+      }
+
+      if (state.ballY > h + 40) break;
+      await new Promise(r => requestAnimationFrame(r));
     }
 
-    if (S.state === "CAPTURE"){
-      const size = Math.min(190, S.w*0.36);
-      setSprite(enemyImg, creatureC.x, creatureC.y + Math.sin(S.t*2.0+1)*2, size, true);
+    if (!hit) {
+      activeBall = false;
+      closeTransition();
+      statusEl.textContent = "Промах! Увеличь радиус или ослабь цель сильнее.";
+      captureChanceEl.textContent = "0";
     }
+
+    runningThrow = false;
+    throwBtn.disabled = false;
+    weakenBtn.disabled = false;
   }
 
-  // ===== Input =====
-  canvas.addEventListener('pointerdown', (e) => {
-    if (!S.started || S.state !== "CAPTURE") return;
-    canvas.setPointerCapture(e.pointerId);
-    startAim(pointerPos(e));
-  });
-  canvas.addEventListener('pointermove', (e) => {
-    if (!S.started || S.state !== "CAPTURE") return;
-    moveAim(pointerPos(e));
-  });
-  canvas.addEventListener('pointerup', () => {
-    if (!S.started || S.state !== "CAPTURE") return;
-    endAim();
-  });
-  canvas.addEventListener('pointercancel', () => {
-    if (!S.started || S.state !== "CAPTURE") return;
-    aim.active = false;
-  });
-  document.addEventListener('touchmove', (e)=>e.preventDefault(), { passive:false });
-
-  // ===== Buttons =====
-  btnAttack.addEventListener('click', playerAttack);
-  btnDefend.addEventListener('click', playerDefend);
-  btnInv.addEventListener('click', openInventory);
-  btnRun.addEventListener('click', () => endResult("Поражение!", "Ты сдался. Начни сначала."));
-
-  invBack.addEventListener('click', closeInventory);
-
-  restartBtn.addEventListener('click', () => {
-    resetAll({newEnemy:true});
-  });
-
-
-  // ===== Main loop =====
-  let last = performance.now();
-  function loop(now){
-    if (!S.started) { requestAnimationFrame(loop); return; }
-
-    const dt = clamp((now-last)/1000, 0, 1/30);
-    last = now;
-    S.t += dt;
-    if (S.msgT > 0) S.msgT -= dt;
-    updateWorld(dt);
-
-    if (S.state === "CAPTURE"){
-      drawCaptureBG();
-      stepCapture(dt);
-      drawRing();
-      drawAimGuide();
-      if (ball.trail.length) drawTrail();
-      drawMasterMagic();
-      drawBall(ball.x, ball.y, ball.r0 * scaleAtZ(ball.z), ball.spin);
-      drawMessage();
+  function showResult(success, chance) {
+    result.style.display = "flex";
+    if (success) {
+      resultTitle.textContent = "Поймано!";
+      resultTitle.style.color = "var(--ok)";
+      resultText.textContent = `Ты поймал ${enemyNameEl.textContent} с шансом ${chance}%. Отличный бросок!`;
+      statusEl.textContent = "Успех! Можно запускать новый раунд.";
     } else {
-      drawBattleBG();
-      drawHPBar(S.w*0.07, S.h*0.12, S.w*0.40, 14, player.hp, player.hpMax, player.name, player.shielded);
-      drawHPBar(S.w*0.53, S.h*0.12, S.w*0.40, 14, wild.hp, wild.hpMax, wild.name, wild.shielded);
-      drawMessage();
-      layoutSprites();
+      resultTitle.textContent = "Вырвался!";
+      resultTitle.style.color = "var(--danger)";
+      resultText.textContent = `${enemyNameEl.textContent} вырвался. Попробуй снова: уменьшай HP и корректируй радиус.`;
+      statusEl.textContent = "Неудача. Проанализируй радиус и бросай ещё раз.";
     }
-
-    requestAnimationFrame(loop);
   }
 
-  // ===== Start logic =====
-  function setDifficultyFromUI(){
-    setDifficulty(diffSel.value);
+  function tick(ts) {
+    drawBackground(ts);
+    drawReticle();
+    drawBall();
+
+    const bob = Math.sin(ts * 0.003) * 4;
+    enemySprite.style.transform = `scaleX(-1) translateY(${bob}px)`;
+    requestAnimationFrame(tick);
   }
 
-  async function startGame(){
-    setDifficultyFromUI();
-    startOverlay.style.display = "none";
+  radiusSlider.addEventListener("input", () => {
+    radius = Number(radiusSlider.value);
+    radiusValue.textContent = radius;
+    statusEl.textContent = `Радиус ${radius}px установлен. ${radius > 200 ? "Бросок стабильнее." : "Выше риск промаха, но награда больше."}`;
+  });
 
-    resize();
-    await initEnemyPool();
-    pickRandomEnemy();
+  weakenBtn.addEventListener("click", () => {
+    enemyHp = Math.max(5, enemyHp - 15);
+    enemyHpEl.textContent = enemyHp;
+    statusEl.textContent = `Цель ослаблена. HP противника: ${enemyHp}%.`;
+  });
 
-    renderInventoryUI();
-    resetAll({newEnemy:false});
-    S.started = true;
-    requestAnimationFrame(loop);
-  }
+  throwBtn.addEventListener("click", throwBall);
 
-  btnStart.addEventListener('click', startGame);
-  diffSel.addEventListener('change', setDifficultyFromUI);
+  restartBtn.addEventListener("click", () => {
+    result.style.display = "none";
+    const next = pokemonPool[Math.floor(Math.random() * pokemonPool.length)];
+    setEnemy(next);
+  });
 
-  // Init visuals before start
+  window.addEventListener("resize", resize);
   resize();
-  setDifficulty("NORMAL");
-  setState("BATTLE");
-  modeEl.textContent = "—";
+  setEnemy(pokemonPool[0]);
+  requestAnimationFrame(tick);
 })();
 </script>
 </body>
