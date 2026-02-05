@@ -93,7 +93,7 @@
       right: 10px;
       z-index: 25;
       display: grid;
-      grid-template-columns: 1fr auto auto;
+      grid-template-columns: 1fr auto auto auto;
       gap: 8px;
       align-items: start;
     }
@@ -147,9 +147,14 @@
 
     .controls-row {
       display: grid;
-      grid-template-columns: 1fr auto auto auto;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px;
       align-items: center;
+    }
+
+    .mode-copy,
+    #status {
+      display: none;
     }
 
     button {
@@ -289,6 +294,22 @@
 
     .drag-ball.active { cursor: grabbing; }
 
+    .ball-poke::before, .ball-center.ball-poke::before {
+      background: linear-gradient(180deg, #f63a3a 50%, #fff 50%);
+    }
+
+    .ball-great::before, .ball-center.ball-great::before {
+      background: linear-gradient(180deg, #2f66f1 50%, #fff 50%);
+    }
+
+    .ball-ultra::before, .ball-center.ball-ultra::before {
+      background: linear-gradient(180deg, #1f1f2a 50%, #ffd44b 50%);
+    }
+
+    .ball-dusk::before, .ball-center.ball-dusk::before {
+      background: linear-gradient(180deg, #40235f 50%, #8b74d9 50%);
+    }
+
     .ball-center::before,
     .ball-center::after {
       content: "";
@@ -351,6 +372,9 @@
         <option value="clouds">Облака</option>
         <option value="fog">Лиса / туман</option>
         <option value="sandstorm">Песчаная буря</option>
+        <option value="thunder">Гроза</option>
+        <option value="aurora">Северное сияние</option>
+        <option value="ash">Пепел</option>
       </select>
     </div>
     <div class="panel weather-panel">
@@ -361,6 +385,24 @@
         <option value="field">Поля</option>
         <option value="river">Река</option>
         <option value="mountain">Горы</option>
+        <option value="volcano">Вулкан</option>
+        <option value="swamp">Болото</option>
+        <option value="city">Ночной город</option>
+        <option value="cave">Пещера</option>
+      </select>
+    </div>
+    <div class="panel weather-panel">
+      <strong>Визуал</strong>
+      <select id="timeSelect">
+        <option value="day">День</option>
+        <option value="sunset">Закат</option>
+        <option value="night">Ночь</option>
+      </select>
+      <select id="fxSelect">
+        <option value="none">Без эффекта</option>
+        <option value="trail">След броска</option>
+        <option value="shake">Тряска при попадании</option>
+        <option value="scan">Скан-линии</option>
       </select>
     </div>
   </div>
@@ -382,8 +424,7 @@
 
   <div class="bottom-controls panel">
     <div class="controls-row">
-      <strong id="modeHint">В бою вы атакуете по очереди. Для ловли откройте инвентарь.</strong>
-      <button id="attackBtn">Атаковать</button>
+      <button id="attackBtn">Атака</button>
       <button id="inventoryBtn">Инвентарь</button>
       <button id="actionBtn">Бросить покебол</button>
     </div>
@@ -407,10 +448,10 @@
       const spriteBase = "https://play.pokemonshowdown.com/sprites/ani/";
 
       const balls = [
-        { key: "poke", name: "Poke Ball", bonus: 1, base: 30 },
-        { key: "great", name: "Great Ball", bonus: 1.35, base: 38 },
-        { key: "ultra", name: "Ultra Ball", bonus: 1.7, base: 46 },
-        { key: "dusk", name: "Dusk Ball", bonus: 1.55, base: 42 }
+        { key: "poke", name: "Poke Ball", bonus: 1, base: 30, top: "#f63a3a", bottom: "#ffffff", band: "#1b1b1b" },
+        { key: "great", name: "Great Ball", bonus: 1.35, base: 38, top: "#2f66f1", bottom: "#ffffff", band: "#111111" },
+        { key: "ultra", name: "Ultra Ball", bonus: 1.7, base: 46, top: "#1f1f2a", bottom: "#ffd44b", band: "#0f0f0f" },
+        { key: "dusk", name: "Dusk Ball", bonus: 1.55, base: 42, top: "#40235f", bottom: "#8b74d9", band: "#171717" }
       ];
 
       const canvas = document.getElementById("gameCanvas");
@@ -429,13 +470,15 @@
       const stateChip = document.getElementById("stateChip");
       const weatherSelect = document.getElementById("weatherSelect");
       const biomeSelect = document.getElementById("biomeSelect");
+      const timeSelect = document.getElementById("timeSelect");
+      const fxSelect = document.getElementById("fxSelect");
       const inventoryBtn = document.getElementById("inventoryBtn");
       const inventoryPanel = document.getElementById("inventoryPanel");
       const ballsSection = document.getElementById("ballsSection");
       const rodSelect = document.getElementById("rodSelect");
       const attackBtn = document.getElementById("attackBtn");
       const actionBtn = document.getElementById("actionBtn");
-      const modeHint = document.getElementById("modeHint");
+      const modeHint = { textContent: "" };
       const statusEl = document.getElementById("status");
       const centerBall = document.getElementById("centerBall");
       const dragBall = document.getElementById("dragBall");
@@ -464,7 +507,10 @@
         throwAnim: null,
         rodHolding: false,
         rodPower: 0,
-        drag: null
+        drag: null,
+        throwGuide: null,
+        timeOfDay: "day",
+        fx: "none"
       };
 
       function resize() {
@@ -479,15 +525,17 @@
 
       function layoutSprites() {
         if (game.mode === "capture") {
+          playerSprite.style.display = "none";
           playerSprite.style.left = "50%";
           playerSprite.style.bottom = "16%";
           playerSprite.style.transform = "translateX(-50%)";
           enemySprite.style.right = "50%";
           enemySprite.style.bottom = "48%";
           enemySprite.style.transform = "translateX(50%) scaleX(-1)";
-          centerBall.style.display = game.selectedTool === "ball" ? "block" : "none";
+          centerBall.style.display = "none";
           dragBall.style.display = game.selectedTool === "ball" ? "block" : "none";
         } else {
+          playerSprite.style.display = "block";
           playerSprite.style.left = "16%";
           playerSprite.style.bottom = "12%";
           playerSprite.style.transform = "none";
@@ -523,6 +571,11 @@
       }
 
       function updateHpBars() {
+        const hideBattleUi = game.mode === "capture";
+        playerHpWrap.style.display = hideBattleUi ? "none" : "block";
+        enemyHpWrap.style.display = hideBattleUi ? "none" : "block";
+        playerHpLabel.style.display = hideBattleUi ? "none" : "block";
+        enemyHpLabel.style.display = hideBattleUi ? "none" : "block";
         playerHpBar.style.width = `${game.playerHp}%`;
         enemyHpBar.style.width = `${game.enemyHp}%`;
         playerHpLabel.textContent = `Игрок HP ${game.playerHp}%`;
@@ -541,6 +594,7 @@
         enemyHpLabel.style.top = `${eRect.top - 38}px`;
 
         stateChip.textContent = `Режим: ${game.mode === "battle" ? "Бой" : "Ловля"} | Игрок HP ${game.playerHp}% | Враг HP ${game.enemyHp}%`;
+        if (game.mode === "capture") stateChip.textContent += " | Цель: поймать броском";
       }
 
       function drawBiome() {
@@ -594,6 +648,32 @@
           ctx.fillRect(0, 0, game.w, game.h);
           ctx.fillStyle = "rgba(14,55,120,.55)";
           ctx.fillRect(game.w * 0.3, game.h * 0.55, game.w * 0.4, game.h * 0.45);
+        } else if (game.biome === "volcano") {
+          const g = ctx.createLinearGradient(0, 0, 0, game.h);
+          g.addColorStop(0, "#4f2121"); g.addColorStop(1, "#200a0a");
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, game.w, game.h);
+          ctx.fillStyle = "rgba(255,96,24,.45)";
+          for (let i = 0; i < 6; i++) ctx.fillRect(i * 180, game.h * 0.7 + Math.sin(i + performance.now() * 0.003) * 14, 120, 100);
+        } else if (game.biome === "swamp") {
+          const g = ctx.createLinearGradient(0, 0, 0, game.h);
+          g.addColorStop(0, "#6f8c62"); g.addColorStop(1, "#223529");
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, game.w, game.h);
+          ctx.fillStyle = "rgba(70, 92, 55, .6)";
+          for (let i = 0; i < 10; i++) ctx.fillRect(i * 130, game.h * 0.64, 80, 90);
+        } else if (game.biome === "city") {
+          const g = ctx.createLinearGradient(0, 0, 0, game.h);
+          g.addColorStop(0, "#1f3250"); g.addColorStop(1, "#11161f");
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, game.w, game.h);
+          ctx.fillStyle = "rgba(255,225,120,.3)";
+          for (let i = 0; i < 14; i++) ctx.fillRect(i * 90 + 30, game.h * 0.45, 40, 150);
+        } else if (game.biome === "cave") {
+          const g = ctx.createLinearGradient(0, 0, 0, game.h);
+          g.addColorStop(0, "#61627a"); g.addColorStop(1, "#232331");
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, game.w, game.h);
         } else {
           const g = ctx.createLinearGradient(0, 0, 0, game.h);
           g.addColorStop(0, "#b6ccdf"); g.addColorStop(1, "#676d76");
@@ -641,6 +721,25 @@
             ctx.fillStyle = "rgba(215,175,120,.4)";
             ctx.fillRect(p.x, p.y, 4, 2);
             p.x -= 2.3;
+          } else if (game.weather === "thunder") {
+            ctx.strokeStyle = "rgba(180,220,255,.8)";
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p.x - 3, p.y + 15);
+            ctx.stroke();
+            if (Math.random() < 0.002) {
+              ctx.fillStyle = "rgba(255,255,255,.28)";
+              ctx.fillRect(0, 0, game.w, game.h);
+            }
+            p.y += p.v * 2.6;
+          } else if (game.weather === "aurora") {
+            ctx.fillStyle = "rgba(120,255,210,.1)";
+            ctx.fillRect(0, 40 + Math.sin(performance.now() * 0.002) * 20, game.w, 120);
+            p.y += p.v * 0.2;
+          } else if (game.weather === "ash") {
+            ctx.fillStyle = "rgba(170,170,170,.45)";
+            ctx.fillRect(p.x, p.y, 2, 2);
+            p.y += p.v * 0.7;
           }
 
           if (p.y > game.h + 20) { p.y = -20; p.x = Math.random() * game.w; }
@@ -655,20 +754,29 @@
         const t = Math.min(1, (performance.now() - a.start) / 760);
         const x = a.fromX + (a.toX - a.fromX) * t;
         const y = a.fromY + (a.toY - a.fromY) * t - Math.sin(t * Math.PI) * 160;
-        const r = 40 - t * 28;
+        const r = 40 - t * 24;
+
+        if (game.fx === "trail") {
+          ctx.strokeStyle = "rgba(255,255,255,.4)";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(a.fromX, a.fromY);
+          ctx.lineTo(x, y);
+          ctx.stroke();
+        }
 
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(t * 10);
-        ctx.fillStyle = "#fff";
+        ctx.fillStyle = a.ball.bottom;
         ctx.beginPath();
         ctx.arc(0, 0, r, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = "#de2121";
+        ctx.fillStyle = a.ball.top;
         ctx.beginPath();
         ctx.arc(0, 0, r, Math.PI, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = "#121212";
+        ctx.strokeStyle = a.ball.band;
         ctx.lineWidth = 4;
         ctx.beginPath();
         ctx.arc(0, 0, r, 0, Math.PI * 2);
@@ -676,6 +784,29 @@
         ctx.restore();
 
         if (t >= 1) game.throwAnim = null;
+      }
+
+      function drawAimGuide() {
+        if (!game.throwGuide) return;
+        const g = game.throwGuide;
+        ctx.strokeStyle = "rgba(255,235,170,.65)";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 7]);
+        ctx.beginPath();
+        ctx.moveTo(g.startX, g.startY);
+        ctx.lineTo(g.endX, g.endY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      function applyToneOverlay() {
+        if (game.timeOfDay === "day") return;
+        if (game.timeOfDay === "sunset") {
+          ctx.fillStyle = "rgba(255,140,70,.16)";
+        } else {
+          ctx.fillStyle = "rgba(32,45,95,.3)";
+        }
+        ctx.fillRect(0, 0, game.w, game.h);
       }
 
       function attack() {
@@ -729,8 +860,8 @@
         attackBtn.disabled = true;
         actionBtn.disabled = false;
         actionBtn.textContent = game.selectedTool === "ball" ? "Бросить покебол" : "Удерживать удочку";
-        modeHint.textContent = "Режим ловли: выберите покебол или удочку, затем выполните действие.";
-        statusEl.textContent = "Ловля активирована. Персонаж и покебол — по центру, цель вдалеке.";
+        modeHint.textContent = "";
+        statusEl.textContent = "";
         setBottomPanelVisibility(game.selectedTool === "ball");
         layoutSprites();
         updateHpBars();
@@ -744,8 +875,10 @@
         btn.classList.add("selected");
         inventoryPanel.classList.remove("open");
         actionBtn.textContent = "Бросить покебол";
-        centerBall.style.display = "block";
+        centerBall.style.display = "none";
         dragBall.style.display = "block";
+        dragBall.className = `drag-ball ball-${ball.key}`;
+        centerBall.className = `ball-center ball-${ball.key}`;
         setBottomPanelVisibility(true);
         statusEl.textContent = `${ball.name} выбран. Нижняя панель скрыта: потяните покебол снизу и отпустите для броска.`;
       }
@@ -774,28 +907,53 @@
 
       function throwBall() {
         const fromX = game.w * 0.5;
-        const fromY = game.h * 0.58;
-        throwBallManual(fromX, fromY);
+        const fromY = game.h * 0.82;
+        throwBallManual(fromX, fromY, 0, -180);
       }
 
-      function throwBallManual(fromX, fromY) {
+      function throwBallManual(fromX, fromY, dx = 0, dy = -140) {
         const t = enemyCenter();
-        game.throwAnim = { start: performance.now(), fromX, fromY, toX: t.x, toY: t.y };
-        throwBallResult();
+        const size = Number(reticle.dataset.size || 140);
+        const radius = size * 0.5;
+        const dragLen = Math.max(45, Math.min(320, Math.hypot(dx, dy)));
+        const power = dragLen * 3.6;
+        const dirLen = Math.max(1, Math.hypot(dx, dy));
+        const ux = dx / dirLen;
+        const uy = dy / dirLen;
+        const expectedLen = Math.hypot(t.x - fromX, t.y - fromY);
+        const angleThrow = Math.atan2(uy, ux);
+        const angleTarget = Math.atan2(t.y - fromY, t.x - fromX);
+        const angleDiff = Math.abs(Math.atan2(Math.sin(angleThrow - angleTarget), Math.cos(angleThrow - angleTarget)));
+        const landingX = fromX + ux * power;
+        const landingY = fromY + uy * power;
+        const missDistance = Math.hypot(landingX - t.x, landingY - t.y);
+
+        game.throwGuide = { startX: fromX, startY: fromY, endX: landingX, endY: landingY };
+        setTimeout(() => { game.throwGuide = null; }, 420);
+
+        game.throwAnim = { start: performance.now(), fromX, fromY, toX: t.x, toY: t.y, ball: game.selectedBall };
+        throwBallResult({ angleDiff, missDistance, radius, expectedLen, power });
       }
 
-      function throwBallResult() {
+      function throwBallResult(metrics) {
+        const { angleDiff, missDistance, radius, expectedLen, power } = metrics;
         const size = Number(reticle.dataset.size || 140);
         const sizeFactor = 1 - (size - 70) / 80;
         const hpFactor = (100 - game.enemyHp) / 100;
-        const chance = Math.min(97, Math.round((game.selectedBall.base + hpFactor * 30 + sizeFactor * 35) * game.selectedBall.bonus));
+        const angleFactor = Math.max(0, 1 - angleDiff / 0.8);
+        const powerFactor = Math.max(0, 1 - Math.abs(power - expectedLen) / expectedLen);
+        const inRadius = missDistance <= radius;
+        const chance = Math.min(97, Math.round((game.selectedBall.base + hpFactor * 30 + sizeFactor * 28 + angleFactor * 20 + powerFactor * 15) * game.selectedBall.bonus));
         const roll = Math.random() * 100;
 
-        if (roll < chance) {
+        if (inRadius && roll < chance) {
           setTimeout(() => showResult(true, `${game.enemy} пойман! Шанс: ${chance}%. Новый покемон уже идёт!`), 720);
         } else {
           setTimeout(() => {
-            statusEl.textContent = `Промах/рывок! Шанс был ${chance}%. Попробуйте ещё раз.`;
+            statusEl.textContent = `Промах. Угол/сила не попали в радиус (${Math.round(missDistance)}px). Шанс: ${chance}%.`;
+            if (game.fx === "shake") {
+              enemySprite.animate([{ transform: enemySprite.style.transform }, { transform: `${enemySprite.style.transform} translateX(-8px)` }, { transform: enemySprite.style.transform }], { duration: 260 });
+            }
           }, 720);
         }
       }
@@ -837,7 +995,9 @@
         actionBtn.textContent = "Бросить покебол";
         setBottomPanelVisibility(false);
         modeHint.textContent = "В бою вы атакуете по очереди. Для ловли откройте инвентарь.";
-        statusEl.textContent = "Новый бой начат.";
+        statusEl.textContent = "";
+        dragBall.className = `drag-ball ball-${game.selectedBall.key}`;
+        centerBall.className = `ball-center ball-${game.selectedBall.key}`;
         layoutSprites();
         updateHpBars();
       }
@@ -845,7 +1005,18 @@
       function tick() {
         drawBiome();
         drawWeather();
+        drawAimGuide();
         drawThrowAnim();
+        applyToneOverlay();
+        if (game.fx === "scan") {
+          ctx.strokeStyle = "rgba(255,255,255,.08)";
+          for (let y = 0; y < game.h; y += 6) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(game.w, y);
+            ctx.stroke();
+          }
+        }
 
         game.reticlePhase += 0.05;
         updateReticle();
@@ -894,6 +1065,14 @@
         game.biome = biomeSelect.value;
       });
 
+      timeSelect.addEventListener("change", () => {
+        game.timeOfDay = timeSelect.value;
+      });
+
+      fxSelect.addEventListener("change", () => {
+        game.fx = fxSelect.value;
+      });
+
       restartBtn.addEventListener("click", resetGame);
 
       dragBall.addEventListener("pointerdown", (e) => {
@@ -923,7 +1102,7 @@
 
         if (dy < -45 && dist > 55) {
           const rect = dragBall.getBoundingClientRect();
-          throwBallManual(rect.left + rect.width / 2, rect.top + rect.height / 2);
+          throwBallManual(rect.left + rect.width / 2, rect.top + rect.height / 2, dx, dy);
         } else {
           statusEl.textContent = "Потяните покебол вверх и отпустите, чтобы бросить.";
         }
