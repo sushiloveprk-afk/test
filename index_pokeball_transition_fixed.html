@@ -3,1121 +3,362 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Pokemon Battle & Capture Prototype</title>
+  <title>Питомцы — поиск и шансы пола</title>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <style>
-    :root {
-      --ui-bg: rgba(18, 14, 12, 0.72);
-      --ui-border: rgba(255, 255, 255, 0.2);
-      --text: #fff4d5;
-      --good: #79f5a2;
-      --bad: #ff8f8f;
-      --accent: #ffd46b;
+    body{margin:0;background:#0f1115;padding:12px}
+    .pdxWrap{
+        max-width: 1060px;
+        margin: 0 auto;
+        position: relative;
+        color:#fff;
+        font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial;
     }
 
-    * { box-sizing: border-box; }
-    html, body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #111;
-      font-family: system-ui, sans-serif;
-      color: var(--text);
+    .pdxGlobalTop{
+        display:grid;
+        gap:10px;
+        margin-bottom:10px;
     }
 
-    #stage, #gameCanvas {
-      position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
+    .pdxSearchRow{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:14px;
+      padding:10px;
+      background:rgba(0,0,0,.25);
+    }
+    .pdxSearchRow input{
+      flex:1;
+      min-width:0;
+      border:1px solid rgba(255,255,255,.2);
+      background:rgba(255,255,255,.08);
+      color:#fff;
+      border-radius:10px;
+      padding:10px 12px;
+      font-weight:700;
+    }
+    .pdxSearchBtn{
+      border:1px solid rgba(255,255,255,.24);
+      background:linear-gradient(180deg,#00d07a,#00b56a);
+      color:#05150e;
+      border-radius:10px;
+      padding:10px 14px;
+      font-weight:900;
+      cursor:pointer;
     }
 
-    #gameCanvas { display: block; touch-action: none; }
-
-    .sprite-layer { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
-    .sprite {
-      position: absolute;
-      transform-origin: center bottom;
-      filter: drop-shadow(0 14px 22px rgba(0,0,0,.45));
+    .pdxGenderCard{
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:14px;
+      padding:10px;
+      background:rgba(0,0,0,.25);
     }
-
-    #playerSprite { width: min(24vw, 230px); left: 16%; bottom: 12%; }
-    #enemySprite { width: min(18vw, 170px); right: 15%; bottom: 22%; transform: scaleX(-1); }
-
-    #reticle {
-      position: fixed;
-      border-radius: 50%;
-      border: 3px solid rgba(255, 230, 170, 0.95);
-      box-shadow: 0 0 0 2px rgba(255,255,255,.2), 0 0 20px rgba(255,200,100,.35);
-      pointer-events: none;
-      z-index: 8;
-      animation: blink 1.1s ease-in-out infinite;
+    .genderTop{display:flex;justify-content:space-between;font-weight:900;font-size:12px;margin-bottom:6px;gap:8px}
+    .genderBar{
+      height:10px;
+      border-radius:999px;
+      background:rgba(255,255,255,.1);
+      overflow:hidden;
+      display:flex;
     }
+    .genderMale{background:linear-gradient(90deg,#43b2ff,#2d8fe9);height:100%}
+    .genderFemale{background:linear-gradient(90deg,#ff80bf,#f05ca6);height:100%}
 
-    @keyframes blink {
-      0%, 100% { opacity: 0.9; }
-      50% { opacity: 0.4; }
+    .pdxWrap input[type="radio"]{ position:absolute; opacity:0; pointer-events:none; }
+    .pdxScreen{
+        display:none;
+        position:relative;
+        border-radius:16px;
+        overflow:hidden;
+        border: 1px solid rgba(255,255,255,.14);
+        background: rgba(255,255,255,.03);
+        height: 680px;
+        min-height: 520px;
+        max-height: 86svh;
     }
+    @supports (height: 1svh){ .pdxScreen{ height: min(680px, 86svh); } }
 
-    .hpbar {
-      position: fixed;
-      width: 220px;
-      height: 16px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.35);
-      background: rgba(0,0,0,.4);
-      overflow: hidden;
-      z-index: 15;
-    }
+    .pdxBg{ position:absolute; inset:0; width:100%; height:100%; object-fit: cover; display:block; transform: translateZ(0); }
+    .pdxVeil{ position:absolute; inset:0; background: radial-gradient(60% 60% at 50% 45%, rgba(0,0,0,.10) 0%, rgba(0,0,0,.36) 78%, rgba(0,0,0,.50) 100%); pointer-events:none; }
+    .pdxContent{ position:absolute; inset:0; display:grid; grid-template-columns: 1.2fr .8fr; gap: 12px; padding: 14px; min-height: 0; }
 
-    .hpbar span {
-      display: block;
-      height: 100%;
-      width: 100%;
-      background: linear-gradient(90deg, #5cf198, #7cffb4);
-      transition: width .25s ease;
-    }
+    .pdxStage{ position:relative; border-radius:14px; border:1px solid rgba(255,255,255,.14); background: rgba(0,0,0,.10); overflow:hidden; min-height: 400px; }
+    .pdxStage::after{ content:""; position:absolute; inset:0; background: radial-gradient(40% 35% at 50% 72%, rgba(0, 177, 208, 0.14) 0%, rgba(0,0,0,0) 70%); pointer-events:none; }
 
-    .hp-label {
-      position: fixed;
-      z-index: 16;
-      font-size: 12px;
-      font-weight: 800;
-      text-shadow: 0 2px 8px rgba(0,0,0,.65);
-    }
+    .pdxPet{ position:absolute; left:50%; top:52%; transform: translate(-50%,-50%); width: clamp(220px, 42vw, 360px); max-width: 86%; filter: drop-shadow(0 18px 34px rgba(0,0,0,.55)); user-select:none; pointer-events:none; animation: pdxFloat 2.8s ease-in-out infinite; }
+    @keyframes pdxFloat{ 0%,100%{ transform: translate(-50%,-50%) translateY(0) scale(1); } 50%{ transform: translate(-50%,-50%) translateY(-10px) scale(1.01); } }
 
-    .top-controls {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      right: 10px;
-      z-index: 25;
-      display: grid;
-      grid-template-columns: 1fr auto auto auto;
-      gap: 8px;
-      align-items: start;
-    }
+    .pdxStageNav{ position:absolute; left: 12px; right: 12px; bottom: 12px; display:flex; gap: 12px; z-index: 5; pointer-events:auto; }
+    .pdxStageBtn{ flex:1; display:flex; align-items:center; justify-content:center; gap:10px; padding: 14px 12px; border-radius:14px; border:1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.08); color:#fff; font-weight:950; font-size: 15px; user-select:none; cursor:pointer; touch-action: manipulation; }
+    .pdxStageBtn.primary{ background: linear-gradient(180deg,#00d07a,#00b56a); color:#06120d; border-color: transparent; }
 
-    .chip, .panel {
-      background: var(--ui-bg);
-      border: 1px solid var(--ui-border);
-      border-radius: 14px;
-      backdrop-filter: blur(5px);
-    }
+    .pdxSide{ display:grid; gap: 10px; align-content:start; min-height: 0; }
+    .pdxCard{ border-radius:14px; border:1px solid rgba(255,255,255,.14); background: rgba(0,0,0,.26); backdrop-filter: blur(2px); padding: 10px; }
+    .pdxHeader{ display:flex; justify-content:space-between; align-items:baseline; gap: 10px; margin-bottom: 8px; }
+    .pdxName{ font-weight: 950; font-size: 15px; line-height: 1.15; }
+    .pdxId{ font-weight: 950; opacity:.85; font-size: 12px; padding: 5px 9px; border-radius: 999px; border:1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.06); white-space:nowrap; }
+    .pdxDesc{ margin: 0; font-weight: 650; font-size: 12.5px; opacity:.95; line-height: 1.3; }
 
-    .chip {
-      padding: 10px 12px;
-      font-weight: 700;
-      font-size: 13px;
-    }
+    .statsGrid{ display:grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 8px; }
+    .stat{ border-radius:12px; border:1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.05); padding: 7px 9px; display:grid; gap: 6px; }
+    .statTop{ display:flex; justify-content:space-between; align-items:center; font-weight:950; font-size: 12px; }
+    .bar{ height: 7px; border-radius: 999px; background: rgba(255,255,255,.10); overflow:hidden; }
+    .fill{ height:100%; width: var(--w, 0%); border-radius: 999px; background: linear-gradient(90deg, #00d07a, #00b56a); }
+    .muted{ opacity:.85; font-weight:900; }
 
-    .weather-panel {
-      display: grid;
-      gap: 6px;
-      padding: 10px;
-      min-width: 220px;
-    }
+    .skill{ border-radius:12px; border:1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.05); padding: 9px; display:grid; gap: 7px; margin-bottom: 8px; }
+    .skill:last-child{ margin-bottom:0; }
+    .skillTitle{ font-weight: 950; font-size: 12px; display:flex; align-items:center; justify-content:space-between; gap: 10px; }
+    .skillLeft{ display:flex; align-items:center; gap: 8px; min-width: 0; }
+    .skillBadge{ padding: 3px 7px; border-radius: 999px; border:1px solid rgba(255,255,255,.16); background: rgba(0,0,0,.22); font-weight: 950; font-size: 11px; white-space:nowrap; }
+    .skillIcons{ display:flex; gap: 6px; align-items:center; flex: 0 0 auto; }
+    .skillIcons img{ width: 50px; height: 50px; border-radius: 6px; object-fit: cover; }
+    .skillText{ font-weight:650; font-size: 12.5px; line-height:1.3; opacity:.95; max-height: 78px; overflow:auto; padding-right: 6px; }
 
-    .weather-panel select {
-      width: 100%;
-      padding: 8px;
-      border-radius: 10px;
-      border: 1px solid var(--ui-border);
-      background: rgba(255,255,255,.08);
-      color: var(--text);
-      font-weight: 700;
-    }
+    .pdxScreen:has(input[type="radio"]:checked) { display: block; }
 
-    .bottom-controls {
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: 4px;
-      width: min(980px, calc(100vw - 20px));
-      z-index: 25;
-      padding: 12px;
-      transition: opacity .25s ease, transform .25s ease;
-    }
+    .pdxEmpty{padding:20px;border:1px solid rgba(255,255,255,.15);border-radius:12px;background:rgba(0,0,0,.25);font-weight:800;text-align:center}
 
-    .bottom-controls.hidden {
-      opacity: 0;
-      pointer-events: none;
-      transform: translate(-50%, 20px);
-    }
-
-    .controls-row {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 8px;
-      align-items: center;
-    }
-
-    .mode-copy,
-    #status {
-      display: none;
-    }
-
-    button {
-      border: 1px solid var(--ui-border);
-      background: rgba(255,255,255,.1);
-      color: var(--text);
-      border-radius: 12px;
-      font-weight: 900;
-      font-size: 13px;
-      padding: 11px 14px;
-      cursor: pointer;
-      min-width: 130px;
-    }
-
-    button:hover { border-color: rgba(255, 210, 110, 0.7); }
-    button:disabled { opacity: .45; cursor: default; }
-
-    #status { margin-top: 10px; font-size: 13px; font-weight: 700; color: #ffeab2; min-height: 18px; }
-
-    #inventoryPanel {
-      position: fixed;
-      right: 12px;
-      top: 86px;
-      width: min(390px, calc(100vw - 20px));
-      max-height: 72vh;
-      overflow: auto;
-      z-index: 30;
-      padding: 10px;
-      display: none;
-    }
-
-    #inventoryPanel.open { display: block; }
-
-    .section {
-      margin-bottom: 10px;
-      border: 1px solid rgba(255,255,255,.14);
-      border-radius: 10px;
-      padding: 8px;
-      background: rgba(255,255,255,.03);
-    }
-
-    .section-title { font-size: 13px; font-weight: 900; margin-bottom: 7px; }
-
-    .item {
-      width: 100%;
-      text-align: left;
-      margin-bottom: 6px;
-      min-width: 0;
-      padding: 9px 10px;
-      border-radius: 10px;
-    }
-
-    .item.selected {
-      border-color: var(--accent);
-      box-shadow: inset 0 0 0 1px rgba(255,212,107,.5);
-      background: rgba(255,212,107,.16);
-    }
-
-    .rod-art {
-      width: 100%;
-      height: 70px;
-      border-radius: 10px;
-      border: 1px dashed rgba(255,255,255,.35);
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-      position: relative;
-      overflow: hidden;
-      margin-top: 8px;
-    }
-
-    .rod-stick {
-      position: absolute;
-      left: 18px;
-      top: 42px;
-      width: 185px;
-      height: 5px;
-      background: #9e6b3a;
-      border-radius: 4px;
-      transform: rotate(-17deg);
-      transform-origin: left center;
-    }
-
-    .rod-line {
-      position: absolute;
-      left: 180px;
-      top: 10px;
-      width: 2px;
-      height: 42px;
-      background: #dbe9ff;
-    }
-
-    .ball-center {
-      position: fixed;
-      width: 110px;
-      height: 110px;
-      border-radius: 50%;
-      left: 50%;
-      top: 58%;
-      transform: translate(-50%, -50%);
-      z-index: 12;
-      pointer-events: none;
-      display: none;
-    }
-
-    .drag-ball {
-      position: fixed;
-      width: 96px;
-      height: 96px;
-      border-radius: 50%;
-      left: 50%;
-      bottom: 38px;
-      transform: translateX(-50%);
-      z-index: 31;
-      display: none;
-      cursor: grab;
-      touch-action: none;
-      box-shadow: 0 10px 20px rgba(0, 0, 0, .45);
-    }
-
-    .drag-ball::before,
-    .drag-ball::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-    }
-
-    .drag-ball::before {
-      background: linear-gradient(180deg, #f63a3a 50%, #fff 50%);
-      border: 5px solid #181818;
-    }
-
-    .drag-ball::after {
-      inset: 36px;
-      border: 4px solid #181818;
-      background: #fff;
-    }
-
-    .drag-ball.active { cursor: grabbing; }
-
-    .ball-poke::before, .ball-center.ball-poke::before {
-      background: linear-gradient(180deg, #f63a3a 50%, #fff 50%);
-    }
-
-    .ball-great::before, .ball-center.ball-great::before {
-      background: linear-gradient(180deg, #2f66f1 50%, #fff 50%);
-    }
-
-    .ball-ultra::before, .ball-center.ball-ultra::before {
-      background: linear-gradient(180deg, #1f1f2a 50%, #ffd44b 50%);
-    }
-
-    .ball-dusk::before, .ball-center.ball-dusk::before {
-      background: linear-gradient(180deg, #40235f 50%, #8b74d9 50%);
-    }
-
-    .ball-center::before,
-    .ball-center::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-    }
-
-    .ball-center::before {
-      background: linear-gradient(180deg, #f63a3a 50%, #fff 50%);
-      border: 5px solid #181818;
-    }
-
-    .ball-center::after {
-      inset: 42px;
-      border: 4px solid #181818;
-      background: #fff;
-    }
-
-    .result {
-      position: fixed;
-      inset: 0;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 35;
-      background: rgba(0,0,0,.55);
-    }
-
-    .result-box {
-      width: min(460px, calc(100vw - 20px));
-      padding: 18px;
-      text-align: center;
+    @media (max-width: 900px){
+        .pdxScreen{ border-radius:14px; height: auto; min-height: 0; max-height: none; }
+        .pdxContent{ position:relative; inset:auto; grid-template-columns: 1fr; padding: 12px; }
+        .pdxBg{ position:absolute; inset:0; height: 100%; min-height: 92svh; }
+        .pdxStage{ min-height: 52svh; }
+        .pdxPet{ top: 54%; width: clamp(220px, 68vw, 340px); max-width: 92%; }
+        .pdxStageNav{ position: sticky; bottom: 10px; }
+        .pdxStageBtn{ padding: 13px 10px; font-size: 14px; }
+        .skillText{ max-height: 92px; }
     }
   </style>
 </head>
 <body>
-  <canvas id="gameCanvas"></canvas>
-
-  <div class="sprite-layer">
-    <img id="playerSprite" class="sprite" src="https://play.pokemonshowdown.com/sprites/ani-back/charizard.gif" alt="player" referrerpolicy="no-referrer">
-    <img id="enemySprite" class="sprite" src="https://play.pokemonshowdown.com/sprites/ani/pikachu.gif" alt="enemy" referrerpolicy="no-referrer">
-  </div>
-
-  <div id="reticle"></div>
-
-  <div id="playerHpBar" class="hpbar"><span></span></div>
-  <div id="enemyHpBar" class="hpbar"><span></span></div>
-  <div id="playerHpLabel" class="hp-label"></div>
-  <div id="enemyHpLabel" class="hp-label"></div>
-
-  <div class="top-controls">
-    <div class="chip" id="stateChip">Режим: Бой | Игрок HP 100% | Враг HP 100%</div>
-    <div class="panel weather-panel">
-      <strong>Погода</strong>
-      <select id="weatherSelect">
-        <option value="clear">Ясно</option>
-        <option value="rain">Дождь</option>
-        <option value="snow">Снег</option>
-        <option value="clouds">Облака</option>
-        <option value="fog">Лиса / туман</option>
-        <option value="sandstorm">Песчаная буря</option>
-        <option value="thunder">Гроза</option>
-        <option value="aurora">Северное сияние</option>
-        <option value="ash">Пепел</option>
-      </select>
-    </div>
-    <div class="panel weather-panel">
-      <strong>Локация</strong>
-      <select id="biomeSelect">
-        <option value="desert">Пустыня</option>
-        <option value="forest">Лес</option>
-        <option value="field">Поля</option>
-        <option value="river">Река</option>
-        <option value="mountain">Горы</option>
-        <option value="volcano">Вулкан</option>
-        <option value="swamp">Болото</option>
-        <option value="city">Ночной город</option>
-        <option value="cave">Пещера</option>
-      </select>
-    </div>
-    <div class="panel weather-panel">
-      <strong>Визуал</strong>
-      <select id="timeSelect">
-        <option value="day">День</option>
-        <option value="sunset">Закат</option>
-        <option value="night">Ночь</option>
-      </select>
-      <select id="fxSelect">
-        <option value="none">Без эффекта</option>
-        <option value="trail">След броска</option>
-        <option value="shake">Тряска при попадании</option>
-        <option value="scan">Скан-линии</option>
-      </select>
-    </div>
-  </div>
-
-  <div id="inventoryPanel" class="panel">
-    <div class="section">
-      <div class="section-title">Покеболы</div>
-      <div id="ballsSection"></div>
-    </div>
-    <div class="section">
-      <div class="section-title">Инструмент</div>
-      <button class="item" id="rodSelect">🎣 Удочка натяжения — удерживай, чтобы поймать</button>
-      <div class="rod-art">
-        <div class="rod-stick"></div>
-        <div class="rod-line"></div>
+<div class="pdxWrap">
+    <div class="pdxGlobalTop">
+      <div class="pdxSearchRow">
+        <input id="petSearchInput" type="text" placeholder="Поиск по имени или ID">
+        <button id="petSearchBtn" class="pdxSearchBtn">Найти</button>
+      </div>
+      <div class="pdxGenderCard">
+        <div class="genderTop">
+          <span>Частота появления в мире</span>
+          <span id="genderSummary">М: 50% / Ж: 50%</span>
+        </div>
+        <div class="genderBar">
+          <div id="genderMaleBar" class="genderMale" style="width:50%"></div>
+          <div id="genderFemaleBar" class="genderFemale" style="width:50%"></div>
+        </div>
       </div>
     </div>
-  </div>
+    <div class="screens" id="petsContainer"></div>
+</div>
 
-  <div class="bottom-controls panel">
-    <div class="controls-row">
-      <button id="attackBtn">Атака</button>
-      <button id="inventoryBtn">Инвентарь</button>
-      <button id="actionBtn">Бросить покебол</button>
-    </div>
-    <div id="status">Цель в бою. Уберите HP врага и переходите в ловлю.</div>
-  </div>
-
-  <div id="centerBall" class="ball-center"></div>
-  <div id="dragBall" class="drag-ball" aria-label="Перетащите покебол для броска"></div>
-
-  <div id="result" class="result">
-    <div class="result-box panel">
-      <h2 id="resultTitle">Поймано!</h2>
-      <p id="resultText"></p>
-      <button id="restartBtn">Новый бой</button>
-    </div>
-  </div>
-
-  <script>
-    (() => {
-      const pokemonPool = ["Pikachu", "Bulbasaur", "Squirtle", "Eevee", "Growlithe", "Psyduck"];
-      const spriteBase = "https://play.pokemonshowdown.com/sprites/ani/";
-
-      const balls = [
-        { key: "poke", name: "Poke Ball", bonus: 1, base: 30, top: "#f63a3a", bottom: "#ffffff", band: "#1b1b1b" },
-        { key: "great", name: "Great Ball", bonus: 1.35, base: 38, top: "#2f66f1", bottom: "#ffffff", band: "#111111" },
-        { key: "ultra", name: "Ultra Ball", bonus: 1.7, base: 46, top: "#1f1f2a", bottom: "#ffd44b", band: "#0f0f0f" },
-        { key: "dusk", name: "Dusk Ball", bonus: 1.55, base: 42, top: "#40235f", bottom: "#8b74d9", band: "#171717" }
+<script>
+    // Фоллбек-данные, если внешний массив не подключён
+    if (typeof window.data_13147 === 'undefined') {
+      window.data_13147 = [
+        {id:"1",name:"Феникс",description:"Огненный питомец.",hp:"28",atk:"34",def:"19",spd:"22",baz_skill:"1",baz_abill:"2",male_rate:"55",female_rate:"45"},
+        {id:"2",name:"Нимфа",description:"Лесной дух.",hp:"24",atk:"19",def:"23",spd:"31",baz_skill:"2",baz_abill:"8",male_rate:"30",female_rate:"70"}
       ];
+    }
 
-      const canvas = document.getElementById("gameCanvas");
-      const ctx = canvas.getContext("2d");
-      const playerSprite = document.getElementById("playerSprite");
-      const enemySprite = document.getElementById("enemySprite");
-      const reticle = document.getElementById("reticle");
+    function calculatePercent(value) {
+        const maxStat = 40;
+        return Math.min((value / maxStat) * 100, 100);
+    }
 
-      const playerHpBar = document.querySelector("#playerHpBar span");
-      const enemyHpBar = document.querySelector("#enemyHpBar span");
-      const playerHpLabel = document.getElementById("playerHpLabel");
-      const enemyHpLabel = document.getElementById("enemyHpLabel");
-      const playerHpWrap = document.getElementById("playerHpBar");
-      const enemyHpWrap = document.getElementById("enemyHpBar");
+    function getPetImageUrl(id) { return `https://castles-vk.ru/heroes_vk/pets/okno2/pets/${id}.png`; }
 
-      const stateChip = document.getElementById("stateChip");
-      const weatherSelect = document.getElementById("weatherSelect");
-      const biomeSelect = document.getElementById("biomeSelect");
-      const timeSelect = document.getElementById("timeSelect");
-      const fxSelect = document.getElementById("fxSelect");
-      const inventoryBtn = document.getElementById("inventoryBtn");
-      const inventoryPanel = document.getElementById("inventoryPanel");
-      const ballsSection = document.getElementById("ballsSection");
-      const rodSelect = document.getElementById("rodSelect");
-      const attackBtn = document.getElementById("attackBtn");
-      const actionBtn = document.getElementById("actionBtn");
-      const modeHint = { textContent: "" };
-      const statusEl = document.getElementById("status");
-      const centerBall = document.getElementById("centerBall");
-      const dragBall = document.getElementById("dragBall");
-      const bottomControls = document.querySelector(".bottom-controls");
+    function getSkillImageUrl(type, id) {
+        if (type === 'skill') return `https://castles-vk.ru/heroes_vk/pets/okno2/skill/${id}.png`;
+        if (type === 'abill') return `https://castles-vk.ru/heroes_vk/pets/okno2/abill/${id}.png`;
+        return '';
+    }
 
-      const result = document.getElementById("result");
-      const resultTitle = document.getElementById("resultTitle");
-      const resultText = document.getElementById("resultText");
-      const restartBtn = document.getElementById("restartBtn");
+    function getGenderRates(pet) {
+      let male = Number(pet.male_rate ?? pet.male ?? pet.gender_m ?? pet.sex_m ?? NaN);
+      let female = Number(pet.female_rate ?? pet.female ?? pet.gender_f ?? pet.sex_f ?? NaN);
 
-      const game = {
-        w: 0,
-        h: 0,
-        dpr: 1,
-        mode: "battle",
-        playerHp: 100,
-        enemyHp: 100,
-        enemy: "Pikachu",
-        playerTurn: true,
-        selectedBall: balls[0],
-        selectedTool: "ball",
-        reticlePhase: 0,
-        weather: "clear",
-        biome: "desert",
-        particles: [],
-        throwAnim: null,
-        rodHolding: false,
-        rodPower: 0,
-        drag: null,
-        throwGuide: null,
-        timeOfDay: "day",
-        fx: "none"
-      };
-
-      function resize() {
-        game.w = window.innerWidth;
-        game.h = window.innerHeight;
-        game.dpr = Math.min(window.devicePixelRatio || 1, 2);
-        canvas.width = Math.floor(game.w * game.dpr);
-        canvas.height = Math.floor(game.h * game.dpr);
-        ctx.setTransform(game.dpr, 0, 0, game.dpr, 0, 0);
-        layoutSprites();
+      if (!Number.isFinite(male) && !Number.isFinite(female)) {
+        const g = String(pet.gender ?? pet.sex ?? '').toLowerCase();
+        if (g === 'm' || g.includes('м')) return { male: 100, female: 0 };
+        if (g === 'f' || g.includes('ж')) return { male: 0, female: 100 };
+        return { male: 50, female: 50 };
       }
 
-      function layoutSprites() {
-        if (game.mode === "capture") {
-          playerSprite.style.display = "none";
-          playerSprite.style.left = "50%";
-          playerSprite.style.bottom = "16%";
-          playerSprite.style.transform = "translateX(-50%)";
-          enemySprite.style.right = "50%";
-          enemySprite.style.bottom = "48%";
-          enemySprite.style.transform = "translateX(50%) scaleX(-1)";
-          centerBall.style.display = "none";
-          dragBall.style.display = game.selectedTool === "ball" ? "block" : "none";
-        } else {
-          playerSprite.style.display = "block";
-          playerSprite.style.left = "16%";
-          playerSprite.style.bottom = "12%";
-          playerSprite.style.transform = "none";
-          enemySprite.style.right = "15%";
-          enemySprite.style.bottom = "22%";
-          enemySprite.style.transform = "scaleX(-1)";
-          centerBall.style.display = "none";
-          dragBall.style.display = "none";
-        }
+      if (!Number.isFinite(male)) male = Math.max(0, 100 - female);
+      if (!Number.isFinite(female)) female = Math.max(0, 100 - male);
+
+      const total = male + female;
+      if (total <= 0) return { male: 50, female: 50 };
+      return { male: (male / total) * 100, female: (female / total) * 100 };
+    }
+
+    function updateGenderBar(pets) {
+      if (!pets.length) {
+        $('#genderSummary').text('М: 0% / Ж: 0%');
+        $('#genderMaleBar').css('width', '0%');
+        $('#genderFemaleBar').css('width', '0%');
+        return;
       }
 
-
-      function setBottomPanelVisibility(hidden) {
-        bottomControls.classList.toggle("hidden", hidden);
-      }
-
-      function enemyCenter() {
-        const rect = enemySprite.getBoundingClientRect();
-        return { x: rect.left + rect.width / 2, y: rect.top + rect.height * 0.55 };
-      }
-
-      function updateReticle() {
-        const c = enemyCenter();
-        const min = 70;
-        const max = 150;
-        const pulse = (Math.sin(game.reticlePhase) + 1) / 2;
-        const size = min + (max - min) * pulse;
-        reticle.style.width = `${size}px`;
-        reticle.style.height = `${size}px`;
-        reticle.style.left = `${c.x - size / 2}px`;
-        reticle.style.top = `${c.y - size / 2}px`;
-        reticle.dataset.size = size.toFixed(1);
-      }
-
-      function updateHpBars() {
-        const hideBattleUi = game.mode === "capture";
-        playerHpWrap.style.display = hideBattleUi ? "none" : "block";
-        enemyHpWrap.style.display = hideBattleUi ? "none" : "block";
-        playerHpLabel.style.display = hideBattleUi ? "none" : "block";
-        enemyHpLabel.style.display = hideBattleUi ? "none" : "block";
-        playerHpBar.style.width = `${game.playerHp}%`;
-        enemyHpBar.style.width = `${game.enemyHp}%`;
-        playerHpLabel.textContent = `Игрок HP ${game.playerHp}%`;
-        enemyHpLabel.textContent = `${game.enemy} HP ${game.enemyHp}%`;
-
-        const pRect = playerSprite.getBoundingClientRect();
-        const eRect = enemySprite.getBoundingClientRect();
-        playerHpWrap.style.left = `${pRect.left + pRect.width / 2 - 110}px`;
-        playerHpWrap.style.top = `${pRect.top - 18}px`;
-        enemyHpWrap.style.left = `${eRect.left + eRect.width / 2 - 110}px`;
-        enemyHpWrap.style.top = `${eRect.top - 20}px`;
-
-        playerHpLabel.style.left = `${pRect.left + pRect.width / 2 - 50}px`;
-        playerHpLabel.style.top = `${pRect.top - 36}px`;
-        enemyHpLabel.style.left = `${eRect.left + eRect.width / 2 - 48}px`;
-        enemyHpLabel.style.top = `${eRect.top - 38}px`;
-
-        stateChip.textContent = `Режим: ${game.mode === "battle" ? "Бой" : "Ловля"} | Игрок HP ${game.playerHp}% | Враг HP ${game.enemyHp}%`;
-        if (game.mode === "capture") stateChip.textContent += " | Цель: поймать броском";
-      }
-
-      function drawBiome() {
-        if (game.biome === "desert") {
-          const g = ctx.createLinearGradient(0, 0, 0, game.h);
-          g.addColorStop(0, "#f3c789"); g.addColorStop(1, "#a86d39");
-          ctx.fillStyle = g;
-          ctx.fillRect(0, 0, game.w, game.h);
-
-          const drift = performance.now() * 0.012;
-          ctx.fillStyle = "rgba(255,255,255,.2)";
-          for (let i = 0; i < 5; i++) {
-            const x = ((i * 230 + drift) % (game.w + 260)) - 200;
-            ctx.beginPath();
-            ctx.ellipse(x, 90 + i * 22, 130, 30, 0, 0, Math.PI * 2);
-            ctx.fill();
-          }
-
-          ctx.fillStyle = "rgba(180,120,62,.4)";
-          for (let i = 0; i < 3; i++) {
-            ctx.beginPath();
-            ctx.ellipse(game.w * (0.2 + i * 0.34), game.h * (0.72 + i * 0.04), game.w * 0.28, 90, 0, 0, Math.PI * 2);
-            ctx.fill();
-          }
-
-          ctx.strokeStyle = "rgba(255,244,210,.35)";
-          for (let i = 0; i < 28; i++) {
-            const y = game.h * 0.36 + i * 9;
-            const shift = Math.sin((performance.now() * 0.002) + i) * 16;
-            ctx.beginPath();
-            ctx.moveTo(0, y + shift);
-            ctx.lineTo(game.w, y + shift + 8);
-            ctx.stroke();
-          }
-        } else if (game.biome === "forest") {
-          const g = ctx.createLinearGradient(0, 0, 0, game.h);
-          g.addColorStop(0, "#6db7ff"); g.addColorStop(1, "#1f5d2f");
-          ctx.fillStyle = g;
-          ctx.fillRect(0, 0, game.w, game.h);
-          ctx.fillStyle = "rgba(20,70,30,.7)";
-          for (let i = 0; i < 22; i++) ctx.fillRect(i * 90, game.h * 0.52, 28, game.h * 0.5);
-        } else if (game.biome === "field") {
-          const g = ctx.createLinearGradient(0, 0, 0, game.h);
-          g.addColorStop(0, "#8dd1ff"); g.addColorStop(1, "#4fa43f");
-          ctx.fillStyle = g;
-          ctx.fillRect(0, 0, game.w, game.h);
-        } else if (game.biome === "river") {
-          const g = ctx.createLinearGradient(0, 0, 0, game.h);
-          g.addColorStop(0, "#a8dcff"); g.addColorStop(1, "#2f8ec4");
-          ctx.fillStyle = g;
-          ctx.fillRect(0, 0, game.w, game.h);
-          ctx.fillStyle = "rgba(14,55,120,.55)";
-          ctx.fillRect(game.w * 0.3, game.h * 0.55, game.w * 0.4, game.h * 0.45);
-        } else if (game.biome === "volcano") {
-          const g = ctx.createLinearGradient(0, 0, 0, game.h);
-          g.addColorStop(0, "#4f2121"); g.addColorStop(1, "#200a0a");
-          ctx.fillStyle = g;
-          ctx.fillRect(0, 0, game.w, game.h);
-          ctx.fillStyle = "rgba(255,96,24,.45)";
-          for (let i = 0; i < 6; i++) ctx.fillRect(i * 180, game.h * 0.7 + Math.sin(i + performance.now() * 0.003) * 14, 120, 100);
-        } else if (game.biome === "swamp") {
-          const g = ctx.createLinearGradient(0, 0, 0, game.h);
-          g.addColorStop(0, "#6f8c62"); g.addColorStop(1, "#223529");
-          ctx.fillStyle = g;
-          ctx.fillRect(0, 0, game.w, game.h);
-          ctx.fillStyle = "rgba(70, 92, 55, .6)";
-          for (let i = 0; i < 10; i++) ctx.fillRect(i * 130, game.h * 0.64, 80, 90);
-        } else if (game.biome === "city") {
-          const g = ctx.createLinearGradient(0, 0, 0, game.h);
-          g.addColorStop(0, "#1f3250"); g.addColorStop(1, "#11161f");
-          ctx.fillStyle = g;
-          ctx.fillRect(0, 0, game.w, game.h);
-          ctx.fillStyle = "rgba(255,225,120,.3)";
-          for (let i = 0; i < 14; i++) ctx.fillRect(i * 90 + 30, game.h * 0.45, 40, 150);
-        } else if (game.biome === "cave") {
-          const g = ctx.createLinearGradient(0, 0, 0, game.h);
-          g.addColorStop(0, "#61627a"); g.addColorStop(1, "#232331");
-          ctx.fillStyle = g;
-          ctx.fillRect(0, 0, game.w, game.h);
-        } else {
-          const g = ctx.createLinearGradient(0, 0, 0, game.h);
-          g.addColorStop(0, "#b6ccdf"); g.addColorStop(1, "#676d76");
-          ctx.fillStyle = g;
-          ctx.fillRect(0, 0, game.w, game.h);
-        }
-      }
-
-      function ensureParticles() {
-        if (game.particles.length) return;
-        for (let i = 0; i < 120; i++) {
-          game.particles.push({ x: Math.random() * game.w, y: Math.random() * game.h, s: 1 + Math.random() * 2, v: 1 + Math.random() * 3 });
-        }
-      }
-
-      function drawWeather() {
-        ensureParticles();
-        if (game.weather === "clear") return;
-
-        if (game.weather === "clouds") {
-          ctx.fillStyle = "rgba(255,255,255,.25)";
-          for (let i = 0; i < 7; i++) ctx.fillRect((i * 180 + performance.now() * 0.015) % (game.w + 260) - 140, 70 + i * 18, 140, 36);
-          return;
-        }
-
-        for (const p of game.particles) {
-          if (game.weather === "rain") {
-            ctx.strokeStyle = "rgba(180,220,255,.7)";
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p.x - 4, p.y + 12);
-            ctx.stroke();
-            p.y += p.v * 2.4;
-          } else if (game.weather === "snow") {
-            ctx.fillStyle = "rgba(255,255,255,.82)";
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.s, 0, Math.PI * 2);
-            ctx.fill();
-            p.y += p.v * 0.4;
-          } else if (game.weather === "fog") {
-            ctx.fillStyle = "rgba(230,230,230,.12)";
-            ctx.fillRect(p.x, p.y, 80, 24);
-            p.x += 0.5;
-          } else if (game.weather === "sandstorm") {
-            ctx.fillStyle = "rgba(215,175,120,.4)";
-            ctx.fillRect(p.x, p.y, 4, 2);
-            p.x -= 2.3;
-          } else if (game.weather === "thunder") {
-            ctx.strokeStyle = "rgba(180,220,255,.8)";
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p.x - 3, p.y + 15);
-            ctx.stroke();
-            if (Math.random() < 0.002) {
-              ctx.fillStyle = "rgba(255,255,255,.28)";
-              ctx.fillRect(0, 0, game.w, game.h);
-            }
-            p.y += p.v * 2.6;
-          } else if (game.weather === "aurora") {
-            ctx.fillStyle = "rgba(120,255,210,.1)";
-            ctx.fillRect(0, 40 + Math.sin(performance.now() * 0.002) * 20, game.w, 120);
-            p.y += p.v * 0.2;
-          } else if (game.weather === "ash") {
-            ctx.fillStyle = "rgba(170,170,170,.45)";
-            ctx.fillRect(p.x, p.y, 2, 2);
-            p.y += p.v * 0.7;
-          }
-
-          if (p.y > game.h + 20) { p.y = -20; p.x = Math.random() * game.w; }
-          if (p.x > game.w + 20) p.x = -20;
-          if (p.x < -20) p.x = game.w + 20;
-        }
-      }
-
-      function drawThrowAnim() {
-        if (!game.throwAnim) return;
-        const a = game.throwAnim;
-        const t = Math.min(1, (performance.now() - a.start) / 760);
-        const x = a.fromX + (a.toX - a.fromX) * t;
-        const y = a.fromY + (a.toY - a.fromY) * t - Math.sin(t * Math.PI) * 160;
-        const r = 40 - t * 24;
-
-        if (game.fx === "trail") {
-          ctx.strokeStyle = "rgba(255,255,255,.4)";
-          ctx.lineWidth = 3;
-          ctx.beginPath();
-          ctx.moveTo(a.fromX, a.fromY);
-          ctx.lineTo(x, y);
-          ctx.stroke();
-        }
-
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(t * 10);
-        ctx.fillStyle = a.ball.bottom;
-        ctx.beginPath();
-        ctx.arc(0, 0, r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = a.ball.top;
-        ctx.beginPath();
-        ctx.arc(0, 0, r, Math.PI, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = a.ball.band;
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.arc(0, 0, r, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.restore();
-
-        if (t >= 1) game.throwAnim = null;
-      }
-
-      function drawAimGuide() {
-        if (!game.throwGuide) return;
-        const g = game.throwGuide;
-        ctx.strokeStyle = "rgba(255,235,170,.65)";
-        ctx.lineWidth = 2;
-        ctx.setLineDash([8, 7]);
-        ctx.beginPath();
-        ctx.moveTo(g.startX, g.startY);
-        ctx.lineTo(g.endX, g.endY);
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }
-
-      function applyToneOverlay() {
-        if (game.timeOfDay === "day") return;
-        if (game.timeOfDay === "sunset") {
-          ctx.fillStyle = "rgba(255,140,70,.16)";
-        } else {
-          ctx.fillStyle = "rgba(32,45,95,.3)";
-        }
-        ctx.fillRect(0, 0, game.w, game.h);
-      }
-
-      function attack() {
-        if (game.mode !== "battle" || !game.playerTurn || result.style.display === "flex") return;
-        const dmg = 14 + Math.floor(Math.random() * 8);
-        playerSprite.animate([
-          { transform: "translateX(0)" },
-          { transform: "translateX(48px)" },
-          { transform: "translateX(0)" }
-        ], { duration: 380, easing: "ease-out" });
-        enemySprite.animate([
-          { filter: "brightness(1)" },
-          { filter: "brightness(2)" },
-          { filter: "brightness(1)" }
-        ], { duration: 280 });
-        game.enemyHp = Math.max(0, game.enemyHp - dmg);
-        statusEl.textContent = `Вы нанесли ${dmg} урона!`;
-        game.playerTurn = false;
-        updateHpBars();
-
-        if (game.enemyHp <= 0) {
-          statusEl.textContent = "Враг ослаблен. Откройте инвентарь для режима ловли!";
-          return;
-        }
-
-        setTimeout(() => {
-          const enemyDmg = 10 + Math.floor(Math.random() * 9);
-          enemySprite.animate([
-            { transform: "scaleX(-1) translateX(0)" },
-            { transform: "scaleX(-1) translateX(-42px)" },
-            { transform: "scaleX(-1) translateX(0)" }
-          ], { duration: 360, easing: "ease-out" });
-          playerSprite.animate([
-            { filter: "brightness(1)" },
-            { filter: "brightness(2)" },
-            { filter: "brightness(1)" }
-          ], { duration: 260 });
-          game.playerHp = Math.max(0, game.playerHp - enemyDmg);
-          statusEl.textContent = `${game.enemy} атакует: -${enemyDmg} HP.`;
-          game.playerTurn = true;
-          updateHpBars();
-          if (game.playerHp <= 0) {
-            showResult(false, "Ваш покемон выбит. Появляется новый противник...");
-          }
-        }, 800);
-      }
-
-      function openInventoryForCapture() {
-        game.mode = "capture";
-        inventoryPanel.classList.add("open");
-        attackBtn.disabled = true;
-        actionBtn.disabled = false;
-        actionBtn.textContent = game.selectedTool === "ball" ? "Бросить покебол" : "Удерживать удочку";
-        modeHint.textContent = "";
-        statusEl.textContent = "";
-        setBottomPanelVisibility(game.selectedTool === "ball");
-        layoutSprites();
-        updateHpBars();
-      }
-
-      function chooseBall(ball, btn) {
-        game.selectedTool = "ball";
-        game.selectedBall = ball;
-        rodSelect.classList.remove("selected");
-        [...ballsSection.querySelectorAll(".item")].forEach((x) => x.classList.remove("selected"));
-        btn.classList.add("selected");
-        inventoryPanel.classList.remove("open");
-        actionBtn.textContent = "Бросить покебол";
-        centerBall.style.display = "none";
-        dragBall.style.display = "block";
-        dragBall.className = `drag-ball ball-${ball.key}`;
-        centerBall.className = `ball-center ball-${ball.key}`;
-        setBottomPanelVisibility(true);
-        statusEl.textContent = `${ball.name} выбран. Нижняя панель скрыта: потяните покебол снизу и отпустите для броска.`;
-      }
-
-      function handleActionDown() {
-        if (game.mode !== "capture") return;
-        if (game.selectedTool === "rod") {
-          game.rodHolding = true;
-          statusEl.textContent = "Натягиваем удочку... удерживайте!";
-        } else {
-          throwBall();
-        }
-      }
-
-      function handleActionUp() {
-        if (game.mode !== "capture" || game.selectedTool !== "rod" || !game.rodHolding) return;
-        game.rodHolding = false;
-        const success = game.rodPower >= 85;
-        game.rodPower = 0;
-        if (success) {
-          showResult(true, `Пойман на удочку натяжением! (${game.enemy})`);
-        } else {
-          statusEl.textContent = "Слабое натяжение. Удерживайте дольше для уверенной поимки.";
-        }
-      }
-
-      function throwBall() {
-        const fromX = game.w * 0.5;
-        const fromY = game.h * 0.82;
-        throwBallManual(fromX, fromY, 0, -180);
-      }
-
-      function throwBallManual(fromX, fromY, dx = 0, dy = -140) {
-        const t = enemyCenter();
-        const size = Number(reticle.dataset.size || 140);
-        const radius = size * 0.5;
-        const dragLen = Math.max(45, Math.min(320, Math.hypot(dx, dy)));
-        const power = dragLen * 3.6;
-        const dirLen = Math.max(1, Math.hypot(dx, dy));
-        const ux = dx / dirLen;
-        const uy = dy / dirLen;
-        const expectedLen = Math.hypot(t.x - fromX, t.y - fromY);
-        const angleThrow = Math.atan2(uy, ux);
-        const angleTarget = Math.atan2(t.y - fromY, t.x - fromX);
-        const angleDiff = Math.abs(Math.atan2(Math.sin(angleThrow - angleTarget), Math.cos(angleThrow - angleTarget)));
-        const landingX = fromX + ux * power;
-        const landingY = fromY + uy * power;
-        const missDistance = Math.hypot(landingX - t.x, landingY - t.y);
-
-        game.throwGuide = { startX: fromX, startY: fromY, endX: landingX, endY: landingY };
-        setTimeout(() => { game.throwGuide = null; }, 420);
-
-        game.throwAnim = { start: performance.now(), fromX, fromY, toX: t.x, toY: t.y, ball: game.selectedBall };
-        throwBallResult({ angleDiff, missDistance, radius, expectedLen, power });
-      }
-
-      function throwBallResult(metrics) {
-        const { angleDiff, missDistance, radius, expectedLen, power } = metrics;
-        const size = Number(reticle.dataset.size || 140);
-        const sizeFactor = 1 - (size - 70) / 80;
-        const hpFactor = (100 - game.enemyHp) / 100;
-        const angleFactor = Math.max(0, 1 - angleDiff / 0.8);
-        const powerFactor = Math.max(0, 1 - Math.abs(power - expectedLen) / expectedLen);
-        const inRadius = missDistance <= radius;
-        const chance = Math.min(97, Math.round((game.selectedBall.base + hpFactor * 30 + sizeFactor * 28 + angleFactor * 20 + powerFactor * 15) * game.selectedBall.bonus));
-        const roll = Math.random() * 100;
-
-        if (inRadius && roll < chance) {
-          setTimeout(() => showResult(true, `${game.enemy} пойман! Шанс: ${chance}%. Новый покемон уже идёт!`), 720);
-        } else {
-          setTimeout(() => {
-            statusEl.textContent = `Промах. Угол/сила не попали в радиус (${Math.round(missDistance)}px). Шанс: ${chance}%.`;
-            if (game.fx === "shake") {
-              enemySprite.animate([{ transform: enemySprite.style.transform }, { transform: `${enemySprite.style.transform} translateX(-8px)` }, { transform: enemySprite.style.transform }], { duration: 260 });
-            }
-          }, 720);
-        }
-      }
-
-      function showResult(success, text) {
-        result.style.display = "flex";
-        resultTitle.textContent = success ? "Успех!" : "Поражение";
-        resultTitle.style.color = success ? "var(--good)" : "var(--bad)";
-        resultText.textContent = text;
-        setTimeout(resetGame, 1500);
-      }
-
-      function setEnemy(name) {
-        game.enemy = name;
-        enemySprite.src = `${spriteBase}${name.toLowerCase()}.gif`;
-      }
-
-      function renderInventory() {
-        ballsSection.innerHTML = "";
-        balls.forEach((ball) => {
-          const b = document.createElement("button");
-          b.className = `item${ball.key === game.selectedBall.key ? " selected" : ""}`;
-          b.textContent = `${ball.name} — базовый шанс ${ball.base}%`;
-          b.addEventListener("click", () => chooseBall(ball, b));
-          ballsSection.appendChild(b);
-        });
-      }
-
-      function resetGame() {
-        result.style.display = "none";
-        game.playerHp = 100;
-        game.enemyHp = 100;
-        game.mode = "battle";
-        game.playerTurn = true;
-        const next = pokemonPool[Math.floor(Math.random() * pokemonPool.length)];
-        setEnemy(next);
-        inventoryPanel.classList.remove("open");
-        attackBtn.disabled = false;
-        actionBtn.textContent = "Бросить покебол";
-        setBottomPanelVisibility(false);
-        modeHint.textContent = "В бою вы атакуете по очереди. Для ловли откройте инвентарь.";
-        statusEl.textContent = "";
-        dragBall.className = `drag-ball ball-${game.selectedBall.key}`;
-        centerBall.className = `ball-center ball-${game.selectedBall.key}`;
-        layoutSprites();
-        updateHpBars();
-      }
-
-      function tick() {
-        drawBiome();
-        drawWeather();
-        drawAimGuide();
-        drawThrowAnim();
-        applyToneOverlay();
-        if (game.fx === "scan") {
-          ctx.strokeStyle = "rgba(255,255,255,.08)";
-          for (let y = 0; y < game.h; y += 6) {
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(game.w, y);
-            ctx.stroke();
-          }
-        }
-
-        game.reticlePhase += 0.05;
-        updateReticle();
-
-        if (game.rodHolding) {
-          game.rodPower = Math.min(100, game.rodPower + 0.45);
-          statusEl.textContent = `Натяжение удочки: ${Math.round(game.rodPower)}%`;
-        }
-
-        updateHpBars();
-        requestAnimationFrame(tick);
-      }
-
-      attackBtn.addEventListener("click", attack);
-
-      inventoryBtn.addEventListener("click", () => {
-        if (game.mode === "battle") {
-          openInventoryForCapture();
-        } else {
-          inventoryPanel.classList.toggle("open");
-        }
+      let maleSum = 0;
+      let femaleSum = 0;
+      pets.forEach(p => {
+        const rate = getGenderRates(p);
+        maleSum += rate.male;
+        femaleSum += rate.female;
       });
 
-      rodSelect.addEventListener("click", () => {
-        game.selectedTool = "rod";
-        rodSelect.classList.add("selected");
-        [...ballsSection.querySelectorAll(".item")].forEach((x) => x.classList.remove("selected"));
-        actionBtn.textContent = "Удерживать удочку";
-        inventoryPanel.classList.remove("open");
-        centerBall.style.display = "none";
-        dragBall.style.display = "none";
-        setBottomPanelVisibility(false);
-        statusEl.textContent = "Удочка выбрана. Зажмите кнопку действия и держите до полного натяжения.";
-      });
+      const male = Math.round(maleSum / pets.length);
+      const female = Math.max(0, 100 - male);
+      $('#genderSummary').text(`М: ${male}% / Ж: ${female}%`);
+      $('#genderMaleBar').css('width', `${male}%`);
+      $('#genderFemaleBar').css('width', `${female}%`);
+    }
 
-      actionBtn.addEventListener("pointerdown", handleActionDown);
-      actionBtn.addEventListener("pointerup", handleActionUp);
-      actionBtn.addEventListener("pointerleave", handleActionUp);
+    function createPetScreen(petData, index, totalPets) {
+        const screenId = index + 1;
+        const prevScreenId = index;
+        const nextScreenId = index + 2;
 
-      weatherSelect.addEventListener("change", () => {
-        game.weather = weatherSelect.value;
-        game.particles = [];
-      });
+        const prevBtnText = index === 0 ? '' : '⬅️ Назад';
+        const nextBtnText = index === totalPets - 1 ? '' : 'Дальше ➡️';
+        const prevBtnFor = index === 0 ? '' : `for="pdx_p${prevScreenId}"`;
+        const nextBtnFor = index === totalPets - 1 ? '' : `for="pdx_p${nextScreenId}"`;
 
-      biomeSelect.addEventListener("change", () => {
-        game.biome = biomeSelect.value;
-      });
+        return `
+        <section class="pdxScreen" id="screen${screenId}">
+            <input type="radio" name="pdx_page" id="pdx_p${screenId}" ${index === 0 ? 'checked' : ''}>
+            <img class="pdxBg" src="https://castles-vk.ru/heroes_vk/pets/okno2/fon/1.jpg" alt="">
+            <div class="pdxVeil"></div>
+            <div class="pdxContent">
+                <div class="pdxStage">
+                    <img class="pdxPet" src="${getPetImageUrl(petData.id)}" alt="${petData.name}">
+                    <div class="pdxStageNav">
+                        ${prevBtnText ? `<label class="pdxStageBtn" ${prevBtnFor}>${prevBtnText}</label>` : '<div></div>'}
+                        ${nextBtnText ? `<label class="pdxStageBtn primary" ${nextBtnFor}>${nextBtnText}</label>` : '<div></div>'}
+                    </div>
+                </div>
+                <aside class="pdxSide">
+                    <div class="pdxCard">
+                        <div class="pdxHeader">
+                            <div class="pdxName">${petData.name}</div>
+                            <div class="pdxId">ID: ${petData.id}</div>
+                        </div>
+                        <p class="pdxDesc">${petData.description || '—'}</p>
+                        <div class="statsGrid">
+                            <div class="stat"><div class="statTop">❤️ HP <span class="muted">${petData.hp}</span></div><div class="bar"><div class="fill" style="--w:${calculatePercent(parseInt(petData.hp) || 0)}%;"></div></div></div>
+                            <div class="stat"><div class="statTop">🗡️ ATK <span class="muted">${petData.atk}</span></div><div class="bar"><div class="fill" style="--w:${calculatePercent(parseInt(petData.atk) || 0)}%;"></div></div></div>
+                            <div class="stat"><div class="statTop">🛡️ DEF <span class="muted">${petData.def}</span></div><div class="bar"><div class="fill" style="--w:${calculatePercent(parseInt(petData.def) || 0)}%;"></div></div></div>
+                            <div class="stat"><div class="statTop">⚡ SPD <span class="muted">${petData.spd}</span></div><div class="bar"><div class="fill" style="--w:${calculatePercent(parseInt(petData.spd) || 0)}%;"></div></div></div>
+                        </div>
+                    </div>
+                    <div class="pdxCard">
+                        ${petData.baz_skill !== "0" ? `<div class="skill"><div class="skillTitle"><div class="skillLeft"><span class="skillBadge">Активная</span><span style="opacity:.9;font-weight:900">ID: ${petData.baz_skill}</span></div><div class="skillIcons"><img src="${getSkillImageUrl('skill', petData.baz_skill)}" alt="Активный навык"></div></div><div class="skillText">${getSkillDescription(petData.baz_skill)}</div></div>` : ''}
+                        ${petData.baz_abill !== "0" ? `<div class="skill"><div class="skillTitle"><div class="skillLeft"><span class="skillBadge">Врождённая</span><span style="opacity:.9;font-weight:900">ID: ${petData.baz_abill}</span></div><div class="skillIcons"><img src="${getSkillImageUrl('abill', petData.baz_abill)}" alt="Врожденный навык"></div></div><div class="skillText">${getAbilityDescription(petData.baz_abill)}</div></div>` : ''}
+                        ${petData.baz_skill === "0" && petData.baz_abill === "0" ? '<div class="skill"><div class="skillText">Нет активных или врождённых навыков</div></div>' : ''}
+                    </div>
+                </aside>
+            </div>
+        </section>`;
+    }
 
-      timeSelect.addEventListener("change", () => {
-        game.timeOfDay = timeSelect.value;
-      });
-
-      fxSelect.addEventListener("change", () => {
-        game.fx = fxSelect.value;
-      });
-
-      restartBtn.addEventListener("click", resetGame);
-
-      dragBall.addEventListener("pointerdown", (e) => {
-        if (game.mode !== "capture" || game.selectedTool !== "ball") return;
-        dragBall.setPointerCapture(e.pointerId);
-        dragBall.classList.add("active");
-        game.drag = {
-          startX: e.clientX,
-          startY: e.clientY
+    function getSkillDescription(skillId) {
+        const descriptions = {
+            "1": "Наносит урон 25 ед сквозь броню и накладывает кровотечение с шансом 40% на ✦ 1-2/1-3/1-4/1-5 хода.",
+            "2": "Накладывает на противника с шансом 30% ослепление, после чего он бездействует ✦ 1/1-2/1-3/1-4 хода.",
+            "3": "Снимает все отрицательные эффекты с хозяина, кроме оглушения и отдыха, с шансом: 20/25/30/35%",
+            "4": "Накладывает на противника заморозку на 2 хода с шансом: 20/25/30/35%",
+            "5": "Оглушает противника на 2 хода с шансом: 20/25/30/35%",
+            "6": "Наносит урон 15 ед сквозь броню, накладывает кровотечение на 1 ход и понижает скорость противника на: 2/3/4/5%",
+            "7": "Накладывает заморозку на противника на 1 ход с шансом 50% и наносит урон от атаки владельца в размере: 3/5/6/7%",
+            "8": "Открывает телепорт за энергию героя. Расходует энергии: 5/4/3/2",
+            "9": "Накладывает на противника статус поджог на ✦ 2 хода и замораживает на ✦ 2 хода с шансом: 20/40/60/90",
         };
-      });
+        return descriptions[skillId] || "Описание активного навыка";
+    }
 
-      dragBall.addEventListener("pointermove", (e) => {
-        if (!game.drag) return;
-        const dx = e.clientX - game.drag.startX;
-        const dy = e.clientY - game.drag.startY;
-        dragBall.style.transform = `translateX(-50%) translate(${dx}px, ${dy}px)`;
-      });
+    function getAbilityDescription(abilityId) {
+        const descriptions = {
+            "1": "После победы над противником способностью 'Выстрел ружьем', шанс получить призрачную пулю c шансом 10/15/20/25% ",
+            "2": "Увеличивает стат атаки героя на + 2/3/4/5%",
+            "3": "Способность Кровавое исцеление героя, восстанавливает больше здоровья за 1 стак крови на 7/12/15/20",
+            "4": "Усиливает конечный урон способности Разрыв плоти, после всех бонусов на: 3/5/7/10%",
+            "5": "Способность Удар рыцаря имеет повышенный шанс на крит: 25/30/35/40%",
+            "6": "Увеличивает стат защиты героя на + 2/4/5/6%",
+            "7": "Увеличивает стат здоровья героя на + 5/6/7/8%",
+            "8": "Увеличивает стат скорости героя на + 5/8/10/12%",
+            "9": "Снижает расход способности некроманта Похищение жизни до 45/40/30/20%",
+            "10": "Способность огненный шар мага, чаще поджигает и  увеличивает шанс на мощный взрыв до 25/30/35/40%",
+            "11": "Способность шквал ударов корсара, расходует меньше выносливости на  9/8/7/6%",
+            "12": "Увеличивает все статы героя на + 2/3/4/5%",
+            "13": "Увеличивает дроп золота на +15/20/25/30",
+            "14": "Способность Стойкая сила снимает отрицательные статусы с шансом: 50/60/70/80%",
+            "15": "Дарует хозяйну иммунитет в битве к огню и льду с шансом: 50/60/70/80%",
+            "16": "Создаем эпокахльный случайный предмет после победы противника в битве: 15000/12000/10000/8000 раз",
+        };
+        return descriptions[abilityId] || "Описание врождённого навыка";
+    }
 
-      function finishDragThrow(e) {
-        if (!game.drag) return;
-        const dx = e.clientX - game.drag.startX;
-        const dy = e.clientY - game.drag.startY;
-        const dist = Math.hypot(dx, dy);
-        dragBall.classList.remove("active");
-        dragBall.style.transform = "translateX(-50%)";
+    function getValidPets() {
+      return (window.data_13147 || []).filter(pet => pet.id !== "0" && pet.name !== "Пуля");
+    }
 
-        if (dy < -45 && dist > 55) {
-          const rect = dragBall.getBoundingClientRect();
-          throwBallManual(rect.left + rect.width / 2, rect.top + rect.height / 2, dx, dy);
-        } else {
-          statusEl.textContent = "Потяните покебол вверх и отпустите, чтобы бросить.";
+    function displayAllPets(filteredPets = null) {
+        const validPets = filteredPets || getValidPets();
+        const container = $('#petsContainer');
+        container.empty();
+
+        if (!validPets.length) {
+          container.append('<div class="pdxEmpty">Ничего не найдено. Попробуйте другое имя или ID.</div>');
+          updateGenderBar([]);
+          return;
         }
-        game.drag = null;
+
+        validPets.forEach((pet, index) => container.append(createPetScreen(pet, index, validPets.length)));
+        $('#pdx_p1').prop('checked', true);
+        updateGenderBar(validPets);
+    }
+
+    function showPetOneByOne() {
+        displayAllPets();
+
+        $(document).on('click', '.pdxStageBtn', function() {
+            const targetId = $(this).attr('for');
+            if (targetId) {
+                $('input[name="pdx_page"]').prop('checked', false);
+                $('#' + targetId).prop('checked', true);
+            }
+        });
+    }
+
+    function bindSearch() {
+      function runSearch() {
+        const query = $('#petSearchInput').val().toString().trim().toLowerCase();
+        const validPets = getValidPets();
+        if (!query) {
+          displayAllPets(validPets);
+          return;
+        }
+        const filtered = validPets.filter(p => {
+          const name = (p.name || '').toString().toLowerCase();
+          const id = (p.id || '').toString().toLowerCase();
+          return name.includes(query) || id.includes(query);
+        });
+        displayAllPets(filtered);
       }
 
-      dragBall.addEventListener("pointerup", finishDragThrow);
-      dragBall.addEventListener("pointercancel", finishDragThrow);
+      $('#petSearchBtn').on('click', runSearch);
+      $('#petSearchInput').on('keydown', function(e){ if (e.key === 'Enter') runSearch(); });
+    }
 
-      window.addEventListener("resize", resize);
-      resize();
-      renderInventory();
-      resetGame();
-      requestAnimationFrame(tick);
-    })();
-  </script>
+    $(document).ready(function() {
+      showPetOneByOne();
+      bindSearch();
+    });
+</script>
 </body>
 </html>
