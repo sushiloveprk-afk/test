@@ -132,10 +132,17 @@
       position: fixed;
       left: 50%;
       transform: translateX(-50%);
-      bottom: 14px;
+      bottom: 4px;
       width: min(980px, calc(100vw - 20px));
       z-index: 25;
       padding: 12px;
+      transition: opacity .25s ease, transform .25s ease;
+    }
+
+    .bottom-controls.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, 20px);
     }
 
     .controls-row {
@@ -246,6 +253,42 @@
       display: none;
     }
 
+    .drag-ball {
+      position: fixed;
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      left: 50%;
+      bottom: 38px;
+      transform: translateX(-50%);
+      z-index: 31;
+      display: none;
+      cursor: grab;
+      touch-action: none;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, .45);
+    }
+
+    .drag-ball::before,
+    .drag-ball::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+    }
+
+    .drag-ball::before {
+      background: linear-gradient(180deg, #f63a3a 50%, #fff 50%);
+      border: 5px solid #181818;
+    }
+
+    .drag-ball::after {
+      inset: 36px;
+      border: 4px solid #181818;
+      background: #fff;
+    }
+
+    .drag-ball.active { cursor: grabbing; }
+
     .ball-center::before,
     .ball-center::after {
       content: "";
@@ -348,6 +391,7 @@
   </div>
 
   <div id="centerBall" class="ball-center"></div>
+  <div id="dragBall" class="drag-ball" aria-label="Перетащите покебол для броска"></div>
 
   <div id="result" class="result">
     <div class="result-box panel">
@@ -394,6 +438,8 @@
       const modeHint = document.getElementById("modeHint");
       const statusEl = document.getElementById("status");
       const centerBall = document.getElementById("centerBall");
+      const dragBall = document.getElementById("dragBall");
+      const bottomControls = document.querySelector(".bottom-controls");
 
       const result = document.getElementById("result");
       const resultTitle = document.getElementById("resultTitle");
@@ -417,7 +463,8 @@
         particles: [],
         throwAnim: null,
         rodHolding: false,
-        rodPower: 0
+        rodPower: 0,
+        drag: null
       };
 
       function resize() {
@@ -439,6 +486,7 @@
           enemySprite.style.bottom = "48%";
           enemySprite.style.transform = "translateX(50%) scaleX(-1)";
           centerBall.style.display = game.selectedTool === "ball" ? "block" : "none";
+          dragBall.style.display = game.selectedTool === "ball" ? "block" : "none";
         } else {
           playerSprite.style.left = "16%";
           playerSprite.style.bottom = "12%";
@@ -447,7 +495,13 @@
           enemySprite.style.bottom = "22%";
           enemySprite.style.transform = "scaleX(-1)";
           centerBall.style.display = "none";
+          dragBall.style.display = "none";
         }
+      }
+
+
+      function setBottomPanelVisibility(hidden) {
+        bottomControls.classList.toggle("hidden", hidden);
       }
 
       function enemyCenter() {
@@ -492,9 +546,35 @@
       function drawBiome() {
         if (game.biome === "desert") {
           const g = ctx.createLinearGradient(0, 0, 0, game.h);
-          g.addColorStop(0, "#e6a96a"); g.addColorStop(1, "#b77a3d");
+          g.addColorStop(0, "#f3c789"); g.addColorStop(1, "#a86d39");
           ctx.fillStyle = g;
           ctx.fillRect(0, 0, game.w, game.h);
+
+          const drift = performance.now() * 0.012;
+          ctx.fillStyle = "rgba(255,255,255,.2)";
+          for (let i = 0; i < 5; i++) {
+            const x = ((i * 230 + drift) % (game.w + 260)) - 200;
+            ctx.beginPath();
+            ctx.ellipse(x, 90 + i * 22, 130, 30, 0, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          ctx.fillStyle = "rgba(180,120,62,.4)";
+          for (let i = 0; i < 3; i++) {
+            ctx.beginPath();
+            ctx.ellipse(game.w * (0.2 + i * 0.34), game.h * (0.72 + i * 0.04), game.w * 0.28, 90, 0, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          ctx.strokeStyle = "rgba(255,244,210,.35)";
+          for (let i = 0; i < 28; i++) {
+            const y = game.h * 0.36 + i * 9;
+            const shift = Math.sin((performance.now() * 0.002) + i) * 16;
+            ctx.beginPath();
+            ctx.moveTo(0, y + shift);
+            ctx.lineTo(game.w, y + shift + 8);
+            ctx.stroke();
+          }
         } else if (game.biome === "forest") {
           const g = ctx.createLinearGradient(0, 0, 0, game.h);
           g.addColorStop(0, "#6db7ff"); g.addColorStop(1, "#1f5d2f");
@@ -601,6 +681,16 @@
       function attack() {
         if (game.mode !== "battle" || !game.playerTurn || result.style.display === "flex") return;
         const dmg = 14 + Math.floor(Math.random() * 8);
+        playerSprite.animate([
+          { transform: "translateX(0)" },
+          { transform: "translateX(48px)" },
+          { transform: "translateX(0)" }
+        ], { duration: 380, easing: "ease-out" });
+        enemySprite.animate([
+          { filter: "brightness(1)" },
+          { filter: "brightness(2)" },
+          { filter: "brightness(1)" }
+        ], { duration: 280 });
         game.enemyHp = Math.max(0, game.enemyHp - dmg);
         statusEl.textContent = `Вы нанесли ${dmg} урона!`;
         game.playerTurn = false;
@@ -613,12 +703,22 @@
 
         setTimeout(() => {
           const enemyDmg = 10 + Math.floor(Math.random() * 9);
+          enemySprite.animate([
+            { transform: "scaleX(-1) translateX(0)" },
+            { transform: "scaleX(-1) translateX(-42px)" },
+            { transform: "scaleX(-1) translateX(0)" }
+          ], { duration: 360, easing: "ease-out" });
+          playerSprite.animate([
+            { filter: "brightness(1)" },
+            { filter: "brightness(2)" },
+            { filter: "brightness(1)" }
+          ], { duration: 260 });
           game.playerHp = Math.max(0, game.playerHp - enemyDmg);
           statusEl.textContent = `${game.enemy} атакует: -${enemyDmg} HP.`;
           game.playerTurn = true;
           updateHpBars();
           if (game.playerHp <= 0) {
-            showResult(false, "Ваш покемон выбит. Перезапустите бой.");
+            showResult(false, "Ваш покемон выбит. Появляется новый противник...");
           }
         }, 800);
       }
@@ -631,6 +731,7 @@
         actionBtn.textContent = game.selectedTool === "ball" ? "Бросить покебол" : "Удерживать удочку";
         modeHint.textContent = "Режим ловли: выберите покебол или удочку, затем выполните действие.";
         statusEl.textContent = "Ловля активирована. Персонаж и покебол — по центру, цель вдалеке.";
+        setBottomPanelVisibility(game.selectedTool === "ball");
         layoutSprites();
         updateHpBars();
       }
@@ -644,7 +745,9 @@
         inventoryPanel.classList.remove("open");
         actionBtn.textContent = "Бросить покебол";
         centerBall.style.display = "block";
-        statusEl.textContent = `${ball.name} выбран. Инвентарь закрыт, бросайте по мигающему прицелу.`;
+        dragBall.style.display = "block";
+        setBottomPanelVisibility(true);
+        statusEl.textContent = `${ball.name} выбран. Нижняя панель скрыта: потяните покебол снизу и отпустите для броска.`;
       }
 
       function handleActionDown() {
@@ -670,19 +773,26 @@
       }
 
       function throwBall() {
+        const fromX = game.w * 0.5;
+        const fromY = game.h * 0.58;
+        throwBallManual(fromX, fromY);
+      }
+
+      function throwBallManual(fromX, fromY) {
+        const t = enemyCenter();
+        game.throwAnim = { start: performance.now(), fromX, fromY, toX: t.x, toY: t.y };
+        throwBallResult();
+      }
+
+      function throwBallResult() {
         const size = Number(reticle.dataset.size || 140);
         const sizeFactor = 1 - (size - 70) / 80;
         const hpFactor = (100 - game.enemyHp) / 100;
         const chance = Math.min(97, Math.round((game.selectedBall.base + hpFactor * 30 + sizeFactor * 35) * game.selectedBall.bonus));
         const roll = Math.random() * 100;
 
-        const fromX = game.w * 0.5;
-        const fromY = game.h * 0.58;
-        const t = enemyCenter();
-        game.throwAnim = { start: performance.now(), fromX, fromY, toX: t.x, toY: t.y };
-
         if (roll < chance) {
-          setTimeout(() => showResult(true, `${game.enemy} пойман! Шанс: ${chance}%`), 720);
+          setTimeout(() => showResult(true, `${game.enemy} пойман! Шанс: ${chance}%. Новый покемон уже идёт!`), 720);
         } else {
           setTimeout(() => {
             statusEl.textContent = `Промах/рывок! Шанс был ${chance}%. Попробуйте ещё раз.`;
@@ -695,6 +805,7 @@
         resultTitle.textContent = success ? "Успех!" : "Поражение";
         resultTitle.style.color = success ? "var(--good)" : "var(--bad)";
         resultText.textContent = text;
+        setTimeout(resetGame, 1500);
       }
 
       function setEnemy(name) {
@@ -724,6 +835,7 @@
         inventoryPanel.classList.remove("open");
         attackBtn.disabled = false;
         actionBtn.textContent = "Бросить покебол";
+        setBottomPanelVisibility(false);
         modeHint.textContent = "В бою вы атакуете по очереди. Для ловли откройте инвентарь.";
         statusEl.textContent = "Новый бой начат.";
         layoutSprites();
@@ -764,6 +876,8 @@
         actionBtn.textContent = "Удерживать удочку";
         inventoryPanel.classList.remove("open");
         centerBall.style.display = "none";
+        dragBall.style.display = "none";
+        setBottomPanelVisibility(false);
         statusEl.textContent = "Удочка выбрана. Зажмите кнопку действия и держите до полного натяжения.";
       });
 
@@ -781,6 +895,43 @@
       });
 
       restartBtn.addEventListener("click", resetGame);
+
+      dragBall.addEventListener("pointerdown", (e) => {
+        if (game.mode !== "capture" || game.selectedTool !== "ball") return;
+        dragBall.setPointerCapture(e.pointerId);
+        dragBall.classList.add("active");
+        game.drag = {
+          startX: e.clientX,
+          startY: e.clientY
+        };
+      });
+
+      dragBall.addEventListener("pointermove", (e) => {
+        if (!game.drag) return;
+        const dx = e.clientX - game.drag.startX;
+        const dy = e.clientY - game.drag.startY;
+        dragBall.style.transform = `translateX(-50%) translate(${dx}px, ${dy}px)`;
+      });
+
+      function finishDragThrow(e) {
+        if (!game.drag) return;
+        const dx = e.clientX - game.drag.startX;
+        const dy = e.clientY - game.drag.startY;
+        const dist = Math.hypot(dx, dy);
+        dragBall.classList.remove("active");
+        dragBall.style.transform = "translateX(-50%)";
+
+        if (dy < -45 && dist > 55) {
+          const rect = dragBall.getBoundingClientRect();
+          throwBallManual(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        } else {
+          statusEl.textContent = "Потяните покебол вверх и отпустите, чтобы бросить.";
+        }
+        game.drag = null;
+      }
+
+      dragBall.addEventListener("pointerup", finishDragThrow);
+      dragBall.addEventListener("pointercancel", finishDragThrow);
 
       window.addEventListener("resize", resize);
       resize();
