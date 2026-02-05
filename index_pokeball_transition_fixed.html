@@ -524,6 +524,30 @@
   }
 
   const S = { w:0,h:0,dpr:1,t:0,state:"",message:"",msgT:0,lock:false,selectedBall:"POKE",started:false };
+  const bgCache = { battle:null, capture:null };
+  const world = {
+    wind: 0,
+    windPhase: rnd(0, Math.PI * 2),
+    clouds: Array.from({length: 10}, (_, i) => ({
+      x: rnd(-240, 1200),
+      y: 24 + i * 30 + rnd(-12, 12),
+      rx: rnd(90, 150),
+      ry: rnd(34, 62),
+      speed: rnd(0.8, 1.6),
+      layer: rnd(0.6, 1.5),
+      alpha: rnd(0.12, 0.24)
+    })),
+    gusts: []
+  };
+  const captureAnim = { active:false, timer:0, shakes:0, maxShakes:3, success:false, chance:0 };
+
+  function refreshButtons(){
+    const disabled = S.lock || S.state !== "BATTLE";
+    btnAttack.disabled = disabled;
+    btnDefend.disabled = disabled;
+    btnInv.disabled = disabled;
+    btnRun.disabled = disabled;
+  }
 
   function setState(st){
     S.state = st;
@@ -542,6 +566,7 @@
       playerImg.style.display = "none";
       enemyImg.style.display = "none";
     }
+    refreshButtons();
   }
 
   function resize(){
@@ -554,6 +579,8 @@
     canvas.style.height = h + "px";
     ctx.setTransform(S.dpr,0,0,S.dpr,0,0);
     S.w = w; S.h = h;
+    bgCache.battle = null;
+    bgCache.capture = null;
 
     aim.maxPull = Math.min(240, Math.max(150, S.h * 0.28));
     ball.r0 = Math.min(28, Math.max(18, S.w * 0.045));
@@ -675,9 +702,14 @@
   function applyDamage(target, amount){ target.hp = Math.max(0, target.hp - amount); }
   function wait(ms){ return new Promise(res => setTimeout(res, ms)); }
 
+  function setLock(value){
+    S.lock = value;
+    refreshButtons();
+  }
+
   async function playerAttack(){
     if (S.lock || S.state !== "BATTLE") return;
-    S.lock = true;
+    setLock(true);
     say(`${player.name} атакует!`);
     await wait(240);
 
@@ -705,7 +737,7 @@
 
   async function playerDefend(){
     if (S.lock || S.state !== "BATTLE") return;
-    S.lock = true;
+    setLock(true);
     player.shielded = true;
     say(`${player.name} в защите!`);
     await wait(360);
@@ -724,7 +756,7 @@
       wild.shielded = true;
       say(`${wild.name} ставит защиту!`);
       await wait(520);
-      S.lock = false;
+      setLock(false);
       return;
     }
 
@@ -750,11 +782,11 @@
       endResult("Поражение!", `${player.name} проиграл. Начни сначала.`);
       return;
     }
-    S.lock = false;
+    setLock(false);
   }
 
   function endResult(title, text){
-    S.lock = true;
+    setLock(true);
     setState("RESULT");
     resultTitle.textContent = title;
     resultText.textContent = text;
@@ -771,7 +803,7 @@
     if (newEnemy) pickRandomEnemy();
     wild.shielded = false;
 
-    S.lock = false;
+    setLock(false);
     say("Бой начался!");
     resetCapture();
     setState("BATTLE");
@@ -859,6 +891,9 @@
     ring.phase = 0;
     aim.active = false;
     aim.points = [];
+    captureAnim.active = false;
+    captureAnim.shakes = 0;
+    captureAnim.timer = 0;
   }
 
   function resetBallSoft(){
@@ -883,6 +918,7 @@
   function canStartAim(p){
     if (S.state !== "CAPTURE") return false;
     if (ball.flying) return false;
+    if (captureAnim.active) return false;
     return len(p.x - ball.x, p.y - ball.y) <= ball.r0 * 1.7;
   }
 
@@ -992,12 +1028,32 @@
     return clamp(p, 0.03, 0.92);
   }
 
+
+
+  function beginCaptureResolve({chance, label}){
+    const t = targetCenter();
+    ball.flying = false;
+    ball.z = 1;
+    ball.x = t.x;
+    ball.y = t.y;
+    ball.vx = ball.vy = ball.vz = 0;
+
+    captureAnim.active = true;
+    captureAnim.timer = 0.38;
+    captureAnim.shakes = 0;
+    captureAnim.maxShakes = 3;
+    captureAnim.success = Math.random() < chance;
+    captureAnim.chance = chance;
+
+    say(`${label}! Покебол удерживает цель...`);
+  }
+
   function backToBattleFail(){
     // Pokemon-style "snap back to battle" transition
     setTimeout(() => {
       playPokeTransition(() => {
         setState("BATTLE");
-        S.lock = false;
+        setLock(false);
         say("Не поймал… бой продолжается!");
         layoutSprites();
       });
@@ -1032,13 +1088,49 @@
     });
   }
 
+
+  function updateWorld(dt){
+    world.windPhase += dt * 0.45;
+    const diff = DIFF[difficultyKey];
+    world.wind = (Math.sin(world.windPhase) * 0.55 + Math.sin(world.windPhase * 2.6) * 0.25) * diff.driftMul;
+
+    for (const c of world.clouds){
+      c.x += (15 + 24 * c.speed + Math.abs(world.wind) * 18) * c.layer * dt;
+      if (c.x - c.rx > S.w + 120){
+        c.x = -c.rx - rnd(20, 220);
+        c.y = 24 + rnd(0, S.h * 0.30);
+      }
+    }
+
+    if (Math.random() < dt * (3.2 + Math.abs(world.wind) * 2)){
+      world.gusts.push({
+        x: rnd(-40, S.w + 60),
+        y: rnd(S.h * 0.08, S.h * 0.7),
+        vx: 110 + rnd(60, 180) + Math.abs(world.wind) * 120,
+        vy: rnd(-10, 10),
+        life: rnd(0.4, 0.8),
+        age: 0,
+        len: rnd(28, 62)
+      });
+      if (world.gusts.length > 44) world.gusts.shift();
+    }
+    for (let i = world.gusts.length - 1; i >= 0; i--){
+      const g = world.gusts[i];
+      g.age += dt;
+      g.x += g.vx * dt;
+      g.y += g.vy * dt;
+      if (g.age >= g.life || g.x > S.w + 160) world.gusts.splice(i, 1);
+    }
+  }
+
   function stepCapture(dt){
+    const diff = DIFF[difficultyKey];
+
     creatureC.sway += dt * (2.0 + (currentEnemy ? currentEnemy.diff*0.6 : 0.6));
     const wander = Math.sin(creatureC.sway) * (S.w * 0.05);
     creatureC.x = clamp(creatureC.x0 + wander * 0.35, S.w*0.25, S.w*0.75);
     creatureC.y = capFarGroundY();
 
-    const diff = DIFF[difficultyKey];
     const perMon = currentEnemy ? currentEnemy.diff : 1.10;
 
     const wiggle = 0.85 + 0.55*(0.5+0.5*Math.sin(S.t*0.7+1.2));
@@ -1113,8 +1205,6 @@
           const hitRadius = (br + cr) / clamp(strict, 0.85, 1.35);
 
           if (d <= hitRadius){
-            ball.flying = false;
-
             const ringR = ring.curR;
             let label = "Nice";
             if (ringR < cr*0.55) label = "Excellent";
@@ -1124,12 +1214,7 @@
             const chance = captureChance({accuracy, label, spinAbs: Math.abs(ball.w)});
             const pct = Math.round(chance*100);
             say(`${label}! (${pct}%)`);
-
-            if (Math.random() < chance){
-              endResult("Пойман!", `Ты поймал ${currentEnemy ? currentEnemy.name : "дикого"} (${BALLS[S.selectedBall].name}). Шанс был ${pct}%.`);
-            } else {
-              backToBattleFail();
-            }
+            beginCaptureResolve({chance, label});
           }
         }
       }
@@ -1144,10 +1229,31 @@
           backToBattleFail();
         }
       }
-    } else {
+    } else if (!captureAnim.active) {
       ball.z = 0;
       ball.x = S.w*0.5;
       ball.y = yAtZ(0);
+    }
+
+    if (captureAnim.active){
+      captureAnim.timer -= dt;
+      if (captureAnim.timer <= 0){
+        captureAnim.shakes += 1;
+        ball.spin += (captureAnim.shakes % 2 === 0 ? -1 : 1) * 0.28;
+        if (captureAnim.shakes < captureAnim.maxShakes){
+          say(`Покебол дрожит... ${captureAnim.shakes}/${captureAnim.maxShakes}`);
+          captureAnim.timer = 0.36 + rnd(0.07, 0.18);
+        } else {
+          captureAnim.active = false;
+          const pct = Math.round(captureAnim.chance * 100);
+          if (captureAnim.success){
+            endResult("Пойман!", `Ты поймал ${currentEnemy ? currentEnemy.name : "дикого"} (${BALLS[S.selectedBall].name}). Шанс был ${pct}%.`);
+          } else {
+            say(`Вырвался! (${pct}%)`);
+            backToBattleFail();
+          }
+        }
+      }
     }
 
     layoutSprites();
@@ -1192,30 +1298,33 @@
   }
 
   function drawBattleBG(){
-    const g = ctx.createLinearGradient(0,0,0,S.h);
-    g.addColorStop(0, "#7ecbff");
-    g.addColorStop(0.45, "#bfe9ff");
-    g.addColorStop(1, "#2a7a5a");
-    ctx.fillStyle = g;
+    if (!bgCache.battle){
+      const g = ctx.createLinearGradient(0,0,0,S.h);
+      g.addColorStop(0, "#7ecbff");
+      g.addColorStop(0.45, "#bfe9ff");
+      g.addColorStop(1, "#2a7a5a");
+      const fg = ctx.createLinearGradient(0, S.h * 0.82 - 140, 0, S.h);
+      fg.addColorStop(0, "rgba(65,200,120,1)");
+      fg.addColorStop(1, "rgba(18,110,70,1)");
+      bgCache.battle = { sky:g, field:fg };
+    }
+
+    ctx.fillStyle = bgCache.battle.sky;
     ctx.fillRect(0,0,S.w,S.h);
 
     ctx.save();
-    ctx.globalAlpha = 0.22;
-    for (let i=0;i<6;i++){
-      const x = (i*220 + (S.t*22)) % (S.w+260) - 130;
-      const y = 40 + (i*78)% (S.h*0.28);
+    for (const c of world.clouds){
+      if (c.y > S.h * 0.33) continue;
+      ctx.globalAlpha = c.alpha;
       ctx.beginPath();
-      ctx.ellipse(x, y, 140, 56, 0, 0, Math.PI*2);
+      ctx.ellipse(c.x, c.y, c.rx, c.ry, 0, 0, Math.PI*2);
       ctx.fillStyle = "rgba(255,255,255,0.95)";
       ctx.fill();
     }
     ctx.restore();
 
     const gy = S.h * 0.82;
-    const fg = ctx.createLinearGradient(0, gy-140, 0, S.h);
-    fg.addColorStop(0, "rgba(65,200,120,1)");
-    fg.addColorStop(1, "rgba(18,110,70,1)");
-    ctx.fillStyle = fg;
+    ctx.fillStyle = bgCache.battle.field;
     ctx.fillRect(0, gy-80, S.w, S.h-(gy-80));
 
     ctx.save();
@@ -1226,34 +1335,38 @@
     ctx.lineTo(S.w, gy-140);
     ctx.stroke();
     ctx.restore();
+
+    drawWindTrails();
   }
 
   function drawCaptureBG(){
-    const g = ctx.createLinearGradient(0,0,0,S.h);
-    g.addColorStop(0, "#6dbfff");
-    g.addColorStop(0.55, "#cfefff");
-    g.addColorStop(1, "#2f8a62");
-    ctx.fillStyle = g;
+    if (!bgCache.capture){
+      const g = ctx.createLinearGradient(0,0,0,S.h);
+      g.addColorStop(0, "#6dbfff");
+      g.addColorStop(0.55, "#cfefff");
+      g.addColorStop(1, "#2f8a62");
+      const field = ctx.createLinearGradient(0, capFarGroundY()-120, 0, S.h);
+      field.addColorStop(0, "rgba(95,220,140,1)");
+      field.addColorStop(0.65, "rgba(35,150,90,1)");
+      field.addColorStop(1, "rgba(18,110,70,1)");
+      bgCache.capture = { sky:g, field };
+    }
+
+    ctx.fillStyle = bgCache.capture.sky;
     ctx.fillRect(0,0,S.w,S.h);
 
     ctx.save();
-    ctx.globalAlpha = 0.20;
-    for (let i=0;i<7;i++){
-      const x = (i*190 + (S.t*18)) % (S.w+240) - 120;
-      const y = 35 + (i*66)% (S.h*0.26);
+    for (const c of world.clouds){
+      ctx.globalAlpha = c.alpha * 0.95;
       ctx.beginPath();
-      ctx.ellipse(x, y, 130, 52, 0, 0, Math.PI*2);
+      ctx.ellipse(c.x, c.y, c.rx, c.ry, 0, 0, Math.PI*2);
       ctx.fillStyle = "rgba(255,255,255,0.95)";
       ctx.fill();
     }
     ctx.restore();
 
     const farY = capFarGroundY();
-    const field = ctx.createLinearGradient(0, farY-120, 0, S.h);
-    field.addColorStop(0, "rgba(95,220,140,1)");
-    field.addColorStop(0.65, "rgba(35,150,90,1)");
-    field.addColorStop(1, "rgba(18,110,70,1)");
-    ctx.fillStyle = field;
+    ctx.fillStyle = bgCache.capture.field;
     ctx.fillRect(0, farY-80, S.w, S.h-(farY-80));
 
     ctx.save();
@@ -1263,6 +1376,25 @@
     ctx.moveTo(0, farY);
     ctx.lineTo(S.w, farY);
     ctx.stroke();
+    ctx.restore();
+
+    drawWindTrails();
+  }
+
+  function drawWindTrails(){
+    if (!world.gusts.length) return;
+    ctx.save();
+    ctx.lineCap = "round";
+    for (const g of world.gusts){
+      const a = clamp(1 - g.age / g.life, 0, 1);
+      ctx.globalAlpha = a * 0.35;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(g.x, g.y);
+      ctx.lineTo(g.x + g.len, g.y + Math.sin((g.x + S.t * 200) * 0.01) * 6);
+      ctx.stroke();
+    }
     ctx.restore();
   }
 
@@ -1530,13 +1662,6 @@
     resetAll({newEnemy:true});
   });
 
-  setInterval(() => {
-    const disabled = S.lock || S.state !== "BATTLE";
-    btnAttack.disabled = disabled;
-    btnDefend.disabled = disabled;
-    btnInv.disabled = disabled;
-    btnRun.disabled = disabled;
-  }, 60);
 
   // ===== Main loop =====
   let last = performance.now();
@@ -1547,6 +1672,7 @@
     last = now;
     S.t += dt;
     if (S.msgT > 0) S.msgT -= dt;
+    updateWorld(dt);
 
     if (S.state === "CAPTURE"){
       drawCaptureBG();
