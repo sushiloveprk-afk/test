@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Desert Poké Capture Mini‑Game</title>
+  <title>Poké Capture Mini‑Game</title>
   <style>
     :root {
       --ui-bg: rgba(16, 12, 8, 0.55);
@@ -17,7 +17,7 @@
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #1e170f; }
 
     #stage { position: fixed; inset: 0; }
-    canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 
     .sprite-layer { position: absolute; inset: 0; pointer-events: none; }
     .sprite {
@@ -67,7 +67,7 @@
       left: 50%;
       transform: translateX(-50%);
       bottom: 14px;
-      width: min(900px, calc(100vw - 20px));
+      width: min(980px, calc(100vw - 20px));
       z-index: 22;
       background: var(--ui-bg);
       border: 1px solid var(--ui-border);
@@ -110,27 +110,11 @@
       color: #f9e8b8;
     }
 
-    #loader {
-      margin-top: 8px;
-      display: none;
-      gap: 6px;
-      align-items: center;
-    }
-
-    #loaderTrack {
-      flex: 1;
-      height: 10px;
-      border-radius: 999px;
-      overflow: hidden;
-      border: 1px solid var(--ui-border);
-      background: rgba(0,0,0,0.25);
-    }
-
-    #loaderFill {
-      width: 0%;
-      height: 100%;
-      background: linear-gradient(90deg, #ffbe55, #ff5a5a);
-      transition: width 0.1s linear;
+    .hint {
+      margin-top: 6px;
+      font: 600 12px/1.3 system-ui, sans-serif;
+      opacity: 0.9;
+      color: #ffe7aa;
     }
 
     .result {
@@ -154,6 +138,59 @@
       font-family: system-ui, sans-serif;
     }
 
+    #inventoryPanel {
+      position: fixed;
+      right: 14px;
+      top: 74px;
+      width: min(370px, calc(100vw - 24px));
+      max-height: min(72vh, 580px);
+      overflow: auto;
+      z-index: 30;
+      background: rgba(18, 14, 10, 0.92);
+      border: 1px solid var(--ui-border);
+      border-radius: 14px;
+      padding: 10px;
+      display: none;
+      color: var(--text);
+      font-family: system-ui, sans-serif;
+    }
+
+    #inventoryPanel.open { display: block; }
+
+    .panel-title {
+      font: 900 14px/1.2 system-ui, sans-serif;
+      margin: 4px 2px 10px;
+    }
+
+    .inv-section {
+      margin-bottom: 12px;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 8px;
+      background: rgba(255,255,255,0.03);
+    }
+
+    .item-chip {
+      width: 100%;
+      text-align: left;
+      margin-bottom: 6px;
+      min-width: 0;
+      padding: 9px 10px;
+      font: 700 13px/1.25 system-ui, sans-serif;
+    }
+
+    .item-chip.selected {
+      border-color: #ffcc5a;
+      box-shadow: inset 0 0 0 1px rgba(255, 204, 90, 0.55);
+      background: rgba(255, 204, 90, 0.15);
+    }
+
+    .muted {
+      font: 600 12px/1.3 system-ui, sans-serif;
+      opacity: 0.85;
+      margin-top: 4px;
+    }
+
     #pokeballTransition {
       position: fixed;
       inset: 0;
@@ -169,7 +206,7 @@
       left: -12vw;
       right: -12vw;
       height: 58vh;
-      transition: transform 0.36s cubic-bezier(.2,.85,.2,1);
+      transition: transform 0.45s cubic-bezier(.2,.85,.2,1);
       filter: drop-shadow(0 18px 40px rgba(0,0,0,.5));
     }
 
@@ -178,7 +215,7 @@
       transform: translateY(-120%);
       border-bottom-left-radius: 999px;
       border-bottom-right-radius: 999px;
-      background: linear-gradient(180deg, #ff7878, #d81010 65%);
+      background: linear-gradient(180deg, #ff7979, #cd0808 68%);
     }
 
     .bottom-half {
@@ -186,7 +223,7 @@
       transform: translateY(120%);
       border-top-left-radius: 999px;
       border-top-right-radius: 999px;
-      background: linear-gradient(0deg, #ffffff, #e4e4e4 70%);
+      background: linear-gradient(0deg, #ffffff, #ececec 70%);
     }
 
     .belt {
@@ -197,8 +234,8 @@
       height: 9vh;
       transform: translateY(-50%) scaleX(0);
       transform-origin: center;
-      background: #161616;
-      transition: transform 0.2s ease;
+      background: #151515;
+      transition: transform 0.25s ease;
     }
 
     #pokeballTransition.closed .top-half,
@@ -216,29 +253,36 @@
   </div>
 
   <div class="hud">
-    <div class="chip">Локация: <b>Пустыня Сиен</b></div>
-    <div class="chip">Покемон: <b id="enemyName">Sandslash</b></div>
+    <div class="chip">Цель: <b id="enemyName">Sandslash</b></div>
     <div class="chip">HP цели: <b id="enemyHp">100</b>%</div>
-    <div class="chip">Результат броска: <b id="captureChance">0</b>%</div>
+    <div class="chip">Ветер: <b id="windValue">0.0</b> м/с</div>
+    <div class="chip">Шанс: <b id="captureChance">0</b>%</div>
+    <div class="chip">Покебол: <b id="activeBallLabel">Poke Ball</b></div>
   </div>
 
   <div class="controls">
     <div class="controls-grid">
       <div class="slider-wrap">
-        <div class="label">Радиус прицеливания: <span id="radiusValue" class="value">160</span> px</div>
-        <input id="radiusSlider" type="range" min="80" max="260" step="5" value="160">
+        <div class="label">Радиус прицеливания: <span id="radiusValue" class="value">140</span> px</div>
+        <input id="radiusSlider" type="range" min="90" max="240" step="5" value="140">
       </div>
-      <button id="weakenBtn">Ослабить цель</button>
-      <button id="throwBtn">Кинуть покебол</button>
+      <button id="weakenBtn">Атаковать цель</button>
+      <button id="inventoryBtn">Инвентарь</button>
     </div>
+    <div class="status" id="status">Открой инвентарь, выбери покебол и натяни пальцем по экрану для броска.</div>
+    <div class="hint">Подсказка: сила броска зависит от длины натяжения, а ветер уводит траекторию вбок.</div>
+  </div>
 
-    <div id="loader">
-      <span style="font:700 12px system-ui;">Загрузка скриптов ловли…</span>
-      <div id="loaderTrack"><div id="loaderFill"></div></div>
-      <span id="loaderPct" style="font:700 12px system-ui; width:40px; text-align:right;">0%</span>
+  <div id="inventoryPanel">
+    <div class="panel-title">Инвентарь тренера</div>
+    <div class="inv-section">
+      <div class="label">Защита (в инвентаре)</div>
+      <button class="item-chip selected" id="defenseItem" type="button">Protective Guard Vest — снижает ответный урон на 25%</button>
+      <div class="muted">Защита пассивно работает во время боя.</div>
     </div>
-
-    <div class="status" id="status">Подготовься к броску. Чем больше радиус — тем легче попасть.</div>
+    <div class="inv-section" id="ballsSection">
+      <div class="label">Покеболы (выбери один)</div>
+    </div>
   </div>
 
   <div id="pokeballTransition" aria-hidden="true">
@@ -257,8 +301,19 @@
 
 <script>
 (() => {
-  const pokemonPool = ["Sandslash", "Cubone", "Trapinch", "Hippopotas", "Sandshrew", "Numel"];
+  const pokemonPool = ["Sandslash", "Cubone", "Trapinch", "Hippopotas", "Sandshrew", "Numel", "Gible", "Rhyhorn"];
   const spriteBase = "https://play.pokemonshowdown.com/sprites/ani/";
+
+  const balls = [
+    { key: "poke", name: "Poke Ball", bonus: 1.0, base: 25, aimAssist: 0.92 },
+    { key: "great", name: "Great Ball", bonus: 1.35, base: 34, aimAssist: 1.05 },
+    { key: "ultra", name: "Ultra Ball", bonus: 1.75, base: 43, aimAssist: 1.12 },
+    { key: "dusk", name: "Dusk Ball", bonus: 1.55, base: 39, aimAssist: 1.08 },
+    { key: "quick", name: "Quick Ball", bonus: 1.45, base: 36, aimAssist: 1.2 },
+    { key: "timer", name: "Timer Ball", bonus: 1.7, base: 42, aimAssist: 1.0 },
+    { key: "net", name: "Net Ball", bonus: 1.3, base: 33, aimAssist: 1.14 },
+    { key: "master", name: "Master Ball", bonus: 999, base: 100, aimAssist: 1.5, guaranteed: true }
+  ];
 
   const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
@@ -269,13 +324,13 @@
   const captureChanceEl = document.getElementById("captureChance");
   const radiusSlider = document.getElementById("radiusSlider");
   const radiusValue = document.getElementById("radiusValue");
-  const throwBtn = document.getElementById("throwBtn");
+  const inventoryBtn = document.getElementById("inventoryBtn");
+  const inventoryPanel = document.getElementById("inventoryPanel");
+  const ballsSection = document.getElementById("ballsSection");
   const weakenBtn = document.getElementById("weakenBtn");
   const statusEl = document.getElementById("status");
-
-  const loader = document.getElementById("loader");
-  const loaderFill = document.getElementById("loaderFill");
-  const loaderPct = document.getElementById("loaderPct");
+  const windValueEl = document.getElementById("windValue");
+  const activeBallLabel = document.getElementById("activeBallLabel");
 
   const transition = document.getElementById("pokeballTransition");
   const result = document.getElementById("result");
@@ -288,9 +343,12 @@
   let dpr = 1;
   let radius = Number(radiusSlider.value);
   let enemyHp = 100;
-  let runningThrow = false;
-  let rngSeed = Math.random() * 9999;
-  let activeBall = null;
+  let throwInFlight = false;
+  let enemyHidden = false;
+  let enemyDefense = 0;
+  let wind = 0;
+  let pokeballSpin = 0;
+  let selectedBall = balls[0];
 
   const state = {
     enemyX: 0,
@@ -300,8 +358,15 @@
     ballY: 0,
     ballVX: 0,
     ballVY: 0,
-    ballR: 16,
-    trail: []
+    ballR: 15,
+    trail: [],
+    dragging: false,
+    dragStartX: 0,
+    dragStartY: 0,
+    dragX: 0,
+    dragY: 0,
+    shakes: 0,
+    throwCount: 0
   };
 
   function resize() {
@@ -315,7 +380,10 @@
     state.enemyY = h * 0.58;
   }
 
-  function noise(t) { return Math.sin(t) * 0.5 + Math.sin(t * 0.7 + 12.2) * 0.3 + Math.sin(t * 1.31 + 4.6) * 0.2; }
+  function randomWind() {
+    wind = (Math.random() * 3.6 - 1.8);
+    windValueEl.textContent = wind.toFixed(1);
+  }
 
   function drawBackground(t) {
     const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.72);
@@ -325,11 +393,11 @@
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, w, h);
 
-    for (let i = 0; i < 4; i++) {
-      const y = h * (0.28 + i * 0.11);
-      const alpha = 0.09 - i * 0.015;
+    for (let i = 0; i < 5; i++) {
+      const y = h * (0.26 + i * 0.1);
+      const alpha = 0.09 - i * 0.014;
       ctx.fillStyle = `rgba(255,240,210,${Math.max(alpha, 0.02)})`;
-      ctx.fillRect(0, y, w, 20 + i * 4);
+      ctx.fillRect(0, y, w, 22 + i * 4);
     }
 
     const dune1 = ctx.createLinearGradient(0, h * 0.46, 0, h);
@@ -354,6 +422,10 @@
     }
     ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
     ctx.fill();
+
+    ctx.fillStyle = "rgba(255,255,255,0.32)";
+    ctx.font = "700 14px system-ui, sans-serif";
+    ctx.fillText(`Ветер ${wind > 0 ? "→" : "←"} ${Math.abs(wind).toFixed(1)} м/с`, 16, h - 22);
   }
 
   function drawReticle() {
@@ -366,36 +438,29 @@
     ctx.setLineDash([8, 10]);
     ctx.strokeStyle = "rgba(255, 226, 155, 0.8)";
     ctx.beginPath();
-    ctx.arc(state.enemyX, state.enemyY, radius * 0.5, 0, Math.PI * 2);
+    ctx.arc(state.enemyX, state.enemyY, radius * 0.54, 0, Math.PI * 2);
     ctx.stroke();
     ctx.setLineDash([]);
   }
 
-  function drawBall() {
-    if (!activeBall) return;
-    for (const p of state.trail) {
-      ctx.fillStyle = `rgba(255,245,220,${p.a})`;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    const x = state.ballX;
-    const y = state.ballY;
+  function drawBallShape(x, y, r, typeName) {
     ctx.save();
     ctx.translate(x, y);
+    ctx.rotate(pokeballSpin);
+
+    const topColor = typeName === "Master Ball" ? "#7d4cff" : "#da1919";
     ctx.fillStyle = "#ffffff";
     ctx.beginPath();
-    ctx.arc(0, 0, state.ballR, 0, Math.PI * 2);
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = "#da1919";
+    ctx.fillStyle = topColor;
     ctx.beginPath();
-    ctx.arc(0, 0, state.ballR, Math.PI, Math.PI * 2);
+    ctx.arc(0, 0, r, Math.PI, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = "#151515";
-    ctx.fillRect(-state.ballR, -2, state.ballR * 2, 4);
+    ctx.fillStyle = "#141414";
+    ctx.fillRect(-r, -2, r * 2, 4);
     ctx.beginPath();
     ctx.arc(0, 0, 6, 0, Math.PI * 2);
     ctx.fillStyle = "#f8f8f8";
@@ -403,36 +468,92 @@
     ctx.strokeStyle = "#151515";
     ctx.lineWidth = 3;
     ctx.stroke();
+
+    if (typeName === "Master Ball") {
+      ctx.fillStyle = "#ff7df7";
+      ctx.beginPath();
+      ctx.arc(-7, -7, 3, 0, Math.PI * 2);
+      ctx.arc(7, -7, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.restore();
   }
 
+  function drawBallAndDrag() {
+    for (const p of state.trail) {
+      ctx.fillStyle = `rgba(255,245,220,${p.a})`;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (throwInFlight) {
+      drawBallShape(state.ballX, state.ballY, state.ballR, selectedBall.name);
+      return;
+    }
+
+    const startX = w * 0.2;
+    const startY = h * 0.72;
+    drawBallShape(startX, startY, state.ballR, selectedBall.name);
+
+    if (state.dragging) {
+      ctx.strokeStyle = "rgba(255,255,255,0.7)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(state.dragX, state.dragY);
+      ctx.stroke();
+
+      const pull = Math.min(230, Math.hypot(state.dragX - startX, state.dragY - startY));
+      ctx.fillStyle = "rgba(255,240,190,0.9)";
+      ctx.font = "700 12px system-ui";
+      ctx.fillText(`Сила броска: ${Math.round((pull / 230) * 100)}%`, startX - 56, startY - 28);
+    }
+  }
+
   function computeChance(distance) {
-    const radiusFactor = Math.min(1, Math.max(0.25, radius / 200));
+    if (selectedBall.guaranteed) return 100;
+    const radiusFactor = Math.max(0.55, Math.min(1.25, radius / 170)) * selectedBall.aimAssist;
     const hitFactor = Math.max(0, 1 - distance / radius);
-    const hpFactor = Math.max(0.25, (100 - enemyHp) / 100 + 0.25);
-    const chance = Math.min(95, Math.round(100 * (hitFactor * 0.6 + radiusFactor * 0.15 + hpFactor * 0.25)));
-    return chance;
+    const hpFactor = Math.max(0.28, (100 - enemyHp) / 100 + 0.24);
+    const timerFactor = Math.min(1.2, 0.8 + state.throwCount * 0.07);
+
+    const raw = (selectedBall.base * hitFactor * 0.5 + 42 * hpFactor * 0.34 + 24 * radiusFactor * 0.16) * selectedBall.bonus * timerFactor;
+    return Math.min(96, Math.max(4, Math.round(raw / 2.15)));
   }
 
   function setEnemy(name) {
     enemyNameEl.textContent = name;
     enemySprite.src = `${spriteBase}${name.toLowerCase()}.gif`;
+    enemySprite.style.opacity = "1";
+    enemyHidden = false;
     enemyHp = 100;
+    state.throwCount = 0;
     enemyHpEl.textContent = enemyHp;
     captureChanceEl.textContent = "0";
-    statusEl.textContent = "Новый враг появился. Ослабь цель и настрой радиус для точного броска.";
+    randomWind();
+    statusEl.textContent = "Цель обнаружена. Атакуй, выбери покебол и сделай натягивающий бросок пальцем.";
   }
 
-  async function scriptLoading() {
-    loader.style.display = "flex";
-    loaderFill.style.width = "0%";
-    loaderPct.textContent = "0%";
-    for (let p = 0; p <= 100; p += 10) {
-      loaderFill.style.width = `${p}%`;
-      loaderPct.textContent = `${p}%`;
-      await new Promise(r => setTimeout(r, 40));
-    }
-    loader.style.display = "none";
+  function renderBallsInventory() {
+    balls.forEach((ball) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = `item-chip${ball.key === selectedBall.key ? " selected" : ""}`;
+      btn.textContent = `${ball.name} — шанс ${ball.guaranteed ? "100%" : `~${ball.base}%`}, прицел x${ball.aimAssist.toFixed(2)}`;
+      btn.addEventListener("click", () => {
+        selectedBall = ball;
+        activeBallLabel.textContent = ball.name;
+        [...ballsSection.querySelectorAll(".item-chip")].forEach((x) => x.classList.remove("selected"));
+        btn.classList.add("selected");
+        statusEl.textContent = `${ball.name} выбран. Натяни покебол пальцем и отпусти для броска.`;
+      });
+      ballsSection.appendChild(btn);
+    });
+  }
+
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   function openTransition() {
@@ -442,110 +563,200 @@
 
   function closeTransition() {
     transition.classList.remove("closed");
-    setTimeout(() => transition.classList.remove("active"), 400);
+    setTimeout(() => transition.classList.remove("active"), 460);
   }
 
-  async function throwBall() {
-    if (runningThrow) return;
-    runningThrow = true;
-    throwBtn.disabled = true;
-    weakenBtn.disabled = true;
+  async function shakeBall(times = 3) {
+    const baseX = state.ballX;
+    for (let i = 0; i < times; i++) {
+      await sleep(120);
+      state.ballX = baseX - 6;
+      await sleep(110);
+      state.ballX = baseX + 6;
+      await sleep(110);
+      state.ballX = baseX;
+    }
+    state.shakes = times;
+  }
 
-    await scriptLoading();
-    openTransition();
+  async function releaseEnemyFromBall() {
+    for (let i = 0; i < 12; i++) {
+      enemySprite.style.opacity = `${(i + 1) / 12}`;
+      await sleep(25);
+    }
+    enemyHidden = false;
+  }
+
+  function hideEnemy() {
+    enemySprite.style.opacity = "0";
+    enemyHidden = true;
+  }
+
+  async function executeThrow(launchVX, launchVY) {
+    if (throwInFlight) return;
+    throwInFlight = true;
+    weakenBtn.disabled = true;
+    inventoryBtn.disabled = true;
 
     state.ballX = w * 0.2;
     state.ballY = h * 0.72;
-    const dx = state.enemyX - state.ballX;
-    const dy = state.enemyY - state.ballY;
-
-    const spread = (260 - radius) * 0.09;
-    const sway = noise(rngSeed += 0.6) * spread;
-    state.ballVX = dx * 0.04 + sway;
-    state.ballVY = dy * 0.04 - 7;
+    state.ballVX = launchVX;
+    state.ballVY = launchVY;
     state.trail = [];
+    state.throwCount += 1;
+    const gravity = 0.24;
 
-    activeBall = true;
-    const gravity = 0.23;
+    statusEl.textContent = `Бросок ${selectedBall.name}: учитывай ветер ${wind.toFixed(1)} м/с.`;
 
-    let hit = false;
-    for (let frame = 0; frame < 110; frame++) {
+    let landed = false;
+    for (let frame = 0; frame < 160; frame++) {
       state.ballX += state.ballVX;
       state.ballY += state.ballVY;
       state.ballVY += gravity;
-      state.ballVX *= 0.993;
+      state.ballVX += wind * 0.0045;
+      state.ballVX *= 0.995;
+      pokeballSpin += 0.23;
 
-      if (state.trail.length > 22) state.trail.shift();
-      state.trail.push({ x: state.ballX, y: state.ballY, r: 2 + Math.random() * 2, a: 0.12 + Math.random() * 0.22 });
+      if (state.trail.length > 28) state.trail.shift();
+      state.trail.push({ x: state.ballX, y: state.ballY, r: 1.8 + Math.random() * 2.4, a: 0.11 + Math.random() * 0.24 });
 
-      const d = Math.hypot(state.ballX - state.enemyX, state.ballY - state.enemyY);
-      if (d < radius * 0.48) {
-        hit = true;
-        const chance = computeChance(d);
-        captureChanceEl.textContent = chance;
-        const success = Math.random() * 100 < chance;
-        await new Promise(r => setTimeout(r, 200));
-        activeBall = false;
-        closeTransition();
-        await new Promise(r => setTimeout(r, 250));
-        showResult(success, chance);
+      const distance = Math.hypot(state.ballX - state.enemyX, state.ballY - state.enemyY);
+      if (!enemyHidden && distance < Math.max(30, radius * 0.42)) {
+        landed = true;
+        openTransition();
+        hideEnemy();
+        captureChanceEl.textContent = computeChance(distance);
+        await sleep(220);
+        state.ballX = state.enemyX;
+        state.ballY = state.enemyY;
+        await shakeBall(3);
+
+        const chance = computeChance(distance);
+        const success = selectedBall.guaranteed || Math.random() * 100 < chance;
+        if (success) {
+          await sleep(180);
+          closeTransition();
+          await sleep(260);
+          showResult(true, chance);
+        } else {
+          closeTransition();
+          await sleep(300);
+          await releaseEnemyFromBall();
+          statusEl.textContent = `${enemyNameEl.textContent} вырвался. Попробуй другой покебол или ослабь цель.`;
+          captureChanceEl.textContent = chance;
+        }
         break;
       }
 
-      if (state.ballY > h + 40) break;
-      await new Promise(r => requestAnimationFrame(r));
+      if (state.ballY > h + 30 || state.ballX > w + 30 || state.ballX < -30) {
+        break;
+      }
+      await new Promise((resolve) => requestAnimationFrame(resolve));
     }
 
-    if (!hit) {
-      activeBall = false;
-      closeTransition();
-      statusEl.textContent = "Промах! Увеличь радиус или ослабь цель сильнее.";
+    if (!landed) {
       captureChanceEl.textContent = "0";
+      statusEl.textContent = "Промах. Подстрой угол и силу натяжения, учитывая ветер.";
     }
 
-    runningThrow = false;
-    throwBtn.disabled = false;
+    throwInFlight = false;
     weakenBtn.disabled = false;
+    inventoryBtn.disabled = false;
+    state.trail = [];
   }
 
   function showResult(success, chance) {
     result.style.display = "flex";
     if (success) {
-      resultTitle.textContent = "Поймано!";
+      resultTitle.textContent = "Pokemon пойман!";
       resultTitle.style.color = "var(--ok)";
-      resultText.textContent = `Ты поймал ${enemyNameEl.textContent} с шансом ${chance}%. Отличный бросок!`;
-      statusEl.textContent = "Успех! Можно запускать новый раунд.";
+      resultText.textContent = `${enemyNameEl.textContent} пойман с шансом ${chance}%. Готов к следующему противнику.`;
+      statusEl.textContent = "Успех! Нажми «Новый противник», чтобы продолжить охоту.";
     } else {
       resultTitle.textContent = "Вырвался!";
       resultTitle.style.color = "var(--danger)";
-      resultText.textContent = `${enemyNameEl.textContent} вырвался. Попробуй снова: уменьшай HP и корректируй радиус.`;
-      statusEl.textContent = "Неудача. Проанализируй радиус и бросай ещё раз.";
+      resultText.textContent = `${enemyNameEl.textContent} вырвался. Продолжай бой и бросай снова.`;
+      statusEl.textContent = "Неудача. Улучши бросок и попробуй ещё раз.";
     }
+  }
+
+  function getPointerPos(ev) {
+    const rect = canvas.getBoundingClientRect();
+    return { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
+  }
+
+  function pointerDown(ev) {
+    if (throwInFlight || result.style.display === "flex") return;
+    const p = getPointerPos(ev);
+    const startX = w * 0.2;
+    const startY = h * 0.72;
+    const nearBall = Math.hypot(p.x - startX, p.y - startY) < 60;
+    if (!nearBall) return;
+
+    state.dragging = true;
+    state.dragStartX = startX;
+    state.dragStartY = startY;
+    state.dragX = p.x;
+    state.dragY = p.y;
+    canvas.setPointerCapture(ev.pointerId);
+  }
+
+  function pointerMove(ev) {
+    if (!state.dragging) return;
+    const p = getPointerPos(ev);
+    state.dragX = p.x;
+    state.dragY = p.y;
+  }
+
+  function pointerUp(ev) {
+    if (!state.dragging) return;
+    const p = getPointerPos(ev);
+    state.dragging = false;
+
+    const dx = state.dragStartX - p.x;
+    const dy = state.dragStartY - p.y;
+    const pull = Math.min(240, Math.hypot(dx, dy));
+    if (pull < 24) {
+      statusEl.textContent = "Слишком слабое натяжение. Потяни сильнее и отпусти.";
+      return;
+    }
+
+    const power = pull / 18;
+    const launchVX = (dx / (pull || 1)) * power * 1.18;
+    const launchVY = (dy / (pull || 1)) * power * 1.05 - 1.8;
+    executeThrow(launchVX, launchVY);
   }
 
   function tick(ts) {
     drawBackground(ts);
     drawReticle();
-    drawBall();
+    drawBallAndDrag();
 
     const bob = Math.sin(ts * 0.003) * 4;
-    enemySprite.style.transform = `scaleX(-1) translateY(${bob}px)`;
+    const dodge = enemyDefense > 0 ? Math.sin(ts * 0.006) * 5 : 0;
+    enemySprite.style.transform = `scaleX(-1) translate(${dodge}px, ${bob}px)`;
+
     requestAnimationFrame(tick);
   }
 
   radiusSlider.addEventListener("input", () => {
     radius = Number(radiusSlider.value);
     radiusValue.textContent = radius;
-    statusEl.textContent = `Радиус ${radius}px установлен. ${radius > 200 ? "Бросок стабильнее." : "Выше риск промаха, но награда больше."}`;
+    statusEl.textContent = `Радиус ${radius}px. Чем меньше радиус, тем выше точность и сложнее попадание.`;
   });
 
   weakenBtn.addEventListener("click", () => {
-    enemyHp = Math.max(5, enemyHp - 15);
+    const baseDamage = 18;
+    const mitigated = Math.round(baseDamage * 0.25);
+    enemyDefense = 25;
+    enemyHp = Math.max(5, enemyHp - (baseDamage - mitigated));
     enemyHpEl.textContent = enemyHp;
-    statusEl.textContent = `Цель ослаблена. HP противника: ${enemyHp}%.`;
+    statusEl.textContent = `Ты атаковал цель. Защита в инвентаре снизила ответный урон, HP цели: ${enemyHp}%.`;
   });
 
-  throwBtn.addEventListener("click", throwBall);
+  inventoryBtn.addEventListener("click", () => {
+    inventoryPanel.classList.toggle("open");
+  });
 
   restartBtn.addEventListener("click", () => {
     result.style.display = "none";
@@ -553,8 +764,14 @@
     setEnemy(next);
   });
 
+  canvas.addEventListener("pointerdown", pointerDown);
+  canvas.addEventListener("pointermove", pointerMove);
+  canvas.addEventListener("pointerup", pointerUp);
+  canvas.addEventListener("pointercancel", pointerUp);
+
   window.addEventListener("resize", resize);
   resize();
+  renderBallsInventory();
   setEnemy(pokemonPool[0]);
   requestAnimationFrame(tick);
 })();
