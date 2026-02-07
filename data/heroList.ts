@@ -87,7 +87,7 @@ export const heroList: HeroData[] = [
       { name: 'Arc Lightning', cooldown: 1.6 },
       { name: 'Lightning Bolt', cooldown: 6 },
       { name: 'Heavenly Jump', cooldown: 20 },
-      { name: 'Thundergod\'s Wrath', cooldown: 120 },
+      { name: "Thundergod's Wrath", cooldown: 120 },
     ],
     image: `${HERO_IMAGE_BASE_URL}/zuus.png`,
     render: `${HERO_RENDER_BASE_URL}/zuus.png`,
@@ -131,7 +131,7 @@ export const heroList: HeroData[] = [
     abilities: [
       { name: 'Sprout', cooldown: 11 },
       { name: 'Teleportation', cooldown: 45 },
-      { name: 'Nature\'s Call', cooldown: 35 },
+      { name: "Nature's Call", cooldown: 35 },
       { name: 'Wrath of Nature', cooldown: 90 },
     ],
     image: `${HERO_IMAGE_BASE_URL}/nature_prophet.png`,
@@ -219,7 +219,7 @@ export const heroList: HeroData[] = [
     attackType: 'Melee',
     stats: { damage: 60, armor: 4, speed: 285, baseStr: 25, baseAgi: 15, baseInt: 20 },
     abilities: [
-      { name: 'Nature\'s Grasp', cooldown: 20 },
+      { name: "Nature's Grasp", cooldown: 20 },
       { name: 'Leech Seed', cooldown: 18 },
       { name: 'Living Armor', cooldown: 20 },
       { name: 'Overgrowth', cooldown: 100 },
@@ -234,7 +234,7 @@ export const heroList: HeroData[] = [
     attackType: 'Melee',
     stats: { damage: 62, armor: 6, speed: 310, baseStr: 25, baseAgi: 20, baseInt: 18 },
     abilities: [
-      { name: 'Berserker\'s Call', cooldown: 16 },
+      { name: "Berserker's Call", cooldown: 16 },
       { name: 'Battle Hunger', cooldown: 5 },
       { name: 'Counter Helix', cooldown: 0 },
       { name: 'Culling Blade', cooldown: 75 },

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { heroList, HeroData } from '../../data/heroList';
 import { Search } from 'lucide-react';
+import { heroList, HeroData } from '../../data/heroList';
 
 interface HeroSelectionScreenProps {
   onLockIn: (hero: HeroData) => void;
@@ -10,10 +10,54 @@ type TeamSlot = HeroData | null;
 
 type AttributeFilter = 'all' | 'str' | 'agi' | 'int';
 
+type Role = 'carry' | 'support' | 'mid' | 'offlane' | 'roamer';
+
 const RADIANT_SLOTS = 5;
 const DIRE_SLOTS = 5;
 
-const roleKeywords = ['carry', 'support', 'mid', 'offlane', 'roamer'];
+const heroRoles: Record<string, Role[]> = {
+  antimage: ['carry'],
+  nevermore: ['carry', 'mid'],
+  windrunner: ['support', 'mid'],
+  zuus: ['mid', 'support'],
+  queenofpain: ['mid', 'carry'],
+  wraith_king: ['carry'],
+  nature_prophet: ['offlane', 'support'],
+  rattletrap: ['roamer', 'offlane'],
+  doom_bringer: ['offlane', 'carry'],
+  shredder: ['offlane'],
+  magnataur: ['offlane', 'support'],
+  centaur: ['offlane'],
+  treant: ['support'],
+  axe: ['offlane'],
+  pudge: ['roamer', 'support'],
+  juggernaut: ['carry'],
+  crystal_maiden: ['support'],
+  sniper: ['carry', 'mid'],
+  earthshaker: ['support', 'roamer'],
+};
+
+const heroLore: Record<string, string> = {
+  antimage: 'A relentless hunter who hates the arcane and punishes those who wield it.',
+  nevermore: 'A collector of souls who razes his enemies with torrents of shadow.',
+  windrunner: 'A swift ranger whose arrows strike with hurricane force.',
+  zuus: 'The lord of the heavens who brings thunder to the battlefield.',
+  queenofpain: 'A sadistic assassin whose screams rip through her prey.',
+  wraith_king: 'A monarch returned from death to lead his undead dominion.',
+  nature_prophet: 'A guardian of the wilds who bends nature to his command.',
+  rattletrap: 'A mechanized menace that locks enemies in deadly contraptions.',
+  doom_bringer: 'A devourer of worlds who condemns the living to eternal torment.',
+  shredder: 'A saw-wielding inventor who shreds trees and foes alike.',
+  magnataur: 'A mighty warlord who controls the battlefield with brutal force.',
+  centaur: 'A hardened warrior who tramples the weak beneath his hooves.',
+  treant: 'The ancient forest guardian who shields allies with living armor.',
+  axe: 'A ruthless general who thrives in the heart of battle.',
+  pudge: 'A butcher who drags his prey into a gruesome end.',
+  juggernaut: 'A masked swordsman who spins through foes in a deadly dance.',
+  crystal_maiden: 'A frost sorceress who freezes the battlefield with icy magic.',
+  sniper: 'A marksman who strikes from afar with deadly precision.',
+  earthshaker: 'A geomancer who splits the earth with seismic fury.',
+};
 
 const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) => {
   const [selectedHero, setSelectedHero] = useState<HeroData | null>(null);
@@ -43,7 +87,8 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
       if (!matchesAttribute) return false;
       if (!search) return true;
       const inName = hero.name.toLowerCase().includes(search) || hero.id.toLowerCase().includes(search);
-      const inRole = roleKeywords.some((role) => search.includes(role));
+      const roles = heroRoles[hero.id] ?? [];
+      const inRole = roles.some((role) => role.includes(search));
       return inName || inRole;
     });
   }, [attributeFilter, searchTerm]);
@@ -112,6 +157,8 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
   };
 
   const heroPreview = selectedHero ?? heroList[0];
+  const previewLore = heroLore[heroPreview.id] ??
+    `A legend forged in the eternal battlefield, ${heroPreview.name} answers the call of the Ancients.`;
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-[#0f1012] text-white">
@@ -129,7 +176,9 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
                 {slot ? (
                   <img src={slot.image} alt={slot.name} className="h-full w-full object-cover grayscale" />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-[10px] text-[#4a4f57]">{index + 1}</div>
+                  <div className="flex h-full w-full items-center justify-center text-[10px] text-[#4a4f57]">
+                    {index + 1}
+                  </div>
                 )}
               </div>
             ))}
@@ -152,7 +201,9 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
                 {slot ? (
                   <img src={slot.image} alt={slot.name} className="h-full w-full object-cover grayscale" />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-[10px] text-[#4a4f57]">{index + 1}</div>
+                  <div className="flex h-full w-full items-center justify-center text-[10px] text-[#4a4f57]">
+                    {index + 1}
+                  </div>
                 )}
               </div>
             ))}
@@ -283,9 +334,7 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
             />
           </div>
 
-          <p className="text-sm italic text-[#b7bbc2]">
-            A legend forged in the eternal battlefield, {heroPreview.name} answers the call of the Ancients.
-          </p>
+          <p className="text-sm italic text-[#b7bbc2]">{previewLore}</p>
 
           <div className="grid grid-cols-3 gap-3 text-xs uppercase tracking-[0.2em] text-[#9aa0a8]">
             <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-3 py-2">
