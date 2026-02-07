@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Питомцы — поиск и шансы пола</title>
+  <title>Dota 2 — выбор героев</title>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <style>
     body{margin:0;background:#0f1115;padding:12px}
@@ -64,8 +64,9 @@
       overflow:hidden;
       display:flex;
     }
-    .genderMale{background:linear-gradient(90deg,#43b2ff,#2d8fe9);height:100%}
-    .genderFemale{background:linear-gradient(90deg,#ff80bf,#f05ca6);height:100%}
+    .genderMale{background:linear-gradient(90deg,#c0504d,#b23b39);height:100%}
+    .genderFemale{background:linear-gradient(90deg,#53b56a,#3a9f54);height:100%}
+    .genderInt{background:linear-gradient(90deg,#5f7bd7,#3f5cc2);height:100%}
 
     .pdxWrap input[type="radio"]{ position:absolute; opacity:0; pointer-events:none; }
     .pdxScreen{
@@ -138,17 +139,18 @@
 <div class="pdxWrap">
     <div class="pdxGlobalTop">
       <div class="pdxSearchRow">
-        <input id="petSearchInput" type="text" placeholder="Поиск по имени или ID">
+        <input id="petSearchInput" type="text" placeholder="Поиск по имени или ID героя">
         <button id="petSearchBtn" class="pdxSearchBtn">Найти</button>
       </div>
       <div class="pdxGenderCard">
         <div class="genderTop">
-          <span>Частота появления в мире</span>
-          <span id="genderSummary">М: 50% / Ж: 50%</span>
+          <span>Распределение атрибутов</span>
+          <span id="genderSummary">STR: 34% / AGI: 33% / INT: 33%</span>
         </div>
         <div class="genderBar">
-          <div id="genderMaleBar" class="genderMale" style="width:50%"></div>
-          <div id="genderFemaleBar" class="genderFemale" style="width:50%"></div>
+          <div id="genderMaleBar" class="genderMale" style="width:34%"></div>
+          <div id="genderFemaleBar" class="genderFemale" style="width:33%"></div>
+          <div id="genderIntBar" class="genderInt" style="width:33%"></div>
         </div>
       </div>
     </div>
@@ -156,87 +158,285 @@
 </div>
 
 <script>
+    const HERO_IMAGE_BASE_URL = 'https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes';
+    const HERO_RENDER_BASE_URL = 'https://cdn.cloudflare.steamstatic.com/apps/dota2/videos/dota_react/heroes/renders';
+
     // Фоллбек-данные, если внешний массив не подключён
     if (typeof window.data_13147 === 'undefined') {
       window.data_13147 = [
-        {id:"1",name:"Феникс",description:"Огненный питомец.",hp:"28",atk:"34",def:"19",spd:"22",baz_skill:"1",baz_abill:"2",male_rate:"55",female_rate:"45"},
-        {id:"2",name:"Нимфа",description:"Лесной дух.",hp:"24",atk:"19",def:"23",spd:"31",baz_skill:"2",baz_abill:"8",male_rate:"30",female_rate:"70"}
+        {
+          id: 'antimage',
+          name: 'Anti-Mage',
+          attribute: 'agi',
+          attackType: 'Melee',
+          description: 'Быстрый охотник на магов, уничтожающий ману противников.',
+          stats: { damage: 56, armor: 4, speed: 310, baseStr: 21, baseAgi: 24, baseInt: 12 },
+          abilities: [
+            { name: 'Mana Break', cooldown: 0 },
+            { name: 'Blink', cooldown: 12 },
+            { name: 'Counterspell', cooldown: 15 },
+            { name: 'Mana Void', cooldown: 70 }
+          ],
+          image: `${HERO_IMAGE_BASE_URL}/antimage.png`,
+          render: `${HERO_RENDER_BASE_URL}/antimage.png`
+        },
+        {
+          id: 'nevermore',
+          name: 'Shadow Fiend',
+          attribute: 'agi',
+          attackType: 'Ranged',
+          description: 'Собиратель душ, наносящий огромный урон залпами теней.',
+          stats: { damage: 57, armor: 4, speed: 305, baseStr: 19, baseAgi: 25, baseInt: 18 },
+          abilities: [
+            { name: 'Shadowraze', cooldown: 10 },
+            { name: 'Necromastery', cooldown: 0 },
+            { name: 'Presence of the Dark Lord', cooldown: 0 },
+            { name: 'Requiem of Souls', cooldown: 120 }
+          ],
+          image: `${HERO_IMAGE_BASE_URL}/nevermore.png`,
+          render: `${HERO_RENDER_BASE_URL}/nevermore.png`
+        },
+        {
+          id: 'windrunner',
+          name: 'Windranger',
+          attribute: 'agi',
+          attackType: 'Ranged',
+          description: 'Меткая стрелок, контролирующая врагов шквалом стрел.',
+          stats: { damage: 52, armor: 3, speed: 295, baseStr: 18, baseAgi: 17, baseInt: 20 },
+          abilities: [
+            { name: 'Shackleshot', cooldown: 12 },
+            { name: 'Powershot', cooldown: 9 },
+            { name: 'Windrun', cooldown: 15 },
+            { name: 'Focus Fire', cooldown: 70 }
+          ],
+          image: `${HERO_IMAGE_BASE_URL}/windranger.png`,
+          render: `${HERO_RENDER_BASE_URL}/windranger.png`
+        },
+        {
+          id: 'zuus',
+          name: 'Zeus',
+          attribute: 'int',
+          attackType: 'Ranged',
+          description: 'Бог молний, поражающий соперников дальними заклинаниями.',
+          stats: { damage: 53, armor: 2, speed: 315, baseStr: 19, baseAgi: 11, baseInt: 22 },
+          abilities: [
+            { name: 'Arc Lightning', cooldown: 1.6 },
+            { name: 'Lightning Bolt', cooldown: 6 },
+            { name: 'Heavenly Jump', cooldown: 20 },
+            { name: 'Thundergod\'s Wrath', cooldown: 120 }
+          ],
+          image: `${HERO_IMAGE_BASE_URL}/zuus.png`,
+          render: `${HERO_RENDER_BASE_URL}/zuus.png`
+        },
+        {
+          id: 'queenofpain',
+          name: 'Queen of Pain',
+          attribute: 'int',
+          attackType: 'Ranged',
+          description: 'Повелительница боли, терроризирующая врагов мгновенными рывками.',
+          stats: { damage: 56, armor: 2, speed: 310, baseStr: 18, baseAgi: 22, baseInt: 22 },
+          abilities: [
+            { name: 'Shadow Strike', cooldown: 10 },
+            { name: 'Blink', cooldown: 12 },
+            { name: 'Scream of Pain', cooldown: 7 },
+            { name: 'Sonic Wave', cooldown: 110 }
+          ],
+          image: `${HERO_IMAGE_BASE_URL}/queenofpain.png`,
+          render: `${HERO_RENDER_BASE_URL}/queenofpain.png`
+        },
+        {
+          id: 'wraith_king',
+          name: 'Wraith King',
+          attribute: 'str',
+          attackType: 'Melee',
+          description: 'Король-лич, возвращающийся в бой после смерти.',
+          stats: { damage: 60, armor: 5, speed: 315, baseStr: 22, baseAgi: 16, baseInt: 18 },
+          abilities: [
+            { name: 'Wraithfire Blast', cooldown: 7 },
+            { name: 'Vampiric Spirit', cooldown: 30 },
+            { name: 'Mortal Strike', cooldown: 0 },
+            { name: 'Reincarnation', cooldown: 200 }
+          ],
+          image: `${HERO_IMAGE_BASE_URL}/skeleton_king.png`,
+          render: `${HERO_RENDER_BASE_URL}/skeleton_king.png`
+        },
+        {
+          id: 'rattletrap',
+          name: 'Clockwerk',
+          attribute: 'str',
+          attackType: 'Melee',
+          description: 'Механизированный боец, врывающийся в гущу драки.',
+          stats: { damage: 52, armor: 4, speed: 310, baseStr: 26, baseAgi: 13, baseInt: 18 },
+          abilities: [
+            { name: 'Battery Assault', cooldown: 32 },
+            { name: 'Power Cogs', cooldown: 15 },
+            { name: 'Rocket Flare', cooldown: 20 },
+            { name: 'Hookshot', cooldown: 60 }
+          ],
+          image: `${HERO_IMAGE_BASE_URL}/clockwerk.png`,
+          render: `${HERO_RENDER_BASE_URL}/clockwerk.png`
+        },
+        {
+          id: 'doom_bringer',
+          name: 'Doom',
+          attribute: 'str',
+          attackType: 'Melee',
+          description: 'Исполин из ада, поглощающий силы противников.',
+          stats: { damage: 63, armor: 2, speed: 290, baseStr: 24, baseAgi: 11, baseInt: 15 },
+          abilities: [
+            { name: 'Devour', cooldown: 70 },
+            { name: 'Scorched Earth', cooldown: 55 },
+            { name: 'Infernal Blade', cooldown: 12 },
+            { name: 'Doom', cooldown: 145 }
+          ],
+          image: `${HERO_IMAGE_BASE_URL}/doom.png`,
+          render: `${HERO_RENDER_BASE_URL}/doom.png`
+        },
+        {
+          id: 'pudge',
+          name: 'Pudge',
+          attribute: 'str',
+          attackType: 'Melee',
+          description: 'Мясник, затаскивающий врагов смертельным крюком.',
+          stats: { damage: 61, armor: 3, speed: 280, baseStr: 25, baseAgi: 14, baseInt: 16 },
+          abilities: [
+            { name: 'Meat Hook', cooldown: 13 },
+            { name: 'Rot', cooldown: 0 },
+            { name: 'Flesh Heap', cooldown: 0 },
+            { name: 'Dismember', cooldown: 25 }
+          ],
+          image: `${HERO_IMAGE_BASE_URL}/pudge.png`,
+          render: `${HERO_RENDER_BASE_URL}/pudge.png`
+        },
+        {
+          id: 'juggernaut',
+          name: 'Juggernaut',
+          attribute: 'agi',
+          attackType: 'Melee',
+          description: 'Мастер клинка, стремительно рассекающий врагов.',
+          stats: { damage: 59, armor: 3, speed: 305, baseStr: 20, baseAgi: 26, baseInt: 14 },
+          abilities: [
+            { name: 'Blade Fury', cooldown: 30 },
+            { name: 'Healing Ward', cooldown: 60 },
+            { name: 'Blade Dance', cooldown: 0 },
+            { name: 'Omnislash', cooldown: 120 }
+          ],
+          image: `${HERO_IMAGE_BASE_URL}/juggernaut.png`,
+          render: `${HERO_RENDER_BASE_URL}/juggernaut.png`
+        },
+        {
+          id: 'crystal_maiden',
+          name: 'Crystal Maiden',
+          attribute: 'int',
+          attackType: 'Ranged',
+          description: 'Маг льда, замедляющий врагов ледяной бурей.',
+          stats: { damage: 45, armor: 1, speed: 280, baseStr: 16, baseAgi: 16, baseInt: 18 },
+          abilities: [
+            { name: 'Crystal Nova', cooldown: 11 },
+            { name: 'Frostbite', cooldown: 9 },
+            { name: 'Arcane Aura', cooldown: 0 },
+            { name: 'Freezing Field', cooldown: 110 }
+          ],
+          image: `${HERO_IMAGE_BASE_URL}/crystal_maiden.png`,
+          render: `${HERO_RENDER_BASE_URL}/crystal_maiden.png`
+        },
+        {
+          id: 'sniper',
+          name: 'Sniper',
+          attribute: 'agi',
+          attackType: 'Ranged',
+          description: 'Снайпер с безупречной дальностью и точностью.',
+          stats: { damage: 46, armor: 3, speed: 285, baseStr: 19, baseAgi: 21, baseInt: 15 },
+          abilities: [
+            { name: 'Shrapnel', cooldown: 24 },
+            { name: 'Headshot', cooldown: 0 },
+            { name: 'Take Aim', cooldown: 20 },
+            { name: 'Assassinate', cooldown: 20 }
+          ],
+          image: `${HERO_IMAGE_BASE_URL}/sniper.png`,
+          render: `${HERO_RENDER_BASE_URL}/sniper.png`
+        },
+        {
+          id: 'earthshaker',
+          name: 'Earthshaker',
+          attribute: 'str',
+          attackType: 'Melee',
+          description: 'Грохочущий боец, разрывающий землю под врагами.',
+          stats: { damage: 60, armor: 3, speed: 310, baseStr: 22, baseAgi: 12, baseInt: 18 },
+          abilities: [
+            { name: 'Fissure', cooldown: 15 },
+            { name: 'Enchant Totem', cooldown: 5 },
+            { name: 'Aftershock', cooldown: 0 },
+            { name: 'Echo Slam', cooldown: 150 }
+          ],
+          image: `${HERO_IMAGE_BASE_URL}/earthshaker.png`,
+          render: `${HERO_RENDER_BASE_URL}/earthshaker.png`
+        }
       ];
     }
 
-    function calculatePercent(value) {
-        const maxStat = 40;
+    function calculatePercent(value, maxStat) {
         return Math.min((value / maxStat) * 100, 100);
     }
 
-    function getPetImageUrl(id) { return `https://castles-vk.ru/heroes_vk/pets/okno2/pets/${id}.png`; }
-
-    function getSkillImageUrl(type, id) {
-        if (type === 'skill') return `https://castles-vk.ru/heroes_vk/pets/okno2/skill/${id}.png`;
-        if (type === 'abill') return `https://castles-vk.ru/heroes_vk/pets/okno2/abill/${id}.png`;
-        return '';
+    function getAttributeLabel(attribute) {
+      if (attribute === 'str') return 'Сила';
+      if (attribute === 'agi') return 'Ловкость';
+      return 'Интеллект';
     }
 
-    function getGenderRates(pet) {
-      let male = Number(pet.male_rate ?? pet.male ?? pet.gender_m ?? pet.sex_m ?? NaN);
-      let female = Number(pet.female_rate ?? pet.female ?? pet.gender_f ?? pet.sex_f ?? NaN);
-
-      if (!Number.isFinite(male) && !Number.isFinite(female)) {
-        const g = String(pet.gender ?? pet.sex ?? '').toLowerCase();
-        if (g === 'm' || g.includes('м')) return { male: 100, female: 0 };
-        if (g === 'f' || g.includes('ж')) return { male: 0, female: 100 };
-        return { male: 50, female: 50 };
-      }
-
-      if (!Number.isFinite(male)) male = Math.max(0, 100 - female);
-      if (!Number.isFinite(female)) female = Math.max(0, 100 - male);
-
-      const total = male + female;
-      if (total <= 0) return { male: 50, female: 50 };
-      return { male: (male / total) * 100, female: (female / total) * 100 };
+    function getPrimaryStat(heroData) {
+      if (heroData.attribute === 'str') return heroData.stats.baseStr;
+      if (heroData.attribute === 'agi') return heroData.stats.baseAgi;
+      return heroData.stats.baseInt;
     }
 
-    function updateGenderBar(pets) {
-      if (!pets.length) {
-        $('#genderSummary').text('М: 0% / Ж: 0%');
+    function updateAttributeBar(heroes) {
+      if (!heroes.length) {
+        $('#genderSummary').text('STR: 0% / AGI: 0% / INT: 0%');
         $('#genderMaleBar').css('width', '0%');
         $('#genderFemaleBar').css('width', '0%');
+        $('#genderIntBar').css('width', '0%');
         return;
       }
 
-      let maleSum = 0;
-      let femaleSum = 0;
-      pets.forEach(p => {
-        const rate = getGenderRates(p);
-        maleSum += rate.male;
-        femaleSum += rate.female;
-      });
+      const totals = heroes.reduce((acc, hero) => {
+        acc[hero.attribute] += 1;
+        return acc;
+      }, { str: 0, agi: 0, int: 0 });
 
-      const male = Math.round(maleSum / pets.length);
-      const female = Math.max(0, 100 - male);
-      $('#genderSummary').text(`М: ${male}% / Ж: ${female}%`);
-      $('#genderMaleBar').css('width', `${male}%`);
-      $('#genderFemaleBar').css('width', `${female}%`);
+      const total = heroes.length;
+      const str = Math.round((totals.str / total) * 100);
+      const agi = Math.round((totals.agi / total) * 100);
+      const int = Math.max(0, 100 - str - agi);
+
+      $('#genderSummary').text(`STR: ${str}% / AGI: ${agi}% / INT: ${int}%`);
+      $('#genderMaleBar').css('width', `${str}%`);
+      $('#genderFemaleBar').css('width', `${agi}%`);
+      $('#genderIntBar').css('width', `${int}%`);
     }
 
-    function createPetScreen(petData, index, totalPets) {
+    function createHeroScreen(heroData, index, totalHeroes) {
         const screenId = index + 1;
         const prevScreenId = index;
         const nextScreenId = index + 2;
 
         const prevBtnText = index === 0 ? '' : '⬅️ Назад';
-        const nextBtnText = index === totalPets - 1 ? '' : 'Дальше ➡️';
+        const nextBtnText = index === totalHeroes - 1 ? '' : 'Дальше ➡️';
         const prevBtnFor = index === 0 ? '' : `for="pdx_p${prevScreenId}"`;
-        const nextBtnFor = index === totalPets - 1 ? '' : `for="pdx_p${nextScreenId}"`;
+        const nextBtnFor = index === totalHeroes - 1 ? '' : `for="pdx_p${nextScreenId}"`;
+
+        const primaryStat = getPrimaryStat(heroData);
+        const attributeLabel = getAttributeLabel(heroData.attribute);
 
         return `
         <section class="pdxScreen" id="screen${screenId}">
             <input type="radio" name="pdx_page" id="pdx_p${screenId}" ${index === 0 ? 'checked' : ''}>
-            <img class="pdxBg" src="https://castles-vk.ru/heroes_vk/pets/okno2/fon/1.jpg" alt="">
+            <img class="pdxBg" src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/backgrounds/hero_page_bg.png" alt="">
             <div class="pdxVeil"></div>
             <div class="pdxContent">
                 <div class="pdxStage">
-                    <img class="pdxPet" src="${getPetImageUrl(petData.id)}" alt="${petData.name}">
+                    <img class="pdxPet" src="${heroData.render}" alt="${heroData.name}">
                     <div class="pdxStageNav">
                         ${prevBtnText ? `<label class="pdxStageBtn" ${prevBtnFor}>${prevBtnText}</label>` : '<div></div>'}
                         ${nextBtnText ? `<label class="pdxStageBtn primary" ${nextBtnFor}>${nextBtnText}</label>` : '<div></div>'}
@@ -245,86 +445,60 @@
                 <aside class="pdxSide">
                     <div class="pdxCard">
                         <div class="pdxHeader">
-                            <div class="pdxName">${petData.name}</div>
-                            <div class="pdxId">ID: ${petData.id}</div>
+                            <div class="pdxName">${heroData.name}</div>
+                            <div class="pdxId">ID: ${heroData.id}</div>
                         </div>
-                        <p class="pdxDesc">${petData.description || '—'}</p>
+                        <p class="pdxDesc">${heroData.description || 'Легендарный герой Dota 2.'}</p>
                         <div class="statsGrid">
-                            <div class="stat"><div class="statTop">❤️ HP <span class="muted">${petData.hp}</span></div><div class="bar"><div class="fill" style="--w:${calculatePercent(parseInt(petData.hp) || 0)}%;"></div></div></div>
-                            <div class="stat"><div class="statTop">🗡️ ATK <span class="muted">${petData.atk}</span></div><div class="bar"><div class="fill" style="--w:${calculatePercent(parseInt(petData.atk) || 0)}%;"></div></div></div>
-                            <div class="stat"><div class="statTop">🛡️ DEF <span class="muted">${petData.def}</span></div><div class="bar"><div class="fill" style="--w:${calculatePercent(parseInt(petData.def) || 0)}%;"></div></div></div>
-                            <div class="stat"><div class="statTop">⚡ SPD <span class="muted">${petData.spd}</span></div><div class="bar"><div class="fill" style="--w:${calculatePercent(parseInt(petData.spd) || 0)}%;"></div></div></div>
+                            <div class="stat"><div class="statTop">🗡️ Урон <span class="muted">${heroData.stats.damage}</span></div><div class="bar"><div class="fill" style="--w:${calculatePercent(heroData.stats.damage, 80)}%;"></div></div></div>
+                            <div class="stat"><div class="statTop">🛡️ Броня <span class="muted">${heroData.stats.armor}</span></div><div class="bar"><div class="fill" style="--w:${calculatePercent(heroData.stats.armor, 12)}%;"></div></div></div>
+                            <div class="stat"><div class="statTop">⚡ Скорость <span class="muted">${heroData.stats.speed}</span></div><div class="bar"><div class="fill" style="--w:${calculatePercent(heroData.stats.speed, 350)}%;"></div></div></div>
+                            <div class="stat"><div class="statTop">⭐ ${attributeLabel} <span class="muted">${primaryStat}</span></div><div class="bar"><div class="fill" style="--w:${calculatePercent(primaryStat, 30)}%;"></div></div></div>
                         </div>
                     </div>
                     <div class="pdxCard">
-                        ${petData.baz_skill !== "0" ? `<div class="skill"><div class="skillTitle"><div class="skillLeft"><span class="skillBadge">Активная</span><span style="opacity:.9;font-weight:900">ID: ${petData.baz_skill}</span></div><div class="skillIcons"><img src="${getSkillImageUrl('skill', petData.baz_skill)}" alt="Активный навык"></div></div><div class="skillText">${getSkillDescription(petData.baz_skill)}</div></div>` : ''}
-                        ${petData.baz_abill !== "0" ? `<div class="skill"><div class="skillTitle"><div class="skillLeft"><span class="skillBadge">Врождённая</span><span style="opacity:.9;font-weight:900">ID: ${petData.baz_abill}</span></div><div class="skillIcons"><img src="${getSkillImageUrl('abill', petData.baz_abill)}" alt="Врожденный навык"></div></div><div class="skillText">${getAbilityDescription(petData.baz_abill)}</div></div>` : ''}
-                        ${petData.baz_skill === "0" && petData.baz_abill === "0" ? '<div class="skill"><div class="skillText">Нет активных или врождённых навыков</div></div>' : ''}
+                      ${heroData.abilities.map((ability, abilityIndex) => `
+                        <div class="skill">
+                          <div class="skillTitle">
+                            <div class="skillLeft">
+                              <span class="skillBadge">${abilityIndex === 3 ? 'Ульт' : 'Способность'}</span>
+                              <span style="opacity:.9;font-weight:900">${ability.name}</span>
+                            </div>
+                            <div class="skillIcons">
+                              <img src="${heroData.image}" alt="${ability.name}">
+                            </div>
+                          </div>
+                          <div class="skillText">Перезарядка: ${ability.cooldown}s · Тип атаки: ${heroData.attackType}</div>
+                        </div>
+                      `).join('')}
                     </div>
                 </aside>
             </div>
         </section>`;
     }
 
-    function getSkillDescription(skillId) {
-        const descriptions = {
-            "1": "Наносит урон 25 ед сквозь броню и накладывает кровотечение с шансом 40% на ✦ 1-2/1-3/1-4/1-5 хода.",
-            "2": "Накладывает на противника с шансом 30% ослепление, после чего он бездействует ✦ 1/1-2/1-3/1-4 хода.",
-            "3": "Снимает все отрицательные эффекты с хозяина, кроме оглушения и отдыха, с шансом: 20/25/30/35%",
-            "4": "Накладывает на противника заморозку на 2 хода с шансом: 20/25/30/35%",
-            "5": "Оглушает противника на 2 хода с шансом: 20/25/30/35%",
-            "6": "Наносит урон 15 ед сквозь броню, накладывает кровотечение на 1 ход и понижает скорость противника на: 2/3/4/5%",
-            "7": "Накладывает заморозку на противника на 1 ход с шансом 50% и наносит урон от атаки владельца в размере: 3/5/6/7%",
-            "8": "Открывает телепорт за энергию героя. Расходует энергии: 5/4/3/2",
-            "9": "Накладывает на противника статус поджог на ✦ 2 хода и замораживает на ✦ 2 хода с шансом: 20/40/60/90",
-        };
-        return descriptions[skillId] || "Описание активного навыка";
+    function getValidHeroes() {
+      return (window.data_13147 || []).filter(hero => hero.id && hero.name);
     }
 
-    function getAbilityDescription(abilityId) {
-        const descriptions = {
-            "1": "После победы над противником способностью 'Выстрел ружьем', шанс получить призрачную пулю c шансом 10/15/20/25% ",
-            "2": "Увеличивает стат атаки героя на + 2/3/4/5%",
-            "3": "Способность Кровавое исцеление героя, восстанавливает больше здоровья за 1 стак крови на 7/12/15/20",
-            "4": "Усиливает конечный урон способности Разрыв плоти, после всех бонусов на: 3/5/7/10%",
-            "5": "Способность Удар рыцаря имеет повышенный шанс на крит: 25/30/35/40%",
-            "6": "Увеличивает стат защиты героя на + 2/4/5/6%",
-            "7": "Увеличивает стат здоровья героя на + 5/6/7/8%",
-            "8": "Увеличивает стат скорости героя на + 5/8/10/12%",
-            "9": "Снижает расход способности некроманта Похищение жизни до 45/40/30/20%",
-            "10": "Способность огненный шар мага, чаще поджигает и  увеличивает шанс на мощный взрыв до 25/30/35/40%",
-            "11": "Способность шквал ударов корсара, расходует меньше выносливости на  9/8/7/6%",
-            "12": "Увеличивает все статы героя на + 2/3/4/5%",
-            "13": "Увеличивает дроп золота на +15/20/25/30",
-            "14": "Способность Стойкая сила снимает отрицательные статусы с шансом: 50/60/70/80%",
-            "15": "Дарует хозяйну иммунитет в битве к огню и льду с шансом: 50/60/70/80%",
-            "16": "Создаем эпокахльный случайный предмет после победы противника в битве: 15000/12000/10000/8000 раз",
-        };
-        return descriptions[abilityId] || "Описание врождённого навыка";
-    }
-
-    function getValidPets() {
-      return (window.data_13147 || []).filter(pet => pet.id !== "0" && pet.name !== "Пуля");
-    }
-
-    function displayAllPets(filteredPets = null) {
-        const validPets = filteredPets || getValidPets();
+    function displayAllHeroes(filteredHeroes = null) {
+        const validHeroes = filteredHeroes || getValidHeroes();
         const container = $('#petsContainer');
         container.empty();
 
-        if (!validPets.length) {
+        if (!validHeroes.length) {
           container.append('<div class="pdxEmpty">Ничего не найдено. Попробуйте другое имя или ID.</div>');
-          updateGenderBar([]);
+          updateAttributeBar([]);
           return;
         }
 
-        validPets.forEach((pet, index) => container.append(createPetScreen(pet, index, validPets.length)));
+        validHeroes.forEach((hero, index) => container.append(createHeroScreen(hero, index, validHeroes.length)));
         $('#pdx_p1').prop('checked', true);
-        updateGenderBar(validPets);
+        updateAttributeBar(validHeroes);
     }
 
-    function showPetOneByOne() {
-        displayAllPets();
+    function showHeroOneByOne() {
+        displayAllHeroes();
 
         $(document).on('click', '.pdxStageBtn', function() {
             const targetId = $(this).attr('for');
@@ -338,17 +512,17 @@
     function bindSearch() {
       function runSearch() {
         const query = $('#petSearchInput').val().toString().trim().toLowerCase();
-        const validPets = getValidPets();
+        const validHeroes = getValidHeroes();
         if (!query) {
-          displayAllPets(validPets);
+          displayAllHeroes(validHeroes);
           return;
         }
-        const filtered = validPets.filter(p => {
-          const name = (p.name || '').toString().toLowerCase();
-          const id = (p.id || '').toString().toLowerCase();
+        const filtered = validHeroes.filter(hero => {
+          const name = (hero.name || '').toString().toLowerCase();
+          const id = (hero.id || '').toString().toLowerCase();
           return name.includes(query) || id.includes(query);
         });
-        displayAllPets(filtered);
+        displayAllHeroes(filtered);
       }
 
       $('#petSearchBtn').on('click', runSearch);
@@ -356,7 +530,7 @@
     }
 
     $(document).ready(function() {
-      showPetOneByOne();
+      showHeroOneByOne();
       bindSearch();
     });
 </script>
