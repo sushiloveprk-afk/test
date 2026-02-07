@@ -62,6 +62,7 @@ const SHOP_ITEMS = [
 
 const EDGE_PAN_DISTANCE = 40;
 const MAP_SIZE = 6000;
+const MAX_MANA = 400;
 
 const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -70,6 +71,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
     scene: THREE.Scene;
     camera: THREE.PerspectiveCamera;
     renderer: THREE.WebGLRenderer;
+    ground: THREE.Mesh;
     units: GameUnit[];
     projectiles: Projectile[];
     playerId: string;
@@ -87,6 +89,13 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
   const [shopOpen, setShopOpen] = useState(false);
   const [victory, setVictory] = useState<null | Team>(null);
   const [heroStats, setHeroStats] = useState(selectedHero.stats);
+  const [cooldownTick, setCooldownTick] = useState(0);
+  const [playerSnapshot, setPlayerSnapshot] = useState({
+    hp: selectedHero.stats.baseStr * 20,
+    maxHp: selectedHero.stats.baseStr * 20,
+    mana: MAX_MANA,
+    maxMana: MAX_MANA,
+  });
 
   const heroData = useMemo(() => selectedHero ?? heroList[0], [selectedHero]);
 
@@ -102,6 +111,36 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
     });
     setHeroStats(applied);
   }, [inventory, backpack, heroData.stats]);
+
+  useEffect(() => {
+    if (!gameStateRef.current) return;
+    gameStateRef.current.gold = gold;
+    gameStateRef.current.inventory = inventory;
+    gameStateRef.current.backpack = backpack;
+  }, [gold, inventory, backpack]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setCooldownTick((prev) => prev + 1);
+    }, 200);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      const state = gameStateRef.current;
+      if (!state) return;
+      const player = state.units.find((unit) => unit.id === state.playerId);
+      if (!player) return;
+      setPlayerSnapshot({
+        hp: Math.max(player.hp, 0),
+        maxHp: player.maxHp,
+        mana: MAX_MANA,
+        maxMana: MAX_MANA,
+      });
+    }, 250);
+    return () => window.clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -171,6 +210,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
       scene,
       camera,
       renderer,
+      ground,
       units,
       projectiles,
       playerId: playerHero.id,
@@ -304,6 +344,10 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
   };
 
   const currentHeroImage = heroData.image;
+  const abilityCooldowns = gameStateRef.current?.abilityCooldowns ?? { Q: 0, W: 0, E: 0, R: 0 };
+  const now = performance.now() + cooldownTick;
+
+  const abilities = heroData.abilities;
 
   return (
     <div ref={containerRef} className="relative h-screen w-screen overflow-hidden bg-[#0f1012]">
@@ -314,9 +358,23 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
           <div className="h-24 w-24 overflow-hidden rounded-md border border-[#2a2d33]">
             <img src={currentHeroImage} alt={heroData.name} className="h-full w-full object-cover" />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="font-[Cinzel] text-lg uppercase tracking-[0.3em] text-[#f7e7c0]">
               {heroData.name}
+            </div>
+            <div className="space-y-2">
+              <div className="h-3 w-64 overflow-hidden rounded-full border border-[#2a2d33] bg-[#121419]">
+                <div
+                  className="h-full bg-gradient-to-r from-[#1d6b3a] to-[#4edb7c]"
+                  style={{ width: `${(playerSnapshot.hp / playerSnapshot.maxHp) * 100}%` }}
+                />
+              </div>
+              <div className="h-3 w-64 overflow-hidden rounded-full border border-[#2a2d33] bg-[#121419]">
+                <div
+                  className="h-full bg-gradient-to-r from-[#1a2f6b] to-[#3b74ff]"
+                  style={{ width: `${(playerSnapshot.mana / playerSnapshot.maxMana) * 100}%` }}
+                />
+              </div>
             </div>
             <div className="grid grid-cols-3 gap-2 text-xs uppercase tracking-[0.2em] text-[#9aa0a8]">
               <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-3 py-2">
@@ -335,30 +393,68 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => setShopOpen((prev) => !prev)}
-            className="flex items-center gap-2 rounded-md border border-[#2a2d33] bg-[#121419]/80 px-4 py-2 text-xs uppercase tracking-[0.2em] text-[#f7e7c0]"
-          >
-            <ShoppingBag className="h-4 w-4" />
-            Shop
-          </button>
-          <div className="rounded-md border border-[#2a2d33] bg-[#121419]/80 px-4 py-2 text-xs uppercase tracking-[0.2em] text-[#c8ccd4]">
-            Gold: <span className="text-white">{gold}</span>
+        <div className="flex flex-col items-end gap-3">
+          <div className="grid grid-cols-4 gap-3">
+            {abilities.map((ability, index) => {
+              const key = ['Q', 'W', 'E', 'R'][index];
+              const remaining = Math.max(0, Math.ceil((abilityCooldowns[key] - now) / 1000));
+              return (
+                <div
+                  key={ability.name}
+                  className="relative h-14 w-14 overflow-hidden rounded-md border border-[#2a2d33] bg-[#121419]/90"
+                >
+                  <div className="flex h-full w-full flex-col items-center justify-center text-[10px] uppercase tracking-[0.2em] text-[#f7e7c0]">
+                    <span className="text-xs font-semibold">{key}</span>
+                    <span className="text-[9px] text-[#9aa0a8]">{ability.name}</span>
+                  </div>
+                  {remaining > 0 && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/70 text-xs font-semibold text-white">
+                      {remaining}s
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
-          {onExit && (
+          <div className="flex items-center gap-4">
             <button
-              onClick={onExit}
-              className="rounded-md border border-[#c23c2a] bg-[#4b1411]/80 px-4 py-2 text-xs uppercase tracking-[0.2em] text-white"
+              onClick={() => setShopOpen((prev) => !prev)}
+              className="flex items-center gap-2 rounded-md border border-[#2a2d33] bg-[#121419]/80 px-4 py-2 text-xs uppercase tracking-[0.2em] text-[#f7e7c0]"
             >
-              Exit
+              <ShoppingBag className="h-4 w-4" />
+              Shop
             </button>
-          )}
+            <div className="rounded-md border border-[#2a2d33] bg-[#121419]/80 px-4 py-2 text-xs uppercase tracking-[0.2em] text-[#c8ccd4]">
+              Gold: <span className="text-white">{gold}</span>
+            </div>
+            {onExit && (
+              <button
+                onClick={onExit}
+                className="rounded-md border border-[#c23c2a] bg-[#4b1411]/80 px-4 py-2 text-xs uppercase tracking-[0.2em] text-white"
+              >
+                Exit
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="absolute bottom-4 left-4">
+      <div className="absolute bottom-4 left-4 space-y-3">
         <canvas ref={minimapRef} width={180} height={180} className="rounded-md border border-[#2a2d33]" />
+        <div className="grid grid-cols-6 gap-2">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div
+              key={`inv-${index}`}
+              className="h-10 w-10 rounded-md border border-[#2a2d33] bg-[#121419]/80 text-[9px] uppercase text-[#9aa0a8]"
+            >
+              {inventory[index] && (
+                <div className="flex h-full w-full items-center justify-center text-[10px] text-white">
+                  {SHOP_ITEMS.find((item) => item.id === inventory[index])?.name ?? ''}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       {shopOpen && (
@@ -403,11 +499,15 @@ const createMapTexture = () => {
   ctx.fillStyle = '#1b3a2a';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  const riverGradient = ctx.createLinearGradient(0, canvas.height * 0.4, canvas.width, canvas.height * 0.6);
+  ctx.save();
+  ctx.translate(canvas.width / 2, canvas.height / 2);
+  ctx.rotate(-Math.PI / 4);
+  const riverGradient = ctx.createLinearGradient(-canvas.width / 2, 0, canvas.width / 2, 0);
   riverGradient.addColorStop(0, '#0b1a2b');
   riverGradient.addColorStop(1, '#122435');
   ctx.fillStyle = riverGradient;
-  ctx.fillRect(0, canvas.height * 0.45, canvas.width, canvas.height * 0.1);
+  ctx.fillRect(-canvas.width / 2, -60, canvas.width, 120);
+  ctx.restore();
 
   for (let i = 0; i < 200; i += 1) {
     ctx.fillStyle = `rgba(10, 20, 10, ${Math.random() * 0.3})`;
@@ -436,7 +536,7 @@ const spawnTrees = (scene: THREE.Scene) => {
   for (let i = 0; i < 500; i += 1) {
     const x = (Math.random() - 0.5) * MAP_SIZE;
     const z = (Math.random() - 0.5) * MAP_SIZE;
-    if (Math.abs(z) < 200) {
+    if (Math.abs(x - z) < 260) {
       i -= 1;
       continue;
     }
@@ -479,6 +579,8 @@ const createHeroModel = (color: string) => {
   rightLeg.position.set(8, 10, 0);
 
   group.add(body, head, leftArm, rightArm, leftLeg, rightLeg);
+  group.userData.limbs = { leftArm, rightArm, leftLeg, rightLeg };
+  group.userData.walkPhase = Math.random() * Math.PI * 2;
   return group;
 };
 
@@ -635,27 +737,71 @@ const createFountain = (team: Team, position: THREE.Vector3): GameUnit => {
   };
 };
 
-const castPrimaryAbility = (player: GameUnit, hero: HeroData, state: NonNullable<
-  React.MutableRefObject<
-    | {
-        scene: THREE.Scene;
-        camera: THREE.PerspectiveCamera;
-        renderer: THREE.WebGLRenderer;
-        units: GameUnit[];
-        projectiles: Projectile[];
-        playerId: string;
-        mouse: { x: number; y: number; inBounds: boolean };
-        lastTime: number;
-        gold: number;
-        inventory: string[];
-        backpack: string[];
-        abilityCooldowns: Record<string, number>;
-      }
-    | null
-  >['current']
->) => {
+const getGroundPointFromMouse = (
+  state: NonNullable<
+    React.MutableRefObject<
+      | {
+          scene: THREE.Scene;
+          camera: THREE.PerspectiveCamera;
+          renderer: THREE.WebGLRenderer;
+          ground: THREE.Mesh;
+          units: GameUnit[];
+          projectiles: Projectile[];
+          playerId: string;
+          mouse: { x: number; y: number; inBounds: boolean };
+          lastTime: number;
+          gold: number;
+          inventory: string[];
+          backpack: string[];
+          abilityCooldowns: Record<string, number>;
+        }
+      | null
+    >['current']
+  >
+) => {
+  if (!state) return null;
+  const { camera, renderer, ground, mouse } = state;
+  const raycaster = new THREE.Raycaster();
+  const bounds = renderer.domElement.getBoundingClientRect();
+  const pointer = new THREE.Vector2(
+    (mouse.x / bounds.width) * 2 - 1,
+    -(mouse.y / bounds.height) * 2 + 1
+  );
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObject(ground);
+  return hits[0]?.point ?? null;
+};
+
+const castPrimaryAbility = (
+  player: GameUnit,
+  hero: HeroData,
+  state: NonNullable<
+    React.MutableRefObject<
+      | {
+          scene: THREE.Scene;
+          camera: THREE.PerspectiveCamera;
+          renderer: THREE.WebGLRenderer;
+          ground: THREE.Mesh;
+          units: GameUnit[];
+          projectiles: Projectile[];
+          playerId: string;
+          mouse: { x: number; y: number; inBounds: boolean };
+          lastTime: number;
+          gold: number;
+          inventory: string[];
+          backpack: string[];
+          abilityCooldowns: Record<string, number>;
+        }
+      | null
+    >['current']
+  >
+) => {
   if (!state) return;
-  const direction = new THREE.Vector3(1, 0, 0);
+  const targetPoint = getGroundPointFromMouse(state);
+  const direction = targetPoint
+    ? targetPoint.clone().sub(player.mesh.position).setY(0).normalize()
+    : new THREE.Vector3(1, 0, 0);
+
   if (hero.id === 'pudge') {
     const hookGeometry = new THREE.SphereGeometry(12, 12, 12);
     const hookMaterial = new THREE.MeshStandardMaterial({ color: '#c7a352' });
@@ -711,16 +857,17 @@ const castPrimaryAbility = (player: GameUnit, hero: HeroData, state: NonNullable
   }
 
   if (hero.id === 'crystal_maiden') {
+    const target = targetPoint ?? player.mesh.position.clone().add(new THREE.Vector3(200, 0, 0));
     const nova = new THREE.Mesh(
       new THREE.CircleGeometry(120, 32),
       new THREE.MeshBasicMaterial({ color: '#7fb9ff', transparent: true, opacity: 0.4 })
     );
     nova.rotation.x = -Math.PI / 2;
-    nova.position.copy(player.mesh.position).add(new THREE.Vector3(200, 1, 0));
+    nova.position.copy(target).add(new THREE.Vector3(0, 1, 0));
     state.scene.add(nova);
 
     state.units.forEach((unit) => {
-      if (unit.team !== player.team) {
+      if (unit.team !== player.team && !unit.isBuilding) {
         const distance = unit.mesh.position.distanceTo(nova.position);
         if (distance < 140) {
           unit.hp -= 100;
@@ -734,25 +881,27 @@ const castPrimaryAbility = (player: GameUnit, hero: HeroData, state: NonNullable
   }
 };
 
-const updateCamera = (state: NonNullable<
-  React.MutableRefObject<
-    | {
-        scene: THREE.Scene;
-        camera: THREE.PerspectiveCamera;
-        renderer: THREE.WebGLRenderer;
-        units: GameUnit[];
-        projectiles: Projectile[];
-        playerId: string;
-        mouse: { x: number; y: number; inBounds: boolean };
-        lastTime: number;
-        gold: number;
-        inventory: string[];
-        backpack: string[];
-        abilityCooldowns: Record<string, number>;
-      }
-    | null
-  >['current']
->,
+const updateCamera = (
+  state: NonNullable<
+    React.MutableRefObject<
+      | {
+          scene: THREE.Scene;
+          camera: THREE.PerspectiveCamera;
+          renderer: THREE.WebGLRenderer;
+          ground: THREE.Mesh;
+          units: GameUnit[];
+          projectiles: Projectile[];
+          playerId: string;
+          mouse: { x: number; y: number; inBounds: boolean };
+          lastTime: number;
+          gold: number;
+          inventory: string[];
+          backpack: string[];
+          abilityCooldowns: Record<string, number>;
+        }
+      | null
+    >['current']
+  >,
   delta: number
 ) => {
   if (!state) return;
@@ -782,6 +931,43 @@ const updateCamera = (state: NonNullable<
   camera.lookAt(0, 0, 0);
 };
 
+const findClosestEnemy = (state: NonNullable<
+  React.MutableRefObject<
+    | {
+        scene: THREE.Scene;
+        camera: THREE.PerspectiveCamera;
+        renderer: THREE.WebGLRenderer;
+        ground: THREE.Mesh;
+        units: GameUnit[];
+        projectiles: Projectile[];
+        playerId: string;
+        mouse: { x: number; y: number; inBounds: boolean };
+        lastTime: number;
+        gold: number;
+        inventory: string[];
+        backpack: string[];
+        abilityCooldowns: Record<string, number>;
+      }
+    | null
+  >['current']
+>,
+unit: GameUnit,
+range: number
+) => {
+  let closest: GameUnit | null = null;
+  let closestDistance = Number.POSITIVE_INFINITY;
+  state.units.forEach((candidate) => {
+    if (candidate.team === unit.team) return;
+    if (candidate.hp <= 0) return;
+    const distance = candidate.mesh.position.distanceTo(unit.mesh.position);
+    if (distance <= range && distance < closestDistance) {
+      closest = candidate;
+      closestDistance = distance;
+    }
+  });
+  return closest;
+};
+
 const updateUnits = (
   state: NonNullable<
     React.MutableRefObject<
@@ -789,6 +975,7 @@ const updateUnits = (
           scene: THREE.Scene;
           camera: THREE.PerspectiveCamera;
           renderer: THREE.WebGLRenderer;
+          ground: THREE.Mesh;
           units: GameUnit[];
           projectiles: Projectile[];
           playerId: string;
@@ -816,6 +1003,27 @@ const updateUnits = (
 
     if (unit.hp <= 0) return;
 
+    if (unit.type === 'tower') {
+      const target = findClosestEnemy(state, unit, unit.range);
+      if (target) {
+        unit.targetId = target.id;
+      }
+    }
+
+    if (unit.type === 'creep' && !unit.targetId) {
+      const target = findClosestEnemy(state, unit, unit.range + 100);
+      if (target) {
+        unit.targetId = target.id;
+      }
+    }
+
+    if (unit.status?.tauntedBy) {
+      unit.targetId = unit.status.tauntedBy;
+    }
+
+    const target = unit.targetId ? state.units.find((candidate) => candidate.id === unit.targetId) : null;
+    const isMovingToTarget = target && target.hp > 0 && unit.mesh.position.distanceTo(target.mesh.position) > unit.range;
+
     if (unit.type === 'hero' && unit.moveTarget) {
       const direction = unit.moveTarget.clone().sub(unit.mesh.position);
       if (direction.length() < 10) {
@@ -826,25 +1034,38 @@ const updateUnits = (
       }
     }
 
-    if (unit.status?.tauntedBy) {
-      unit.targetId = unit.status.tauntedBy;
+    if (target && target.hp > 0) {
+      const distance = unit.mesh.position.distanceTo(target.mesh.position);
+      if (distance <= unit.range) {
+        unit.attackTimer -= delta;
+        if (unit.attackTimer <= 0) {
+          unit.attackTimer = unit.attackCooldown;
+          spawnProjectile(state, unit, target);
+        }
+      } else if (!unit.isBuilding) {
+        const direction = target.mesh.position.clone().sub(unit.mesh.position).normalize();
+        unit.mesh.position.add(direction.multiplyScalar(unit.speed * delta));
+      }
     }
 
-    if (unit.targetId) {
-      const target = state.units.find((candidate) => candidate.id === unit.targetId);
-      if (target && target.hp > 0) {
-        const distance = unit.mesh.position.distanceTo(target.mesh.position);
-        if (distance <= unit.range) {
-          unit.attackTimer -= delta;
-          if (unit.attackTimer <= 0) {
-            unit.attackTimer = unit.attackCooldown;
-            spawnProjectile(state, unit, target);
-          }
-        } else {
-          const direction = target.mesh.position.clone().sub(unit.mesh.position).normalize();
-          unit.mesh.position.add(direction.multiplyScalar(unit.speed * delta));
-        }
-      }
+    if (unit.type === 'creep' && !target) {
+      unit.mesh.position.add(
+        unit.moveTarget
+          ? unit.moveTarget.clone().sub(unit.mesh.position).normalize().multiplyScalar(unit.speed * delta)
+          : new THREE.Vector3(0, 0, 0)
+      );
+    }
+
+    const limbs = unit.mesh.userData.limbs as
+      | { leftArm: THREE.Object3D; rightArm: THREE.Object3D; leftLeg: THREE.Object3D; rightLeg: THREE.Object3D }
+      | undefined;
+    if (limbs) {
+      unit.mesh.userData.walkPhase += delta * (isMovingToTarget || unit.moveTarget ? 6 : 1);
+      const wave = Math.sin(unit.mesh.userData.walkPhase) * 0.6;
+      limbs.leftArm.rotation.x = wave;
+      limbs.rightArm.rotation.x = -wave;
+      limbs.leftLeg.rotation.x = -wave;
+      limbs.rightLeg.rotation.x = wave;
     }
   });
 
@@ -870,25 +1091,27 @@ const updateUnits = (
   }
 };
 
-const spawnProjectile = (state: NonNullable<
-  React.MutableRefObject<
-    | {
-        scene: THREE.Scene;
-        camera: THREE.PerspectiveCamera;
-        renderer: THREE.WebGLRenderer;
-        units: GameUnit[];
-        projectiles: Projectile[];
-        playerId: string;
-        mouse: { x: number; y: number; inBounds: boolean };
-        lastTime: number;
-        gold: number;
-        inventory: string[];
-        backpack: string[];
-        abilityCooldowns: Record<string, number>;
-      }
-    | null
-  >['current']
->,
+const spawnProjectile = (
+  state: NonNullable<
+    React.MutableRefObject<
+      | {
+          scene: THREE.Scene;
+          camera: THREE.PerspectiveCamera;
+          renderer: THREE.WebGLRenderer;
+          ground: THREE.Mesh;
+          units: GameUnit[];
+          projectiles: Projectile[];
+          playerId: string;
+          mouse: { x: number; y: number; inBounds: boolean };
+          lastTime: number;
+          gold: number;
+          inventory: string[];
+          backpack: string[];
+          abilityCooldowns: Record<string, number>;
+        }
+      | null
+    >['current']
+  >,
   attacker: GameUnit,
   target: GameUnit
 ) => {
@@ -914,25 +1137,27 @@ const spawnProjectile = (state: NonNullable<
   });
 };
 
-const updateProjectiles = (state: NonNullable<
-  React.MutableRefObject<
-    | {
-        scene: THREE.Scene;
-        camera: THREE.PerspectiveCamera;
-        renderer: THREE.WebGLRenderer;
-        units: GameUnit[];
-        projectiles: Projectile[];
-        playerId: string;
-        mouse: { x: number; y: number; inBounds: boolean };
-        lastTime: number;
-        gold: number;
-        inventory: string[];
-        backpack: string[];
-        abilityCooldowns: Record<string, number>;
-      }
-    | null
-  >['current']
->,
+const updateProjectiles = (
+  state: NonNullable<
+    React.MutableRefObject<
+      | {
+          scene: THREE.Scene;
+          camera: THREE.PerspectiveCamera;
+          renderer: THREE.WebGLRenderer;
+          ground: THREE.Mesh;
+          units: GameUnit[];
+          projectiles: Projectile[];
+          playerId: string;
+          mouse: { x: number; y: number; inBounds: boolean };
+          lastTime: number;
+          gold: number;
+          inventory: string[];
+          backpack: string[];
+          abilityCooldowns: Record<string, number>;
+        }
+      | null
+    >['current']
+  >,
   delta: number
 ) => {
   for (let i = state.projectiles.length - 1; i >= 0; i -= 1) {
@@ -963,7 +1188,8 @@ const updateProjectiles = (state: NonNullable<
 
     if (hitCandidate) {
       if (projectile.type === 'hook') {
-        hitCandidate.mesh.position.copy(projectile.origin.clone().add(new THREE.Vector3(20, 0, 20)));
+        hitCandidate.mesh.position.copy(projectile.origin.clone());
+        hitCandidate.moveTarget = undefined;
       } else {
         hitCandidate.hp -= projectile.damage;
       }
@@ -988,25 +1214,27 @@ const updateProjectiles = (state: NonNullable<
   }
 };
 
-const spawnCreeps = (state: NonNullable<
-  React.MutableRefObject<
-    | {
-        scene: THREE.Scene;
-        camera: THREE.PerspectiveCamera;
-        renderer: THREE.WebGLRenderer;
-        units: GameUnit[];
-        projectiles: Projectile[];
-        playerId: string;
-        mouse: { x: number; y: number; inBounds: boolean };
-        lastTime: number;
-        gold: number;
-        inventory: string[];
-        backpack: string[];
-        abilityCooldowns: Record<string, number>;
-      }
-    | null
-  >['current']
->,
+const spawnCreeps = (
+  state: NonNullable<
+    React.MutableRefObject<
+      | {
+          scene: THREE.Scene;
+          camera: THREE.PerspectiveCamera;
+          renderer: THREE.WebGLRenderer;
+          ground: THREE.Mesh;
+          units: GameUnit[];
+          projectiles: Projectile[];
+          playerId: string;
+          mouse: { x: number; y: number; inBounds: boolean };
+          lastTime: number;
+          gold: number;
+          inventory: string[];
+          backpack: string[];
+          abilityCooldowns: Record<string, number>;
+        }
+      | null
+    >['current']
+  >,
   team: Team
 ) => {
   const spawnPosition = team === 'radiant' ? new THREE.Vector3(-1200, 0, -1200) : new THREE.Vector3(1200, 0, 1200);
@@ -1040,6 +1268,7 @@ const updateMinimap = (
           scene: THREE.Scene;
           camera: THREE.PerspectiveCamera;
           renderer: THREE.WebGLRenderer;
+          ground: THREE.Mesh;
           units: GameUnit[];
           projectiles: Projectile[];
           playerId: string;
@@ -1072,10 +1301,41 @@ const updateMinimap = (
     ctx.fill();
   });
 
-  const camX = ((state.camera.position.x + MAP_SIZE / 2) / MAP_SIZE) * canvas.width;
-  const camY = ((state.camera.position.z + MAP_SIZE / 2) / MAP_SIZE) * canvas.height;
+  const camDir = new THREE.Vector3();
+  state.camera.getWorldDirection(camDir);
+  camDir.y = 0;
+  camDir.normalize();
+  const sideDir = new THREE.Vector3(-camDir.z, 0, camDir.x);
+
+  const camPos = state.camera.position.clone();
+  const nearCenter = camPos.clone().add(camDir.clone().multiplyScalar(200));
+  const farCenter = camPos.clone().add(camDir.clone().multiplyScalar(600));
+  const nearWidth = 200;
+  const farWidth = 500;
+
+  const nearLeft = nearCenter.clone().add(sideDir.clone().multiplyScalar(-nearWidth / 2));
+  const nearRight = nearCenter.clone().add(sideDir.clone().multiplyScalar(nearWidth / 2));
+  const farLeft = farCenter.clone().add(sideDir.clone().multiplyScalar(-farWidth / 2));
+  const farRight = farCenter.clone().add(sideDir.clone().multiplyScalar(farWidth / 2));
+
+  const toMini = (pos: THREE.Vector3) => ({
+    x: ((pos.x + MAP_SIZE / 2) / MAP_SIZE) * canvas.width,
+    y: ((pos.z + MAP_SIZE / 2) / MAP_SIZE) * canvas.height,
+  });
+
+  const nL = toMini(nearLeft);
+  const nR = toMini(nearRight);
+  const fR = toMini(farRight);
+  const fL = toMini(farLeft);
+
   ctx.strokeStyle = '#f7e7c0';
-  ctx.strokeRect(camX - 18, camY - 18, 36, 36);
+  ctx.beginPath();
+  ctx.moveTo(nL.x, nL.y);
+  ctx.lineTo(nR.x, nR.y);
+  ctx.lineTo(fR.x, fR.y);
+  ctx.lineTo(fL.x, fL.y);
+  ctx.closePath();
+  ctx.stroke();
 };
 
 export default GameScreen;
