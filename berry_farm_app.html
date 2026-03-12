@@ -33,6 +33,10 @@
         linear-gradient(180deg,#9ae2ff 0%,#c9f1ff 21%,#b9f1b2 21.5%,#7fd781 65%,#61b76c 100%);
     }
     .sky-decor,.ground-decor{position:absolute;inset:0;pointer-events:none}
+    .weather-layer{position:absolute;inset:0;pointer-events:none;z-index:1;overflow:hidden}
+    .rain-drop{position:absolute;width:2px;height:16px;background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(133,207,255,.85));border-radius:99px;animation:rainFall linear infinite}
+    .sun-glow{position:absolute;right:7%;top:11%;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(255,245,173,.86),rgba(255,220,128,.38) 40%,transparent 72%);animation:pulseSun 2.4s ease-in-out infinite}
+    .wind-streak{position:absolute;height:2px;border-radius:99px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent);animation:windMove 2.6s ease-in-out infinite}
     .sky-decor::before,.sky-decor::after{
       content:"";position:absolute;border-radius:999px;background:rgba(255,255,255,.55);filter:blur(10px)
     }
@@ -61,7 +65,7 @@
       filter: drop-shadow(0 6px 8px rgba(95,73,35,.12));
     }
     .topbar{
-      position:absolute;left:16px;right:16px;top:var(--safe-top);display:flex;gap:10px;align-items:center;z-index:5;
+      position:absolute;left:16px;right:16px;top:var(--safe-top);display:flex;gap:10px;align-items:center;z-index:7;
     }
     .capsule,.icon-btn,.pill,.action-btn,.sheet,.plot,.dialog,.toast{
       backdrop-filter: blur(18px);
@@ -84,7 +88,16 @@
     .gem{background:linear-gradient(180deg,#c7b6ff,#7f68ff);clip-path:polygon(50% 0,100% 42%,74% 100%,26% 100%,0 42%)}
     .icon-btn{width:52px;height:52px;border:none;border-radius:18px;background:var(--card-strong);display:grid;place-items:center;color:var(--text);font-size:22px}
 
-    .farm-zone{position:absolute;left:14px;right:14px;top:104px;bottom:150px;z-index:2}
+    .farm-zone{position:absolute;left:14px;right:14px;top:104px;bottom:150px;z-index:5}
+    .plant-tables{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 2px 10px}
+    .plant-table{border:none;background:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.67);border-radius:20px;min-height:68px;padding:8px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;box-shadow:var(--shadow);transition:.2s}
+    .plant-table.ready{background:rgba(255,255,255,.82)}
+    .plant-table.pick{outline:2px solid rgba(61,167,255,.45)}
+    .plant-table img{width:35px;height:35px;object-fit:contain;filter:drop-shadow(0 5px 8px rgba(18,39,68,.2))}
+    .table-title{font-size:11px;font-weight:800;color:var(--muted)}
+    .weather-panel{display:flex;gap:8px;align-items:center;margin:0 2px 8px;overflow:auto;padding-bottom:2px}
+    .weather-pill{border:none;background:rgba(255,255,255,.72);border-radius:999px;padding:7px 10px;font-size:12px;font-weight:800;color:var(--muted)}
+    .weather-pill.active{background:white;color:var(--text)}
     .plots{position:absolute;left:0;right:0;top:72px;bottom:46px;display:grid;grid-template-columns:repeat(2, minmax(0,1fr));grid-auto-rows:1fr;gap:14px;padding:0 4px}
     .plot{
       position:relative;border:none;border-radius:30px;padding:12px;background:linear-gradient(180deg, rgba(255,255,255,.3), rgba(255,255,255,.12));
@@ -158,11 +171,11 @@
     .action-label{font-size:13px;font-weight:800}
 
     .sheet{
-      position:absolute;left:12px;right:12px;bottom:-80%;z-index:12;background:rgba(249,252,255,.86);border:1px solid rgba(255,255,255,.7);border-radius:30px 30px 0 0;transition:bottom .32s cubic-bezier(.2,.8,.2,1);padding:12px 14px calc(18px + var(--safe-bottom));max-height:74%;overflow:auto
+      position:absolute;left:12px;right:12px;bottom:-80%;z-index:12;background:rgba(249,252,255,.9);border:1px solid rgba(255,255,255,.7);border-radius:30px 30px 0 0;transition:bottom .32s cubic-bezier(.2,.8,.2,1);padding:12px 14px calc(18px + var(--safe-bottom));max-height:58%;overflow:auto
     }
     .sheet.open{bottom:0}
-    .scrim{position:absolute;inset:0;background:rgba(16,31,49,.24);opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:11}
-    .scrim.show{opacity:1;pointer-events:auto}
+    .scrim{position:absolute;inset:0;background:rgba(16,31,49,.1);opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:11}
+    .scrim.show{opacity:1;pointer-events:none}
     .grabber{width:48px;height:5px;background:rgba(23,50,77,.14);border-radius:999px;margin:0 auto 12px}
     .sheet-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
     .sheet-title{font-size:22px;font-weight:900}
@@ -201,6 +214,9 @@
     @keyframes tilt{50%{transform:rotate(-8deg) translateY(2px)}}
     @keyframes stream{50%{transform:scaleY(1.08)}}
     @keyframes splash{50%{transform:translateY(2px) scale(1.08);opacity:.7}}
+    @keyframes rainFall{to{transform:translateY(110vh)}}
+    @keyframes pulseSun{50%{transform:scale(1.08)}}
+    @keyframes windMove{0%{transform:translateX(-20px);opacity:.1}50%{opacity:.8}100%{transform:translateX(65px);opacity:.1}}
 
     @media (min-width: 700px){
       body{display:grid;place-items:center}
@@ -212,6 +228,7 @@
 <div class="phone" id="app">
   <div class="sky-decor"></div>
   <div class="ground-decor"></div>
+  <div class="weather-layer" id="weatherLayer"></div>
   <div class="paths"></div>
 
   <div class="topbar">
@@ -221,7 +238,7 @@
         <div class="title">Сад поке-ягод</div>
       </div>
       <div class="stats">
-        <div class="stat"><span class="coin"></span><div>2 640<br><small>монеты</small></div></div>
+        <div class="stat"><span class="coin"></span><div id="coinCount">2 640<br><small>монеты</small></div></div>
         <div class="stat"><span class="drop"></span><div id="waterCount">18<br><small>вода</small></div></div>
         <div class="stat"><span class="gem"></span><div id="boostCount">3<br><small>ускор.</small></div></div>
       </div>
@@ -230,7 +247,9 @@
   </div>
 
   <div class="farm-zone">
-    <div class="farm-note"><div class="hint" id="modeHint">Режим: посадка — перетащи ягоду на свободную грядку</div></div>
+    <div class="farm-note"><div class="hint" id="modeHint">Режим: посадка — перетащи ягоду на стол, затем на грядку</div></div>
+    <div class="weather-panel" id="weatherPanel"></div>
+    <div class="plant-tables" id="plantTables"></div>
     <div class="plots" id="plots"></div>
   </div>
 
@@ -277,447 +296,271 @@
 <script>
 (() => {
   const berryCatalog = {
-    cheri: {
-      key: 'cheri',
-      name: 'Черри-ягода',
-      baseHours: 16,
-      growMs: 70_000,
-      color: '#ff6d6d',
-      fruitUrl: 'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Curry_Ingredient_Cheri_Berry_Sprite.png',
-      iconUrl: 'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Bag_Cheri_Berry_SV_Sprite.png'
-    },
-    pecha: {
-      key: 'pecha',
-      name: 'Печа-ягода',
-      baseHours: 16,
-      growMs: 72_000,
-      color: '#ff8dcc',
-      fruitUrl: 'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Curry_Ingredient_Pecha_Berry_Sprite.png',
-      iconUrl: 'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Bag_Pecha_Berry_SV_Sprite.png'
-    },
-    oran: {
-      key: 'oran',
-      name: 'Оран-ягода',
-      baseHours: 16,
-      growMs: 75_000,
-      color: '#5ca0ff',
-      fruitUrl: 'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Curry_Ingredient_Oran_Berry_Sprite.png',
-      iconUrl: 'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Bag_Oran_Berry_Sprite.png'
-    },
-    sitrus: {
-      key: 'sitrus',
-      name: 'Ситрус-ягода',
-      baseHours: 32,
-      growMs: 105_000,
-      color: '#ffca54',
-      fruitUrl: 'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Curry_Ingredient_Sitrus_Berry_Sprite.png',
-      iconUrl: 'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Bag_Sitrus_Berry_LA_Sprite.png'
-    },
-    lum: {
-      key: 'lum',
-      name: 'Лум-ягода',
-      baseHours: 32,
-      growMs: 115_000,
-      color: '#7cd98f',
-      fruitUrl: 'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Curry_Ingredient_Lum_Berry_Sprite.png',
-      iconUrl: 'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Bag_Lum_Berry_LA_Sprite.png'
-    },
-    razz: {
-      key: 'razz',
-      name: 'Разз-ягода',
-      baseHours: 16,
-      growMs: 78_000,
-      color: '#f44e65',
-      fruitUrl: 'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Bag_Razz_Berry_SV_Sprite.png',
-      iconUrl: 'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Bag_Razz_Berry_SV_Sprite.png'
-    }
+    cheri: { key:'cheri', name:'Черри-ягода', baseHours:16, growMs:70_000, color:'#ff6d6d', fruitUrl:'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Curry_Ingredient_Cheri_Berry_Sprite.png', iconUrl:'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Bag_Cheri_Berry_SV_Sprite.png' },
+    pecha: { key:'pecha', name:'Печа-ягода', baseHours:16, growMs:72_000, color:'#ff8dcc', fruitUrl:'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Curry_Ingredient_Pecha_Berry_Sprite.png', iconUrl:'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Bag_Pecha_Berry_SV_Sprite.png' },
+    oran: { key:'oran', name:'Оран-ягода', baseHours:16, growMs:75_000, color:'#5ca0ff', fruitUrl:'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Curry_Ingredient_Oran_Berry_Sprite.png', iconUrl:'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Bag_Oran_Berry_Sprite.png' },
+    sitrus: { key:'sitrus', name:'Ситрус-ягода', baseHours:32, growMs:105_000, color:'#ffca54', fruitUrl:'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Curry_Ingredient_Sitrus_Berry_Sprite.png', iconUrl:'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Bag_Sitrus_Berry_LA_Sprite.png' },
+    lum: { key:'lum', name:'Лум-ягода', baseHours:32, growMs:115_000, color:'#7cd98f', fruitUrl:'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Curry_Ingredient_Lum_Berry_Sprite.png', iconUrl:'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Bag_Lum_Berry_LA_Sprite.png' },
+    razz: { key:'razz', name:'Разз-ягода', baseHours:16, growMs:78_000, color:'#f44e65', fruitUrl:'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Bag_Razz_Berry_SV_Sprite.png', iconUrl:'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Bag_Razz_Berry_SV_Sprite.png' },
+    joy: { key:'joy', name:'Джой-ягода', baseHours:24, growMs:92_000, color:'#c175ff', fruitUrl:'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Bag_Nanab_Berry_SV_Sprite.png', iconUrl:'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Bag_Nanab_Berry_SV_Sprite.png' }
+  };
+
+  const weatherModes = {
+    clear: { name:'Солнце', icon:'☀️', growthBuff:1.15 },
+    rain: { name:'Дождь', icon:'🌧️', growthBuff:1.08 },
+    wind: { name:'Ветер', icon:'🌬️', growthBuff:1.03 },
+    mist: { name:'Туман', icon:'🌫️', growthBuff:0.96 }
   };
 
   const inventory = {
-    berries: { cheri: 4, pecha: 3, oran: 5, sitrus: 2, lum: 2, razz: 3 },
+    berries: { cheri: 4, pecha: 3, oran: 5, sitrus: 2, lum: 2, razz: 3, joy: 0 },
     boosters: { spray: 2, crystal: 1, mulch: 4 },
     coins: 2640,
     water: 18
   };
 
   let plots = [
-    { id: 1, berry: null, plantedAt: null, watered: false },
-    { id: 2, berry: 'pecha', plantedAt: Date.now() - 20_000, watered: false },
-    { id: 3, berry: 'oran', plantedAt: Date.now() - 45_000, watered: true },
-    { id: 4, berry: 'cheri', plantedAt: Date.now() - 68_000, watered: true },
-    { id: 5, berry: null, plantedAt: null, watered: false },
-    { id: 6, berry: 'sitrus', plantedAt: Date.now() - 85_000, watered: true }
+    { id:1, berry:null, plantedAt:null, watered:false },
+    { id:2, berry:'pecha', plantedAt:Date.now()-20_000, watered:false },
+    { id:3, berry:'oran', plantedAt:Date.now()-45_000, watered:true },
+    { id:4, berry:'cheri', plantedAt:Date.now()-68_000, watered:true },
+    { id:5, berry:null, plantedAt:null, watered:false },
+    { id:6, berry:'sitrus', plantedAt:Date.now()-85_000, watered:true }
   ];
 
-  let mode = 'plant';
-  let selectedTab = 'berries';
-  let selectedBoostTarget = null;
-  let draggedBerry = null;
+  let mode='plant', selectedTab='berries', selectedBoostTarget=null, draggedBerry=null, weather='clear';
+  const tableSlots=[null,null,null];
 
-  const plotsEl = document.getElementById('plots');
-  const modeHintEl = document.getElementById('modeHint');
-  const sheetEl = document.getElementById('sheet');
-  const scrimEl = document.getElementById('scrim');
-  const sheetContentEl = document.getElementById('sheetContent');
-  const toastEl = document.getElementById('toast');
-  const waterCountEl = document.getElementById('waterCount');
-  const boostCountEl = document.getElementById('boostCount');
+  const plotsEl=document.getElementById('plots');
+  const plantTablesEl=document.getElementById('plantTables');
+  const weatherPanelEl=document.getElementById('weatherPanel');
+  const weatherLayerEl=document.getElementById('weatherLayer');
+  const modeHintEl=document.getElementById('modeHint');
+  const sheetEl=document.getElementById('sheet');
+  const scrimEl=document.getElementById('scrim');
+  const sheetContentEl=document.getElementById('sheetContent');
+  const toastEl=document.getElementById('toast');
+  const waterCountEl=document.getElementById('waterCount');
+  const boostCountEl=document.getElementById('boostCount');
+  const coinCountEl=document.getElementById('coinCount');
 
-  function showToast(text){
-    toastEl.textContent = text;
-    toastEl.classList.add('show');
-    clearTimeout(showToast.t);
-    showToast.t = setTimeout(() => toastEl.classList.remove('show'), 1800);
+  function playTone(type='tap'){
+    const AudioCtx=window.AudioContext||window.webkitAudioContext;
+    if(!AudioCtx) return;
+    if(!playTone.ctx) playTone.ctx=new AudioCtx();
+    const ctx=playTone.ctx;
+    if(ctx.state==='suspended') ctx.resume();
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    const now=ctx.currentTime;
+    const presets={tap:[540,.06,'sine'],ok:[640,.12,'triangle'],bad:[220,.13,'sawtooth'],buy:[720,.18,'square']};
+    const [f,d,w]=presets[type]||presets.tap;
+    osc.type=w; osc.frequency.setValueAtTime(f,now); osc.frequency.exponentialRampToValueAtTime(f*1.3,now+d);
+    gain.gain.setValueAtTime(.0001,now); gain.gain.exponentialRampToValueAtTime(.09,now+.02); gain.gain.exponentialRampToValueAtTime(.001,now+d);
+    osc.connect(gain).connect(ctx.destination); osc.start(now); osc.stop(now+d);
   }
 
-  function formatRemaining(ms){
-    if(ms <= 0) return 'Готово';
-    const sec = Math.ceil(ms / 1000);
-    const min = Math.floor(sec / 60);
-    const s = sec % 60;
-    return min > 0 ? `${min} мин ${String(s).padStart(2,'0')} сек` : `${s} сек`;
+  function showToast(text,type='ok'){
+    toastEl.textContent=text; toastEl.classList.add('show'); playTone(type);
+    clearTimeout(showToast.t); showToast.t=setTimeout(()=>toastEl.classList.remove('show'),1700);
   }
+
+  function updateCounters(){
+    waterCountEl.innerHTML=`${inventory.water}<br><small>вода</small>`;
+    boostCountEl.innerHTML=`${Object.values(inventory.boosters).reduce((a,b)=>a+b,0)}<br><small>ускор.</small>`;
+    coinCountEl.innerHTML=`${inventory.coins.toLocaleString('ru-RU')}<br><small>монеты</small>`;
+  }
+
+  function formatRemaining(ms){ if(ms<=0) return 'Готово'; const sec=Math.ceil(ms/1000); return sec>60?`${Math.floor(sec/60)} мин ${String(sec%60).padStart(2,'0')} сек`:`${sec} сек`; }
+
+  function weatherBoost(){ return weatherModes[weather].growthBuff; }
 
   function getPlotState(plot){
-    if(!plot.berry) return { stage:'empty', progress:0, remaining:0, ready:false };
-    const berry = berryCatalog[plot.berry];
-    const elapsed = Date.now() - plot.plantedAt;
-    const progress = Math.min(elapsed / berry.growMs, 1);
-    const ready = progress >= 1;
-    const stage = ready ? 'ready' : progress < .28 ? 'sprout' : progress < .72 ? 'bush' : 'berry';
-    return { stage, progress, remaining: Math.max(berry.growMs - elapsed, 0), ready };
+    if(!plot.berry) return {stage:'empty',progress:0,remaining:0,ready:false};
+    const berry=berryCatalog[plot.berry];
+    const elapsed=(Date.now()-plot.plantedAt)*weatherBoost();
+    const progress=Math.min(elapsed/berry.growMs,1);
+    const ready=progress>=1;
+    const stage=ready?'ready':progress<.28?'sprout':progress<.72?'bush':'berry';
+    return {stage,progress,remaining:Math.max(berry.growMs-elapsed,0),ready};
   }
 
   function renderPlant(plot){
-    const state = getPlotState(plot);
-    if(state.stage === 'empty') return `<div class="stage-empty"></div>`;
-    if(state.stage === 'sprout') {
-      return `<div class="stage-sprout"><span class="stem"></span></div>`;
-    }
-    if(state.stage === 'bush') {
-      return `<div class="stage-bush"><div class="leafy"></div><div class="leaf-group"><i></i><i></i><i></i><i></i><i></i></div></div>`;
-    }
-    const berry = berryCatalog[plot.berry];
-    const readyClass = state.ready ? 'berry-ready' : '';
-    return `<img class="berry-img ${readyClass}" src="${berry.fruitUrl}" alt="${berry.name}" onerror="this.src='${berry.iconUrl}'" />${state.ready ? '<div class="sparkles"><i></i><i></i><i></i><i></i></div>' : ''}`;
+    const state=getPlotState(plot);
+    if(state.stage==='empty') return '<div class="stage-empty"></div>';
+    if(state.stage==='sprout') return '<div class="stage-sprout"><span class="stem"></span></div>';
+    if(state.stage==='bush') return '<div class="stage-bush"><div class="leafy"></div><div class="leaf-group"><i></i><i></i><i></i><i></i><i></i></div></div>';
+    const berry=berryCatalog[plot.berry];
+    return `<img class="berry-img ${state.ready?'berry-ready':''}" src="${berry.fruitUrl}" alt="${berry.name}" onerror="this.src='${berry.iconUrl}'" />${state.ready?'<div class="sparkles"><i></i><i></i><i></i><i></i></div>':''}`;
   }
 
   function renderPlots(){
-    plotsEl.innerHTML = plots.map(plot => {
-      const state = getPlotState(plot);
-      const berry = plot.berry ? berryCatalog[plot.berry] : null;
-      const badgeType = state.ready ? 'ready' : plot.watered ? 'growth' : 'normal';
-      const dotClass = badgeType === 'ready' ? 'mini-dot ready' : badgeType === 'growth' ? 'mini-dot growth' : 'mini-dot';
-      const stageText = !plot.berry ? 'Пусто' : state.ready ? 'Сбор' : state.stage === 'sprout' ? 'Листочки' : state.stage === 'bush' ? 'Куст' : 'Плод';
-      return `
-        <button class="plot ${selectedBoostTarget===plot.id?'selected':''}" data-id="${plot.id}">
-          <div class="plot-header">
-            <div>
-              <div class="badge"><span class="${dotClass}"></span>${plot.berry ? formatRemaining(state.remaining) : 'Свободная грядка'}</div>
-              <div class="plot-name">${berry ? berry.name : 'Нет посадки'}</div>
-            </div>
-            <div class="plot-stage">${stageText}</div>
-          </div>
-          <div class="plant-wrap">${renderPlant(plot)}</div>
-          <div class="watering">
-            <svg viewBox="0 0 100 100" fill="none" aria-hidden="true">
-              <path d="M25 36c0-6 5-11 11-11h18c5 0 9 4 9 9v17c0 5-4 9-9 9H31c-5 0-9-4-9-9V36z" fill="#dbe7f5"/>
-              <path d="M61 41h15c9 0 15 7 15 14" stroke="#dbe7f5" stroke-width="8" stroke-linecap="round"/>
-              <path d="M18 27l20-8" stroke="#8a9cb6" stroke-width="7" stroke-linecap="round"/>
-              <path d="M20 18c0-5 4-9 9-9" stroke="#8a9cb6" stroke-width="7" stroke-linecap="round"/>
-            </svg>
-            <div class="stream"></div>
-            <div class="splash"></div>
-          </div>
-        </button>`;
+    plotsEl.innerHTML=plots.map(plot=>{
+      const state=getPlotState(plot), berry=berryCatalog[plot.berry];
+      const status = !plot.berry ? 'Свободно' : state.ready ? 'Готово к сбору' : formatRemaining(state.remaining);
+      return `<button class="plot ${selectedBoostTarget===plot.id?'selected':''}" data-id="${plot.id}"><div class="plot-head"><span>Грядка ${plot.id}</span><span>${status}</span></div><div class="plot-body">${renderPlant(plot)}</div>${plot.watered?'<div class="pill">Полито</div>':''}<div class="plot-foot">${plot.berry?berry.name:'Пустая почва'}</div><div class="watering"><svg viewBox="0 0 64 64" aria-hidden="true"><path fill="#6ea9ff" d="M9 34h26l7 7v8H9z"/><path fill="#8bc0ff" d="M33 24h7a8 8 0 0 1 8 8v3h-5v-3a3 3 0 0 0-3-3h-7z"/><path fill="#4e85d8" d="M17 20h13v14H17z"/></svg><span class="stream"></span><span class="splash"></span></div></button>`;
     }).join('');
 
-    [...plotsEl.querySelectorAll('.plot')].forEach(btn => {
-      const id = Number(btn.dataset.id);
-      btn.addEventListener('click', () => handlePlotAction(id));
-      btn.addEventListener('dragover', (e) => {
-        if(mode !== 'plant') return;
-        e.preventDefault();
-        btn.classList.add('drop-target');
-      });
-      btn.addEventListener('dragleave', () => btn.classList.remove('drop-target'));
-      btn.addEventListener('drop', (e) => {
-        e.preventDefault();
-        btn.classList.remove('drop-target');
-        if (draggedBerry) plantBerry(id, draggedBerry);
+    plotsEl.querySelectorAll('.plot').forEach(plotBtn=>{
+      const id=Number(plotBtn.dataset.id);
+      plotBtn.addEventListener('click',()=>handlePlotAction(id));
+      plotBtn.addEventListener('dragover',e=>{e.preventDefault(); if(mode==='plant') plotBtn.classList.add('drop-target');});
+      plotBtn.addEventListener('dragleave',()=>plotBtn.classList.remove('drop-target'));
+      plotBtn.addEventListener('drop',e=>{e.preventDefault(); plotBtn.classList.remove('drop-target'); const berry=draggedBerry || e.dataTransfer.getData('text/plain'); if(berry) plantBerry(id,berry);});
+    });
+  }
+
+  function renderWeather(){
+    weatherPanelEl.innerHTML=Object.entries(weatherModes).map(([key,v])=>`<button class="weather-pill ${weather===key?'active':''}" data-weather="${key}">${v.icon} ${v.name}</button>`).join('');
+    weatherPanelEl.querySelectorAll('[data-weather]').forEach(btn=>btn.addEventListener('click',()=>{weather=btn.dataset.weather; renderWeather(); renderWeatherLayer(); renderPlots(); showToast(`Погода: ${weatherModes[weather].name}`);}));
+  }
+
+  function renderWeatherLayer(){
+    if(weather==='clear') weatherLayerEl.innerHTML='<div class="sun-glow"></div>';
+    if(weather==='wind') weatherLayerEl.innerHTML='<div class="sun-glow" style="opacity:.35"></div>'+Array.from({length:7},(_,i)=>`<span class="wind-streak" style="top:${18+i*9}%;left:${10+i*6}%;width:${60+Math.random()*90}px;animation-delay:${i*.2}s"></span>`).join('');
+    if(weather==='mist') weatherLayerEl.innerHTML='<div class="sun-glow" style="opacity:.2"></div><div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(214,236,248,.35),rgba(235,245,255,.1))"></div>';
+    if(weather==='rain') weatherLayerEl.innerHTML=Array.from({length:52},(_,i)=>`<span class="rain-drop" style="left:${Math.random()*100}%;top:${-15-Math.random()*130}px;animation-duration:${.8+Math.random()*0.8}s;animation-delay:${Math.random()*-2}s"></span>`).join('');
+  }
+
+  function renderTables(){
+    plantTablesEl.innerHTML=tableSlots.map((berryKey,idx)=>{
+      const berry=berryCatalog[berryKey];
+      return `<button class="plant-table ${berryKey?'ready':''}" data-slot="${idx}">${berryKey?`<img src="${berry.iconUrl}" alt="${berry.name}" onerror="this.src='${berry.fruitUrl}'"><div class="table-title">${berry.name}</div>`:`<div style="font-size:22px">🪵</div><div class="table-title">Стол ${idx+1}</div>`}</button>`;
+    }).join('');
+    plantTablesEl.querySelectorAll('.plant-table').forEach(slot=>{
+      slot.addEventListener('dragover',e=>{e.preventDefault(); slot.classList.add('pick');});
+      slot.addEventListener('dragleave',()=>slot.classList.remove('pick'));
+      slot.addEventListener('drop',e=>{e.preventDefault(); slot.classList.remove('pick'); const berry=draggedBerry || e.dataTransfer.getData('text/plain'); if(!berry) return; tableSlots[Number(slot.dataset.slot)]=berry; renderTables(); showToast('Ягода на столе подготовки');});
+      slot.addEventListener('click',()=>{
+        const idx=Number(slot.dataset.slot); const berry=tableSlots[idx];
+        if(!berry) return showToast('Перетащи ягоду на стол','tap');
+        const free=plots.find(p=>!p.berry);
+        if(!free) return showToast('Нет свободной грядки','bad');
+        plantBerry(free.id, berry); tableSlots[idx]=null; renderTables();
       });
     });
   }
 
-  function updateCounters(){
-    waterCountEl.innerHTML = `${inventory.water}<br><small>вода</small>`;
-    boostCountEl.innerHTML = `${inventory.boosters.spray + inventory.boosters.crystal}<br><small>ускор.</small>`;
+  function setMode(next){
+    mode=next; selectedBoostTarget=null;
+    const hints={plant:'Режим: посадка — перетащи на стол и нажми стол для посадки',water:'Режим: полив — тапни по грядке',harvest:'Режим: сбор — собери зрелые ягоды',inventory:'Режим: инвентарь — управление ресурсами'};
+    modeHintEl.textContent=hints[next];
+    document.querySelectorAll('.action-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.mode===next));
   }
 
-  function setMode(nextMode){
-    mode = nextMode;
-    document.querySelectorAll('.action-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === nextMode));
-    const hints = {
-      plant: 'Режим: посадка — перетащи ягоду на свободную грядку',
-      water: 'Режим: полив — нажми на грядку, чтобы ускорить рост',
-      harvest: 'Режим: сбор — нажми на готовую грядку',
-      inventory: 'Открыт инвентарь — внутри есть и магазин, и ускорители'
-    };
-    modeHintEl.textContent = hints[nextMode] || '';
-    if(nextMode === 'inventory') openSheet();
+  function plantBerry(plotId,berryKey){
+    const plot=plots.find(p=>p.id===plotId);
+    if(!plot || plot.berry) return showToast('Грядка занята','bad');
+    if((inventory.berries[berryKey]||0)<=0) return showToast('Недостаточно ягод','bad');
+    inventory.berries[berryKey]-=1; plot.berry=berryKey; plot.plantedAt=Date.now(); plot.watered=false;
+    updateCounters(); renderPlots(); renderSheet(); showToast(`Посадка: ${berryCatalog[berryKey].name}`);
   }
 
-  function plantBerry(plotId, berryKey){
-    const plot = plots.find(p => p.id === plotId);
-    if(!plot || plot.berry){
-      showToast('Сюда сейчас нельзя посадить ягоду');
-      return;
-    }
-    if((inventory.berries[berryKey] || 0) <= 0){
-      showToast('Эта ягода закончилась');
-      return;
-    }
-    plot.berry = berryKey;
-    plot.plantedAt = Date.now();
-    plot.watered = false;
-    inventory.berries[berryKey] -= 1;
-    renderPlots();
-    renderSheet();
-    showToast(`Посажена: ${berryCatalog[berryKey].name}`);
+  function playWaterSound(){
+    const AudioCtx=window.AudioContext||window.webkitAudioContext; if(!AudioCtx) return;
+    if(!playWaterSound.ctx) playWaterSound.ctx=new AudioCtx(); const ctx=playWaterSound.ctx; if(ctx.state==='suspended') ctx.resume();
+    const now=ctx.currentTime; const buffer=ctx.createBuffer(1,ctx.sampleRate*0.24,ctx.sampleRate); const data=buffer.getChannelData(0);
+    for(let i=0;i<data.length;i++){const t=i/data.length; data[i]=(Math.random()*2-1)*(1-t)*0.13;}
+    const noise=ctx.createBufferSource(); noise.buffer=buffer;
+    const filter=ctx.createBiquadFilter(); filter.type='bandpass'; filter.frequency.setValueAtTime(850,now);
+    const gain=ctx.createGain(); gain.gain.setValueAtTime(.0001,now); gain.gain.exponentialRampToValueAtTime(.2,now+.02); gain.gain.exponentialRampToValueAtTime(.001,now+.24);
+    noise.connect(filter).connect(gain).connect(ctx.destination); noise.start(now); noise.stop(now+.24);
   }
 
   function waterPlot(plotId){
-    const plot = plots.find(p => p.id === plotId);
-    if(!plot || !plot.berry){ showToast('Сначала посади ягоду'); return; }
-    const state = getPlotState(plot);
-    if(state.ready){ showToast('Эта ягода уже готова к сбору'); return; }
-    if(inventory.water <= 0){ showToast('Вода закончилась'); return; }
-    inventory.water -= 1;
-    plot.watered = true;
-    plot.plantedAt -= 10_000;
-    const btn = plotsEl.querySelector(`.plot[data-id="${plotId}"]`);
-    if(btn){
-      btn.classList.add('watering');
-      setTimeout(() => btn.classList.remove('watering'), 1100);
-    }
-    playWaterSound();
-    updateCounters();
-    renderPlots();
-    showToast('Полив выполнен');
+    const plot=plots.find(p=>p.id===plotId);
+    if(!plot || !plot.berry) return showToast('Сначала посади ягоду','bad');
+    if(inventory.water<=0) return showToast('Закончилась вода','bad');
+    inventory.water-=1; plot.watered=true; plot.plantedAt-=10_000;
+    const btn=plotsEl.querySelector(`.plot[data-id="${plotId}"]`); if(btn){btn.classList.add('watering'); setTimeout(()=>btn.classList.remove('watering'),1100);}
+    playWaterSound(); updateCounters(); renderPlots(); showToast('Полив выполнен');
   }
 
   function harvestPlot(plotId){
-    const plot = plots.find(p => p.id === plotId);
-    if(!plot || !plot.berry){ showToast('Тут нечего собирать'); return; }
-    const state = getPlotState(plot);
-    if(!state.ready){ showToast('Ягода ещё растёт'); return; }
-    inventory.coins += 80;
-    const harvestedBerry = plot.berry;
-    inventory.berries[harvestedBerry] = (inventory.berries[harvestedBerry] || 0) + 2;
-    plot.berry = null;
-    plot.plantedAt = null;
-    plot.watered = false;
-    renderPlots();
-    renderSheet();
-    showToast(`Собрано: ${berryCatalog[harvestedBerry].name}`);
+    const plot=plots.find(p=>p.id===plotId); if(!plot||!plot.berry) return showToast('Тут нечего собирать','bad');
+    const st=getPlotState(plot); if(!st.ready) return showToast('Ягода ещё растёт','tap');
+    inventory.coins+=80; const harvested=plot.berry; inventory.berries[harvested]=(inventory.berries[harvested]||0)+2;
+    plot.berry=null; plot.plantedAt=null; plot.watered=false;
+    updateCounters(); renderPlots(); renderSheet(); showToast(`Собрано: ${berryCatalog[harvested].name}`);
   }
 
-  function boostPlot(plotId, boostType){
-    const plot = plots.find(p => p.id === plotId);
-    if(!plot || !plot.berry){ showToast('Выбери грядку с растением'); return; }
-    const state = getPlotState(plot);
-    if(state.ready){ showToast('Ускоритель не нужен: урожай уже готов'); return; }
-    if(inventory.boosters[boostType] <= 0){ showToast('Ускоритель закончился'); return; }
-    inventory.boosters[boostType] -= 1;
-    if(boostType === 'spray') plot.plantedAt -= 18_000;
-    if(boostType === 'crystal') plot.plantedAt -= 30_000;
-    if(boostType === 'mulch') plot.plantedAt -= 12_000;
-    selectedBoostTarget = null;
-    updateCounters();
-    renderPlots();
-    renderSheet();
-    showToast('Рост ускорен');
+  function boostPlot(plotId,boostType){
+    const plot=plots.find(p=>p.id===plotId);
+    if(!plot||!plot.berry) return showToast('Выбери грядку с растением','bad');
+    const st=getPlotState(plot); if(st.ready) return showToast('Урожай уже готов','tap');
+    if(inventory.boosters[boostType]<=0) return showToast('Ускоритель закончился','bad');
+    inventory.boosters[boostType]-=1;
+    if(boostType==='spray') plot.plantedAt-=18_000;
+    if(boostType==='crystal') plot.plantedAt-=30_000;
+    if(boostType==='mulch') plot.plantedAt-=12_000;
+    selectedBoostTarget=null; updateCounters(); renderPlots(); renderSheet(); showToast('Рост ускорен');
   }
 
   function handlePlotAction(plotId){
-    if(mode === 'water') return waterPlot(plotId);
-    if(mode === 'harvest') return harvestPlot(plotId);
-    if(mode === 'inventory') {
-      selectedBoostTarget = selectedBoostTarget === plotId ? null : plotId;
-      renderPlots();
-      showToast(selectedBoostTarget ? 'Теперь можно применить ускоритель из инвентаря' : 'Выбор грядки снят');
-      return;
-    }
-    const plot = plots.find(p => p.id === plotId);
-    if(mode === 'plant' && plot && !plot.berry){
-      openSheet('berries');
-      showToast('Открой ягоды и перетащи нужную на грядку');
-    }
+    if(mode==='water') return waterPlot(plotId);
+    if(mode==='harvest') return harvestPlot(plotId);
+    if(mode==='inventory'){selectedBoostTarget=selectedBoostTarget===plotId?null:plotId; renderPlots(); showToast(selectedBoostTarget?'Грядка выбрана для ускорителя':'Выбор снят'); return;}
+    const plot=plots.find(p=>p.id===plotId);
+    if(mode==='plant' && plot && !plot.berry){ openSheet('berries'); showToast('Перетащи ягоду на стол или грядку'); }
   }
 
-  function openSheet(tab = selectedTab){
-    selectedTab = tab;
-    renderSheet();
-    sheetEl.classList.add('open');
-    scrimEl.classList.add('show');
-  }
-  function closeSheet(){
-    sheetEl.classList.remove('open');
-    scrimEl.classList.remove('show');
-  }
+  function openSheet(tab=selectedTab){ selectedTab=tab; renderSheet(); sheetEl.classList.add('open'); scrimEl.classList.add('show'); }
+  function closeSheet(){ sheetEl.classList.remove('open'); scrimEl.classList.remove('show'); }
 
   function renderBerriesTab(){
-    const chips = Object.entries(berryCatalog).map(([key, berry]) => `
-      <div class="drag-chip" draggable="true" data-berry="${key}">
-        <img src="${berry.iconUrl}" alt="${berry.name}" onerror="this.src='${berry.fruitUrl}'" />
-        <div>
-          <div style="font-size:13px;font-weight:900">${berry.name}</div>
-          <div style="font-size:11px;color:var(--muted);font-weight:700">${berry.baseHours} ч в оригинале</div>
-        </div>
-      </div>`).join('');
-
-    const cards = Object.entries(berryCatalog).map(([key, berry]) => `
-      <div class="item-card">
-        <div class="item-top">
-          <div class="item-pic"><img src="${berry.fruitUrl}" alt="${berry.name}" onerror="this.src='${berry.iconUrl}'" /></div>
-          <div class="qty">× ${inventory.berries[key] || 0}</div>
-        </div>
-        <div class="item-name">${berry.name}</div>
-        <div class="item-meta">Базовый рост в игре: ${berry.baseHours} ч. В демо время ускорено для браузера.</div>
-        <div class="item-actions">
-          <button class="soft-btn" data-preview="${key}">Описание</button>
-          <button class="primary-btn" data-openplant="${key}">Посадить</button>
-        </div>
-      </div>`).join('');
-
-    return `<div class="sheet-sub" style="margin-bottom:10px">Можно перетаскивать ягоды прямо на грядки.</div><div class="drag-row">${chips}</div><div class="legend"><span>Черри</span><span>Печа</span><span>Оран</span><span>Ситрус</span><span>Лум</span><span>Разз</span></div><div class="grid">${cards}</div>`;
+    const chips=Object.entries(berryCatalog).map(([key,b])=>`<div class="drag-chip" draggable="true" data-berry="${key}"><img src="${b.iconUrl}" alt="${b.name}" onerror="this.src='${b.fruitUrl}'"/><div><div style="font-size:13px;font-weight:900">${b.name}</div><div style="font-size:11px;color:var(--muted);font-weight:700">${b.baseHours} ч в оригинале</div></div></div>`).join('');
+    const cards=Object.entries(berryCatalog).map(([key,b])=>`<div class="item-card"><div class="item-top"><div class="item-pic"><img src="${b.fruitUrl}" alt="${b.name}" onerror="this.src='${b.iconUrl}'"/></div><div class="qty">× ${inventory.berries[key]||0}</div></div><div class="item-name">${b.name}</div><div class="item-meta">Перетащи на столы подготовки или сразу на грядку.</div><div class="item-actions"><button class="soft-btn" data-preview="${key}">Описание</button><button class="primary-btn" data-openplant="${key}">Посадить</button></div></div>`).join('');
+    return `<div class="sheet-sub" style="margin-bottom:10px">Столы подготовки помогают удобнее планировать посадку.</div><div class="drag-row">${chips}</div><div class="grid">${cards}</div>`;
   }
 
   function renderBoostersTab(){
-    const boosterData = [
-      ['spray','Спрей роста','Мгновенно срезает часть таймера на 18 секунд.','⚡', inventory.boosters.spray],
-      ['crystal','Кристалл солнца','Сильный буст: минус 30 секунд роста.','✨', inventory.boosters.crystal],
-      ['mulch','Умная мульча','Мягкое ускорение: минус 12 секунд.','🍃', inventory.boosters.mulch]
-    ];
-    return `<div class="sheet-sub" style="margin-bottom:10px">Сначала выбери грядку нажатием, потом применяй ускоритель.</div><div class="grid">${boosterData.map(([key,name,text,emoji,qty]) => `
-      <div class="item-card">
-        <div class="item-top">
-          <div class="item-pic" style="font-size:30px">${emoji}</div>
-          <div class="qty">× ${qty}</div>
-        </div>
-        <div class="item-name">${name}</div>
-        <div class="item-meta">${text}</div>
-        <div class="item-actions"><button class="primary-btn" data-boost="${key}">${selectedBoostTarget ? 'Применить' : 'Выбрать грядку'}</button></div>
-      </div>`).join('')}</div>`;
+    const data=[['spray','Спрей роста','Мгновенно: -18 секунд','⚡',inventory.boosters.spray],['crystal','Кристалл солнца','Сильный буст: -30 секунд','✨',inventory.boosters.crystal],['mulch','Умная мульча','Мягкий буст: -12 секунд','🍃',inventory.boosters.mulch]];
+    return `<div class="sheet-sub" style="margin-bottom:10px">Выбери грядку в режиме инвентаря и применяй буст.</div><div class="grid">${data.map(([k,n,t,e,q])=>`<div class="item-card"><div class="item-top"><div class="item-pic" style="font-size:30px">${e}</div><div class="qty">× ${q}</div></div><div class="item-name">${n}</div><div class="item-meta">${t}</div><div class="item-actions"><button class="primary-btn" data-boost="${k}">${selectedBoostTarget?'Применить':'Выбери грядку'}</button></div></div>`).join('')}</div>`;
   }
 
   function renderShopTab(){
-    const shop = [
-      ['pecha','Пачка семян Печа',120],
-      ['oran','Пачка семян Оран',140],
-      ['sitrus','Пачка семян Ситрус',220],
-      ['spray','Спрей роста',180],
-      ['mulch','Умная мульча',90],
-      ['crystal','Кристалл солнца',340]
-    ];
-    return `<div class="grid">${shop.map(([key,name,price]) => {
-      const isBerry = !!berryCatalog[key];
-      return `
-      <div class="item-card">
-        <div class="item-top">
-          <div class="item-pic">${isBerry ? `<img src="${berryCatalog[key].iconUrl}" alt="${name}" onerror="this.src='${berryCatalog[key].fruitUrl}'" />` : `<div style="font-size:30px">${key==='spray'?'⚡':key==='mulch'?'🍃':'✨'}</div>`}</div>
-          <div class="qty">${price} 💰</div>
-        </div>
-        <div class="item-name">${name}</div>
-        <div class="item-meta">Современный внутриигровой магазин без перегруза. Один тап — и всё ясно.</div>
-        <div class="item-actions"><button class="primary-btn" data-buy="${key}" data-price="${price}">Купить</button></div>
-      </div>`;
+    const shop=[['joy','Джой-ягода от сестры',280,'sis'],['pecha','Пачка семян Печа',120],['oran','Пачка семян Оран',140],['sitrus','Пачка семян Ситрус',220],['spray','Спрей роста',180],['mulch','Умная мульча',90],['crystal','Кристалл солнца',340]];
+    return `<div class="sheet-sub" style="margin-bottom:10px">Сестра Джой иногда привозит редкие ягоды и музыку сада.</div><div class="grid">${shop.map(([key,name,price,type])=>{
+      const isBerry=!!berryCatalog[key];
+      const pic=type==='sis'?'<div style="font-size:30px">👩‍🌾</div>':isBerry?`<img src="${berryCatalog[key].iconUrl}" alt="${name}" onerror="this.src='${berryCatalog[key].fruitUrl}'" />`:`<div style="font-size:30px">${key==='spray'?'⚡':key==='mulch'?'🍃':'✨'}</div>`;
+      return `<div class="item-card"><div class="item-top"><div class="item-pic">${pic}</div><div class="qty">${price} 💰</div></div><div class="item-name">${name}</div><div class="item-meta">Современный магазин: мягкие анимации, быстрые покупки.</div><div class="item-actions"><button class="primary-btn" data-buy="${key}" data-price="${price}">Купить</button></div></div>`;
     }).join('')}</div>`;
   }
 
   function renderSheet(){
-    document.querySelectorAll('.segmented button').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === selectedTab));
-    sheetContentEl.innerHTML = selectedTab === 'berries' ? renderBerriesTab() : selectedTab === 'boosters' ? renderBoostersTab() : renderShopTab();
+    document.querySelectorAll('.segmented button').forEach(btn=>btn.classList.toggle('active',btn.dataset.tab===selectedTab));
+    sheetContentEl.innerHTML=selectedTab==='berries'?renderBerriesTab():selectedTab==='boosters'?renderBoostersTab():renderShopTab();
 
-    sheetContentEl.querySelectorAll('[data-preview]').forEach(btn => btn.addEventListener('click', () => {
-      const berry = berryCatalog[btn.dataset.preview];
-      showToast(`${berry.name}: базовый рост ${berry.baseHours} ч`);
-    }));
-    sheetContentEl.querySelectorAll('[data-openplant]').forEach(btn => btn.addEventListener('click', () => {
-      const key = btn.dataset.openplant;
-      const free = plots.find(p => !p.berry);
-      if(!free) return showToast('Свободных грядок нет');
-      plantBerry(free.id, key);
-      closeSheet();
-    }));
-    sheetContentEl.querySelectorAll('[data-boost]').forEach(btn => btn.addEventListener('click', () => {
-      if(!selectedBoostTarget){ showToast('Сначала нажми на грядку на поле'); return; }
-      boostPlot(selectedBoostTarget, btn.dataset.boost);
-    }));
-    sheetContentEl.querySelectorAll('[data-buy]').forEach(btn => btn.addEventListener('click', () => {
-      const key = btn.dataset.buy;
-      const price = Number(btn.dataset.price);
-      if(inventory.coins < price) return showToast('Недостаточно монет');
-      inventory.coins -= price;
-      if(berryCatalog[key]) inventory.berries[key] = (inventory.berries[key] || 0) + 2;
-      else inventory.boosters[key] += 1;
-      updateCounters();
-      renderSheet();
-      showToast('Покупка выполнена');
+    sheetContentEl.querySelectorAll('[data-preview]').forEach(btn=>btn.addEventListener('click',()=>{const b=berryCatalog[btn.dataset.preview]; showToast(`${b.name}: рост ${b.baseHours} ч`,'tap');}));
+    sheetContentEl.querySelectorAll('[data-openplant]').forEach(btn=>btn.addEventListener('click',()=>{const key=btn.dataset.openplant; const free=plots.find(p=>!p.berry); if(!free) return showToast('Свободных грядок нет','bad'); plantBerry(free.id,key); closeSheet();}));
+    sheetContentEl.querySelectorAll('[data-boost]').forEach(btn=>btn.addEventListener('click',()=>{if(!selectedBoostTarget) return showToast('Сначала нажми на грядку','tap'); boostPlot(selectedBoostTarget,btn.dataset.boost);}));
+    sheetContentEl.querySelectorAll('[data-buy]').forEach(btn=>btn.addEventListener('click',()=>{
+      const key=btn.dataset.buy, price=Number(btn.dataset.price);
+      if(inventory.coins<price) return showToast('Недостаточно монет','bad');
+      inventory.coins-=price;
+      if(berryCatalog[key]) inventory.berries[key]=(inventory.berries[key]||0)+(key==='joy'?1:2);
+      else inventory.boosters[key]+=1;
+      updateCounters(); renderSheet(); showToast(key==='joy'?'Сестра Джой продала редкую ягоду!':'Покупка выполнена','buy');
     }));
 
-    sheetContentEl.querySelectorAll('.drag-chip').forEach(chip => {
-      chip.addEventListener('dragstart', () => {
-        draggedBerry = chip.dataset.berry;
-        chip.classList.add('dragging');
-      });
-      chip.addEventListener('dragend', () => {
-        draggedBerry = null;
-        chip.classList.remove('dragging');
-      });
+    sheetContentEl.querySelectorAll('.drag-chip').forEach(chip=>{
+      chip.addEventListener('dragstart',e=>{draggedBerry=chip.dataset.berry; e.dataTransfer.setData('text/plain',draggedBerry); chip.classList.add('dragging');});
+      chip.addEventListener('dragend',()=>{draggedBerry=null; chip.classList.remove('dragging');});
     });
   }
 
-  function playWaterSound(){
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if(!AudioCtx) return;
-    if(!playWaterSound.ctx) playWaterSound.ctx = new AudioCtx();
-    const ctx = playWaterSound.ctx;
-    const now = ctx.currentTime;
-    const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.22, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for(let i=0;i<data.length;i++){
-      const t = i / data.length;
-      data[i] = (Math.random()*2-1) * (1-t) * 0.12;
-    }
-    const noise = ctx.createBufferSource();
-    noise.buffer = buffer;
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'highpass';
-    filter.frequency.setValueAtTime(500, now);
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(.0001, now);
-    gain.gain.exponentialRampToValueAtTime(.28, now + .02);
-    gain.gain.exponentialRampToValueAtTime(.001, now + .22);
-    noise.connect(filter).connect(gain).connect(ctx.destination);
-    noise.start(now);
-    noise.stop(now + .22);
-  }
-
-  document.querySelectorAll('.action-btn').forEach(btn => btn.addEventListener('click', () => {
-    const next = btn.dataset.mode;
-    if(next === 'inventory') openSheet();
-    setMode(next);
-  }));
-  document.querySelectorAll('.segmented button').forEach(btn => btn.addEventListener('click', () => { selectedTab = btn.dataset.tab; renderSheet(); }));
-  document.getElementById('openInventoryBtn').addEventListener('click', () => { setMode('inventory'); openSheet(); });
-  document.getElementById('closeSheetBtn').addEventListener('click', closeSheet);
-  scrimEl.addEventListener('click', closeSheet);
+  document.querySelectorAll('.action-btn').forEach(btn=>btn.addEventListener('click',()=>{const next=btn.dataset.mode; if(next==='inventory') openSheet(); setMode(next);}));
+  document.querySelectorAll('.segmented button').forEach(btn=>btn.addEventListener('click',()=>{selectedTab=btn.dataset.tab; renderSheet();}));
+  document.getElementById('openInventoryBtn').addEventListener('click',()=>{setMode('inventory'); openSheet();});
+  document.getElementById('closeSheetBtn').addEventListener('click',closeSheet);
 
   updateCounters();
+  renderWeather();
+  renderWeatherLayer();
+  renderTables();
   renderPlots();
   renderSheet();
-  setInterval(renderPlots, 1000);
+  setInterval(renderPlots,1000);
 })();
 </script>
 </body>
