@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Поке-ферма ягод</title>
+  <style>
+    :root{
+      --bg:#eaf6ff;
+      --card:rgba(255,255,255,.78);
+      --card-strong:rgba(255,255,255,.92);
+      --text:#17324d;
+      --muted:#6b86a0;
+      --accent:#3da7ff;
+      --accent-2:#77d88d;
+      --accent-3:#ffa763;
+      --shadow:0 14px 40px rgba(24,62,105,.18);
+      --radius-xl:28px;
+      --radius-lg:22px;
+      --radius-md:18px;
+      --safe-top:max(18px, env(safe-area-inset-top));
+      --safe-bottom:max(18px, env(safe-area-inset-bottom));
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+    html,body{margin:0;height:100%;background:linear-gradient(180deg,#cdeeff 0%, #f6fbff 45%, #ebf7ef 100%);color:var(--text);overflow:hidden}
+    button,input{font:inherit}
+    .phone{
+      width:100%;height:100%;position:relative;overflow:hidden;
+      background:
+        radial-gradient(circle at 20% 15%, rgba(255,255,255,.95) 0 8%, transparent 9%),
+        radial-gradient(circle at 84% 12%, rgba(255,255,255,.75) 0 5%, transparent 6%),
+        linear-gradient(180deg,#9ae2ff 0%,#c9f1ff 21%,#b9f1b2 21.5%,#7fd781 65%,#61b76c 100%);
+    }
+    .sky-decor,.ground-decor{position:absolute;inset:0;pointer-events:none}
+    .sky-decor::before,.sky-decor::after{
+      content:"";position:absolute;border-radius:999px;background:rgba(255,255,255,.55);filter:blur(10px)
+    }
+    .sky-decor::before{width:180px;height:42px;top:76px;left:26px}
+    .sky-decor::after{width:140px;height:38px;top:112px;right:34px}
+    .ground-decor::before{
+      content:"";position:absolute;left:-8%;right:-8%;bottom:18%;height:48%;
+      background:radial-gradient(ellipse at center, rgba(255,255,255,.14) 0, rgba(255,255,255,0) 64%),
+                 linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,0));
+    }
+    .paths{
+      position:absolute;inset:18% 4% 18% 4%;pointer-events:none;opacity:.9;
+      background-image:
+      radial-gradient(circle at 16% 22%, rgba(255,245,220,.95) 0 15px, transparent 16px),
+      radial-gradient(circle at 24% 28%, rgba(255,245,220,.95) 0 17px, transparent 18px),
+      radial-gradient(circle at 33% 34%, rgba(255,245,220,.95) 0 13px, transparent 14px),
+      radial-gradient(circle at 45% 38%, rgba(255,245,220,.95) 0 14px, transparent 15px),
+      radial-gradient(circle at 58% 36%, rgba(255,245,220,.95) 0 16px, transparent 17px),
+      radial-gradient(circle at 70% 28%, rgba(255,245,220,.95) 0 12px, transparent 13px),
+      radial-gradient(circle at 78% 20%, rgba(255,245,220,.95) 0 14px, transparent 15px),
+      radial-gradient(circle at 60% 77%, rgba(255,245,220,.95) 0 15px, transparent 16px),
+      radial-gradient(circle at 52% 82%, rgba(255,245,220,.95) 0 13px, transparent 14px),
+      radial-gradient(circle at 43% 87%, rgba(255,245,220,.95) 0 11px, transparent 12px),
+      radial-gradient(circle at 34% 90%, rgba(255,245,220,.95) 0 14px, transparent 15px),
+      radial-gradient(circle at 25% 94%, rgba(255,245,220,.95) 0 12px, transparent 13px);
+      filter: drop-shadow(0 6px 8px rgba(95,73,35,.12));
+    }
+    .topbar{
+      position:absolute;left:16px;right:16px;top:var(--safe-top);display:flex;gap:10px;align-items:center;z-index:5;
+    }
+    .capsule,.icon-btn,.pill,.action-btn,.sheet,.plot,.dialog,.toast{
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow:var(--shadow);
+    }
+    .capsule{
+      flex:1;display:flex;gap:12px;align-items:center;padding:10px 14px;background:var(--card);border:1px solid rgba(255,255,255,.65);border-radius:999px;
+    }
+    .title-wrap{display:flex;flex-direction:column;min-width:0}
+    .eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:700}
+    .title{font-size:18px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .stats{display:flex;gap:8px;margin-left:auto}
+    .stat{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.76);padding:8px 12px;border-radius:999px;font-size:13px;font-weight:800}
+    .stat small{display:block;font-size:10px;color:var(--muted);font-weight:700}
+    .gem,.drop,.leaf,.coin{width:18px;height:18px;display:inline-grid;place-items:center;border-radius:50%}
+    .coin{background:linear-gradient(180deg,#ffe08c,#ffbb52)}
+    .drop{background:linear-gradient(180deg,#8fd6ff,#3ca9ff);clip-path:path('M10 0 C8 4 2 8 2 13 C2 17.4 5.6 21 10 21 C14.4 21 18 17.4 18 13 C18 8 12 4 10 0 Z')}
+    .leaf{background:linear-gradient(180deg,#9cf1a4,#45c571);clip-path:path('M2 13 C2 5 9 1 18 1 C18 12 12 19 5 19 C3 19 2 17 2 13 Z')}
+    .gem{background:linear-gradient(180deg,#c7b6ff,#7f68ff);clip-path:polygon(50% 0,100% 42%,74% 100%,26% 100%,0 42%)}
+    .icon-btn{width:52px;height:52px;border:none;border-radius:18px;background:var(--card-strong);display:grid;place-items:center;color:var(--text);font-size:22px}
+
+    .farm-zone{position:absolute;left:14px;right:14px;top:104px;bottom:150px;z-index:2}
+    .plots{position:absolute;left:0;right:0;top:72px;bottom:46px;display:grid;grid-template-columns:repeat(2, minmax(0,1fr));grid-auto-rows:1fr;gap:14px;padding:0 4px}
+    .plot{
+      position:relative;border:none;border-radius:30px;padding:12px;background:linear-gradient(180deg, rgba(255,255,255,.3), rgba(255,255,255,.12));
+      border:1px solid rgba(255,255,255,.52);overflow:hidden;min-height:150px;
+    }
+    .plot.selected{outline:3px solid rgba(61,167,255,.38);transform:translateY(-2px)}
+    .plot::before{
+      content:"";position:absolute;inset:auto 14px 14px 14px;height:62%;border-radius:24px;
+      background:linear-gradient(180deg,#816038 0%,#6e4d2b 100%);box-shadow:inset 0 14px 20px rgba(255,255,255,.12), inset 0 -10px 18px rgba(0,0,0,.2);
+    }
+    .plot::after{
+      content:"";position:absolute;inset:auto 22px 22px 22px;height:52%;border-radius:22px;background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.12) 0 4px, transparent 5px),radial-gradient(circle at 70% 60%, rgba(0,0,0,.12) 0 4px, transparent 5px),radial-gradient(circle at 45% 75%, rgba(255,255,255,.08) 0 3px, transparent 4px);
+      opacity:.5;
+    }
+    .plot-header{position:relative;display:flex;justify-content:space-between;align-items:flex-start;z-index:2}
+    .badge{
+      display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.9);font-size:12px;font-weight:800;line-height:1;
+    }
+    .mini-dot{width:9px;height:9px;border-radius:50%;background:linear-gradient(180deg,#8fd6ff,#3ca9ff)}
+    .mini-dot.growth{background:linear-gradient(180deg,#9cf1a4,#45c571)}
+    .mini-dot.ready{background:linear-gradient(180deg,#ffd27f,#ffa048)}
+    .plot-name{font-size:12px;font-weight:700;color:var(--muted)}
+    .plot-stage{font-size:11px;font-weight:800;color:var(--text);background:rgba(255,255,255,.54);padding:6px 10px;border-radius:999px}
+    .plant-wrap{position:absolute;left:0;right:0;bottom:20px;height:112px;display:grid;place-items:end center;z-index:2;pointer-events:none}
+    .stage-sprout,.stage-bush,.stage-empty{position:relative}
+    .stage-empty{
+      width:78px;height:40px;border-radius:999px;background:radial-gradient(circle at center, rgba(255,255,255,.12), rgba(0,0,0,.08));opacity:.6
+    }
+    .stage-sprout{width:86px;height:96px}
+    .stage-sprout::before,.stage-sprout::after,.stage-bush .leafy::before,.stage-bush .leafy::after{
+      content:"";position:absolute;background:linear-gradient(180deg,#b4f6a1 0%,#3dbc56 100%);border-radius:100% 0 100% 0/100% 0 100% 0;
+      filter:drop-shadow(0 7px 10px rgba(29,89,52,.16));
+    }
+    .stage-sprout::before{width:34px;height:22px;left:18px;bottom:34px;transform:rotate(-20deg)}
+    .stage-sprout::after{width:34px;height:22px;right:18px;bottom:36px;transform:scaleX(-1) rotate(-20deg)}
+    .stem{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);width:8px;height:40px;background:linear-gradient(180deg,#7dd47d,#3f9d44);border-radius:999px}
+    .stage-bush{width:120px;height:110px}
+    .stage-bush .leafy{position:absolute;inset:auto 12px 14px 12px;height:82px}
+    .stage-bush .leafy::before{width:46px;height:32px;left:6px;bottom:20px;transform:rotate(-16deg)}
+    .stage-bush .leafy::after{width:46px;height:32px;right:6px;bottom:22px;transform:scaleX(-1) rotate(-18deg)}
+    .leaf-group{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:86px;height:74px}
+    .leaf-group i{position:absolute;display:block;background:linear-gradient(180deg,#9cf1a4,#33b95f);border-radius:100% 0 100% 0/100% 0 100% 0;filter:drop-shadow(0 7px 10px rgba(29,89,52,.16))}
+    .leaf-group i:nth-child(1){width:40px;height:30px;left:2px;bottom:12px;transform:rotate(-18deg)}
+    .leaf-group i:nth-child(2){width:40px;height:30px;right:2px;bottom:12px;transform:scaleX(-1) rotate(-18deg)}
+    .leaf-group i:nth-child(3){width:42px;height:32px;left:22px;bottom:28px;transform:rotate(-2deg)}
+    .leaf-group i:nth-child(4){width:34px;height:24px;left:0;bottom:38px;transform:rotate(-40deg)}
+    .leaf-group i:nth-child(5){width:34px;height:24px;right:0;bottom:40px;transform:scaleX(-1) rotate(-32deg)}
+    .berry-img{width:92px;height:92px;object-fit:contain;filter:drop-shadow(0 12px 20px rgba(34,58,108,.18))}
+    .berry-ready{animation:floaty 2.6s ease-in-out infinite}
+    .sparkles{position:absolute;inset:0;pointer-events:none}
+    .sparkles i{position:absolute;width:8px;height:8px;background:white;border-radius:2px;transform:rotate(45deg);opacity:0;animation:twinkle 2.4s linear infinite}
+    .sparkles i:nth-child(1){left:22%;top:30%;animation-delay:.2s}
+    .sparkles i:nth-child(2){left:72%;top:24%;animation-delay:1.1s}
+    .sparkles i:nth-child(3){left:64%;top:62%;animation-delay:.7s}
+    .sparkles i:nth-child(4){left:30%;top:68%;animation-delay:1.6s}
+    .watering{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .2s ease;z-index:3}
+    .plot.watering .watering{opacity:1}
+    .watering svg{position:absolute;right:12px;top:18px;width:88px;height:88px;animation:tilt 1s ease infinite}
+    .watering .stream{position:absolute;right:66px;top:56px;width:5px;height:70px;border-radius:999px;background:linear-gradient(180deg,rgba(119,212,255,0),rgba(90,190,255,.96));filter:blur(.2px);box-shadow:0 0 12px rgba(90,190,255,.5);animation:stream .8s linear infinite}
+    .watering .splash{position:absolute;right:45%;bottom:34px;width:48px;height:18px;border-radius:999px;background:radial-gradient(circle at center, rgba(140,225,255,.85) 0 4px, transparent 5px);animation:splash .8s linear infinite}
+
+    .farm-note{position:absolute;left:4px;right:4px;top:4px;display:flex;justify-content:center;z-index:2;pointer-events:none}
+    .hint{padding:10px 16px;background:rgba(255,255,255,.78);border:1px solid rgba(255,255,255,.68);border-radius:999px;font-size:12px;font-weight:700;color:var(--muted)}
+
+    .bottom-nav{position:absolute;left:16px;right:16px;bottom:calc(16px + var(--safe-bottom));display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;z-index:6}
+    .action-btn{
+      border:none;border-radius:24px;background:var(--card-strong);padding:14px 8px 12px;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--text)
+    }
+    .action-btn.active{background:linear-gradient(180deg,#ffffff 0%,#edf8ff 100%);outline:2px solid rgba(61,167,255,.18)}
+    .action-icon{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;font-size:22px;background:linear-gradient(180deg,#ffffff,#eef5ff);box-shadow:inset 0 0 0 1px rgba(255,255,255,.9)}
+    .action-label{font-size:13px;font-weight:800}
+
+    .sheet{
+      position:absolute;left:12px;right:12px;bottom:-80%;z-index:12;background:rgba(249,252,255,.86);border:1px solid rgba(255,255,255,.7);border-radius:30px 30px 0 0;transition:bottom .32s cubic-bezier(.2,.8,.2,1);padding:12px 14px calc(18px + var(--safe-bottom));max-height:74%;overflow:auto
+    }
+    .sheet.open{bottom:0}
+    .scrim{position:absolute;inset:0;background:rgba(16,31,49,.24);opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:11}
+    .scrim.show{opacity:1;pointer-events:auto}
+    .grabber{width:48px;height:5px;background:rgba(23,50,77,.14);border-radius:999px;margin:0 auto 12px}
+    .sheet-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+    .sheet-title{font-size:22px;font-weight:900}
+    .sheet-sub{font-size:12px;color:var(--muted);font-weight:700}
+    .segmented{display:flex;gap:8px;background:rgba(255,255,255,.64);padding:6px;border-radius:18px;margin-bottom:14px}
+    .segmented button{flex:1;border:none;border-radius:14px;padding:10px 12px;background:transparent;font-weight:800;color:var(--muted)}
+    .segmented button.active{background:white;color:var(--text);box-shadow:0 10px 20px rgba(44,71,114,.08)}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .item-card{background:rgba(255,255,255,.82);border:1px solid rgba(255,255,255,.8);border-radius:22px;padding:12px;display:flex;flex-direction:column;gap:10px;min-height:142px}
+    .item-top{display:flex;justify-content:space-between;align-items:start;gap:8px}
+    .item-pic{width:62px;height:62px;border-radius:18px;display:grid;place-items:center;background:linear-gradient(180deg,#ffffff,#ecf5ff)}
+    .item-pic img{width:48px;height:48px;object-fit:contain}
+    .qty{font-size:12px;font-weight:800;color:var(--muted);background:#eef6ff;padding:6px 8px;border-radius:999px}
+    .item-name{font-size:15px;font-weight:900;line-height:1.2}
+    .item-meta{font-size:12px;color:var(--muted);line-height:1.35}
+    .item-actions{display:flex;gap:8px;margin-top:auto}
+    .soft-btn,.primary-btn{
+      border:none;border-radius:16px;padding:10px 12px;font-weight:800;flex:1
+    }
+    .soft-btn{background:#edf5ff;color:var(--text)}
+    .primary-btn{background:linear-gradient(180deg,#1ea8ff,#1285ff);color:white}
+    .drag-row{display:flex;gap:8px;overflow:auto;padding-bottom:4px;margin-bottom:12px}
+    .drag-chip{min-width:118px;background:rgba(255,255,255,.88);border:1px solid rgba(255,255,255,.8);border-radius:18px;padding:10px;display:flex;align-items:center;gap:10px;cursor:grab}
+    .drag-chip img{width:34px;height:34px;object-fit:contain}
+    .drag-chip.dragging{opacity:.55;transform:scale(.98)}
+    .drop-target{box-shadow:0 0 0 3px rgba(61,167,255,.28), var(--shadow)}
+    .legend{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 6px}
+    .legend span{font-size:11px;font-weight:800;color:var(--muted);padding:8px 10px;background:rgba(255,255,255,.8);border-radius:999px}
+    .toast{
+      position:absolute;left:50%;transform:translateX(-50%);bottom:132px;z-index:14;background:rgba(21,35,53,.82);color:white;padding:12px 14px;border-radius:18px;font-size:13px;font-weight:800;opacity:0;pointer-events:none;transition:.25s
+    }
+    .toast.show{opacity:1;bottom:142px}
+
+    @keyframes floaty{50%{transform:translateY(-5px)}}
+    @keyframes twinkle{0%,100%{opacity:0;transform:scale(.5) rotate(45deg)}30%,60%{opacity:1;transform:scale(1) rotate(45deg)}}
+    @keyframes tilt{50%{transform:rotate(-8deg) translateY(2px)}}
+    @keyframes stream{50%{transform:scaleY(1.08)}}
+    @keyframes splash{50%{transform:translateY(2px) scale(1.08);opacity:.7}}
+
+    @media (min-width: 700px){
+      body{display:grid;place-items:center}
+      .phone{max-width:420px;max-height:860px;border-radius:42px;box-shadow:0 30px 80px rgba(20,58,100,.22)}
+    }
+  </style>
+</head>
+<body>
+<div class="phone" id="app">
+  <div class="sky-decor"></div>
+  <div class="ground-decor"></div>
+  <div class="paths"></div>
+
+  <div class="topbar">
+    <div class="capsule">
+      <div class="title-wrap">
+        <div class="eyebrow">ягодная зона</div>
+        <div class="title">Сад поке-ягод</div>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="coin"></span><div>2 640<br><small>монеты</small></div></div>
+        <div class="stat"><span class="drop"></span><div id="waterCount">18<br><small>вода</small></div></div>
+        <div class="stat"><span class="gem"></span><div id="boostCount">3<br><small>ускор.</small></div></div>
+      </div>
+    </div>
+    <button class="icon-btn" id="openInventoryBtn" aria-label="Инвентарь">☰</button>
+  </div>
+
+  <div class="farm-zone">
+    <div class="farm-note"><div class="hint" id="modeHint">Режим: посадка — перетащи ягоду на свободную грядку</div></div>
+    <div class="plots" id="plots"></div>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="action-btn active" data-mode="plant">
+      <span class="action-icon">🌱</span>
+      <span class="action-label">Посадить</span>
+    </button>
+    <button class="action-btn" data-mode="water">
+      <span class="action-icon">💧</span>
+      <span class="action-label">Полить</span>
+    </button>
+    <button class="action-btn" data-mode="harvest">
+      <span class="action-icon">🧺</span>
+      <span class="action-label">Собрать</span>
+    </button>
+    <button class="action-btn" data-mode="inventory">
+      <span class="action-icon">🎒</span>
+      <span class="action-label">Инвентарь</span>
+    </button>
+  </div>
+
+  <div class="scrim" id="scrim"></div>
+  <div class="sheet" id="sheet">
+    <div class="grabber"></div>
+    <div class="sheet-head">
+      <div>
+        <div class="sheet-title">Инвентарь</div>
+        <div class="sheet-sub">Семена, ускорители и внутренний магазин</div>
+      </div>
+      <button class="icon-btn" id="closeSheetBtn" aria-label="Закрыть">×</button>
+    </div>
+    <div class="segmented">
+      <button class="active" data-tab="berries">Ягоды</button>
+      <button data-tab="boosters">Ускорители</button>
+      <button data-tab="shop">Магазин</button>
+    </div>
+    <div id="sheetContent"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+(() => {
+  const berryCatalog = {
+    cheri: {
+      key: 'cheri',
+      name: 'Черри-ягода',
+      baseHours: 16,
+      growMs: 70_000,
+      color: '#ff6d6d',
+      fruitUrl: 'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Curry_Ingredient_Cheri_Berry_Sprite.png',
+      iconUrl: 'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Bag_Cheri_Berry_SV_Sprite.png'
+    },
+    pecha: {
+      key: 'pecha',
+      name: 'Печа-ягода',
+      baseHours: 16,
+      growMs: 72_000,
+      color: '#ff8dcc',
+      fruitUrl: 'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Curry_Ingredient_Pecha_Berry_Sprite.png',
+      iconUrl: 'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Bag_Pecha_Berry_SV_Sprite.png'
+    },
+    oran: {
+      key: 'oran',
+      name: 'Оран-ягода',
+      baseHours: 16,
+      growMs: 75_000,
+      color: '#5ca0ff',
+      fruitUrl: 'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Curry_Ingredient_Oran_Berry_Sprite.png',
+      iconUrl: 'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Bag_Oran_Berry_Sprite.png'
+    },
+    sitrus: {
+      key: 'sitrus',
+      name: 'Ситрус-ягода',
+      baseHours: 32,
+      growMs: 105_000,
+      color: '#ffca54',
+      fruitUrl: 'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Curry_Ingredient_Sitrus_Berry_Sprite.png',
+      iconUrl: 'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Bag_Sitrus_Berry_LA_Sprite.png'
+    },
+    lum: {
+      key: 'lum',
+      name: 'Лум-ягода',
+      baseHours: 32,
+      growMs: 115_000,
+      color: '#7cd98f',
+      fruitUrl: 'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Curry_Ingredient_Lum_Berry_Sprite.png',
+      iconUrl: 'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Bag_Lum_Berry_LA_Sprite.png'
+    },
+    razz: {
+      key: 'razz',
+      name: 'Разз-ягода',
+      baseHours: 16,
+      growMs: 78_000,
+      color: '#f44e65',
+      fruitUrl: 'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Bag_Razz_Berry_SV_Sprite.png',
+      iconUrl: 'https://archives.bulbagarden.net/wiki/Special:Redirect/file/Bag_Razz_Berry_SV_Sprite.png'
+    }
+  };
+
+  const inventory = {
+    berries: { cheri: 4, pecha: 3, oran: 5, sitrus: 2, lum: 2, razz: 3 },
+    boosters: { spray: 2, crystal: 1, mulch: 4 },
+    coins: 2640,
+    water: 18
+  };
+
+  let plots = [
+    { id: 1, berry: null, plantedAt: null, watered: false },
+    { id: 2, berry: 'pecha', plantedAt: Date.now() - 20_000, watered: false },
+    { id: 3, berry: 'oran', plantedAt: Date.now() - 45_000, watered: true },
+    { id: 4, berry: 'cheri', plantedAt: Date.now() - 68_000, watered: true },
+    { id: 5, berry: null, plantedAt: null, watered: false },
+    { id: 6, berry: 'sitrus', plantedAt: Date.now() - 85_000, watered: true }
+  ];
+
+  let mode = 'plant';
+  let selectedTab = 'berries';
+  let selectedBoostTarget = null;
+  let draggedBerry = null;
+
+  const plotsEl = document.getElementById('plots');
+  const modeHintEl = document.getElementById('modeHint');
+  const sheetEl = document.getElementById('sheet');
+  const scrimEl = document.getElementById('scrim');
+  const sheetContentEl = document.getElementById('sheetContent');
+  const toastEl = document.getElementById('toast');
+  const waterCountEl = document.getElementById('waterCount');
+  const boostCountEl = document.getElementById('boostCount');
+
+  function showToast(text){
+    toastEl.textContent = text;
+    toastEl.classList.add('show');
+    clearTimeout(showToast.t);
+    showToast.t = setTimeout(() => toastEl.classList.remove('show'), 1800);
+  }
+
+  function formatRemaining(ms){
+    if(ms <= 0) return 'Готово';
+    const sec = Math.ceil(ms / 1000);
+    const min = Math.floor(sec / 60);
+    const s = sec % 60;
+    return min > 0 ? `${min} мин ${String(s).padStart(2,'0')} сек` : `${s} сек`;
+  }
+
+  function getPlotState(plot){
+    if(!plot.berry) return { stage:'empty', progress:0, remaining:0, ready:false };
+    const berry = berryCatalog[plot.berry];
+    const elapsed = Date.now() - plot.plantedAt;
+    const progress = Math.min(elapsed / berry.growMs, 1);
+    const ready = progress >= 1;
+    const stage = ready ? 'ready' : progress < .28 ? 'sprout' : progress < .72 ? 'bush' : 'berry';
+    return { stage, progress, remaining: Math.max(berry.growMs - elapsed, 0), ready };
+  }
+
+  function renderPlant(plot){
+    const state = getPlotState(plot);
+    if(state.stage === 'empty') return `<div class="stage-empty"></div>`;
+    if(state.stage === 'sprout') {
+      return `<div class="stage-sprout"><span class="stem"></span></div>`;
+    }
+    if(state.stage === 'bush') {
+      return `<div class="stage-bush"><div class="leafy"></div><div class="leaf-group"><i></i><i></i><i></i><i></i><i></i></div></div>`;
+    }
+    const berry = berryCatalog[plot.berry];
+    const readyClass = state.ready ? 'berry-ready' : '';
+    return `<img class="berry-img ${readyClass}" src="${berry.fruitUrl}" alt="${berry.name}" onerror="this.src='${berry.iconUrl}'" />${state.ready ? '<div class="sparkles"><i></i><i></i><i></i><i></i></div>' : ''}`;
+  }
+
+  function renderPlots(){
+    plotsEl.innerHTML = plots.map(plot => {
+      const state = getPlotState(plot);
+      const berry = plot.berry ? berryCatalog[plot.berry] : null;
+      const badgeType = state.ready ? 'ready' : plot.watered ? 'growth' : 'normal';
+      const dotClass = badgeType === 'ready' ? 'mini-dot ready' : badgeType === 'growth' ? 'mini-dot growth' : 'mini-dot';
+      const stageText = !plot.berry ? 'Пусто' : state.ready ? 'Сбор' : state.stage === 'sprout' ? 'Листочки' : state.stage === 'bush' ? 'Куст' : 'Плод';
+      return `
+        <button class="plot ${selectedBoostTarget===plot.id?'selected':''}" data-id="${plot.id}">
+          <div class="plot-header">
+            <div>
+              <div class="badge"><span class="${dotClass}"></span>${plot.berry ? formatRemaining(state.remaining) : 'Свободная грядка'}</div>
+              <div class="plot-name">${berry ? berry.name : 'Нет посадки'}</div>
+            </div>
+            <div class="plot-stage">${stageText}</div>
+          </div>
+          <div class="plant-wrap">${renderPlant(plot)}</div>
+          <div class="watering">
+            <svg viewBox="0 0 100 100" fill="none" aria-hidden="true">
+              <path d="M25 36c0-6 5-11 11-11h18c5 0 9 4 9 9v17c0 5-4 9-9 9H31c-5 0-9-4-9-9V36z" fill="#dbe7f5"/>
+              <path d="M61 41h15c9 0 15 7 15 14" stroke="#dbe7f5" stroke-width="8" stroke-linecap="round"/>
+              <path d="M18 27l20-8" stroke="#8a9cb6" stroke-width="7" stroke-linecap="round"/>
+              <path d="M20 18c0-5 4-9 9-9" stroke="#8a9cb6" stroke-width="7" stroke-linecap="round"/>
+            </svg>
+            <div class="stream"></div>
+            <div class="splash"></div>
+          </div>
+        </button>`;
+    }).join('');
+
+    [...plotsEl.querySelectorAll('.plot')].forEach(btn => {
+      const id = Number(btn.dataset.id);
+      btn.addEventListener('click', () => handlePlotAction(id));
+      btn.addEventListener('dragover', (e) => {
+        if(mode !== 'plant') return;
+        e.preventDefault();
+        btn.classList.add('drop-target');
+      });
+      btn.addEventListener('dragleave', () => btn.classList.remove('drop-target'));
+      btn.addEventListener('drop', (e) => {
+        e.preventDefault();
+        btn.classList.remove('drop-target');
+        if (draggedBerry) plantBerry(id, draggedBerry);
+      });
+    });
+  }
+
+  function updateCounters(){
+    waterCountEl.innerHTML = `${inventory.water}<br><small>вода</small>`;
+    boostCountEl.innerHTML = `${inventory.boosters.spray + inventory.boosters.crystal}<br><small>ускор.</small>`;
+  }
+
+  function setMode(nextMode){
+    mode = nextMode;
+    document.querySelectorAll('.action-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === nextMode));
+    const hints = {
+      plant: 'Режим: посадка — перетащи ягоду на свободную грядку',
+      water: 'Режим: полив — нажми на грядку, чтобы ускорить рост',
+      harvest: 'Режим: сбор — нажми на готовую грядку',
+      inventory: 'Открыт инвентарь — внутри есть и магазин, и ускорители'
+    };
+    modeHintEl.textContent = hints[nextMode] || '';
+    if(nextMode === 'inventory') openSheet();
+  }
+
+  function plantBerry(plotId, berryKey){
+    const plot = plots.find(p => p.id === plotId);
+    if(!plot || plot.berry){
+      showToast('Сюда сейчас нельзя посадить ягоду');
+      return;
+    }
+    if((inventory.berries[berryKey] || 0) <= 0){
+      showToast('Эта ягода закончилась');
+      return;
+    }
+    plot.berry = berryKey;
+    plot.plantedAt = Date.now();
+    plot.watered = false;
+    inventory.berries[berryKey] -= 1;
+    renderPlots();
+    renderSheet();
+    showToast(`Посажена: ${berryCatalog[berryKey].name}`);
+  }
+
+  function waterPlot(plotId){
+    const plot = plots.find(p => p.id === plotId);
+    if(!plot || !plot.berry){ showToast('Сначала посади ягоду'); return; }
+    const state = getPlotState(plot);
+    if(state.ready){ showToast('Эта ягода уже готова к сбору'); return; }
+    if(inventory.water <= 0){ showToast('Вода закончилась'); return; }
+    inventory.water -= 1;
+    plot.watered = true;
+    plot.plantedAt -= 10_000;
+    const btn = plotsEl.querySelector(`.plot[data-id="${plotId}"]`);
+    if(btn){
+      btn.classList.add('watering');
+      setTimeout(() => btn.classList.remove('watering'), 1100);
+    }
+    playWaterSound();
+    updateCounters();
+    renderPlots();
+    showToast('Полив выполнен');
+  }
+
+  function harvestPlot(plotId){
+    const plot = plots.find(p => p.id === plotId);
+    if(!plot || !plot.berry){ showToast('Тут нечего собирать'); return; }
+    const state = getPlotState(plot);
+    if(!state.ready){ showToast('Ягода ещё растёт'); return; }
+    inventory.coins += 80;
+    const harvestedBerry = plot.berry;
+    inventory.berries[harvestedBerry] = (inventory.berries[harvestedBerry] || 0) + 2;
+    plot.berry = null;
+    plot.plantedAt = null;
+    plot.watered = false;
+    renderPlots();
+    renderSheet();
+    showToast(`Собрано: ${berryCatalog[harvestedBerry].name}`);
+  }
+
+  function boostPlot(plotId, boostType){
+    const plot = plots.find(p => p.id === plotId);
+    if(!plot || !plot.berry){ showToast('Выбери грядку с растением'); return; }
+    const state = getPlotState(plot);
+    if(state.ready){ showToast('Ускоритель не нужен: урожай уже готов'); return; }
+    if(inventory.boosters[boostType] <= 0){ showToast('Ускоритель закончился'); return; }
+    inventory.boosters[boostType] -= 1;
+    if(boostType === 'spray') plot.plantedAt -= 18_000;
+    if(boostType === 'crystal') plot.plantedAt -= 30_000;
+    if(boostType === 'mulch') plot.plantedAt -= 12_000;
+    selectedBoostTarget = null;
+    updateCounters();
+    renderPlots();
+    renderSheet();
+    showToast('Рост ускорен');
+  }
+
+  function handlePlotAction(plotId){
+    if(mode === 'water') return waterPlot(plotId);
+    if(mode === 'harvest') return harvestPlot(plotId);
+    if(mode === 'inventory') {
+      selectedBoostTarget = selectedBoostTarget === plotId ? null : plotId;
+      renderPlots();
+      showToast(selectedBoostTarget ? 'Теперь можно применить ускоритель из инвентаря' : 'Выбор грядки снят');
+      return;
+    }
+    const plot = plots.find(p => p.id === plotId);
+    if(mode === 'plant' && plot && !plot.berry){
+      openSheet('berries');
+      showToast('Открой ягоды и перетащи нужную на грядку');
+    }
+  }
+
+  function openSheet(tab = selectedTab){
+    selectedTab = tab;
+    renderSheet();
+    sheetEl.classList.add('open');
+    scrimEl.classList.add('show');
+  }
+  function closeSheet(){
+    sheetEl.classList.remove('open');
+    scrimEl.classList.remove('show');
+  }
+
+  function renderBerriesTab(){
+    const chips = Object.entries(berryCatalog).map(([key, berry]) => `
+      <div class="drag-chip" draggable="true" data-berry="${key}">
+        <img src="${berry.iconUrl}" alt="${berry.name}" onerror="this.src='${berry.fruitUrl}'" />
+        <div>
+          <div style="font-size:13px;font-weight:900">${berry.name}</div>
+          <div style="font-size:11px;color:var(--muted);font-weight:700">${berry.baseHours} ч в оригинале</div>
+        </div>
+      </div>`).join('');
+
+    const cards = Object.entries(berryCatalog).map(([key, berry]) => `
+      <div class="item-card">
+        <div class="item-top">
+          <div class="item-pic"><img src="${berry.fruitUrl}" alt="${berry.name}" onerror="this.src='${berry.iconUrl}'" /></div>
+          <div class="qty">× ${inventory.berries[key] || 0}</div>
+        </div>
+        <div class="item-name">${berry.name}</div>
+        <div class="item-meta">Базовый рост в игре: ${berry.baseHours} ч. В демо время ускорено для браузера.</div>
+        <div class="item-actions">
+          <button class="soft-btn" data-preview="${key}">Описание</button>
+          <button class="primary-btn" data-openplant="${key}">Посадить</button>
+        </div>
+      </div>`).join('');
+
+    return `<div class="sheet-sub" style="margin-bottom:10px">Можно перетаскивать ягоды прямо на грядки.</div><div class="drag-row">${chips}</div><div class="legend"><span>Черри</span><span>Печа</span><span>Оран</span><span>Ситрус</span><span>Лум</span><span>Разз</span></div><div class="grid">${cards}</div>`;
+  }
+
+  function renderBoostersTab(){
+    const boosterData = [
+      ['spray','Спрей роста','Мгновенно срезает часть таймера на 18 секунд.','⚡', inventory.boosters.spray],
+      ['crystal','Кристалл солнца','Сильный буст: минус 30 секунд роста.','✨', inventory.boosters.crystal],
+      ['mulch','Умная мульча','Мягкое ускорение: минус 12 секунд.','🍃', inventory.boosters.mulch]
+    ];
+    return `<div class="sheet-sub" style="margin-bottom:10px">Сначала выбери грядку нажатием, потом применяй ускоритель.</div><div class="grid">${boosterData.map(([key,name,text,emoji,qty]) => `
+      <div class="item-card">
+        <div class="item-top">
+          <div class="item-pic" style="font-size:30px">${emoji}</div>
+          <div class="qty">× ${qty}</div>
+        </div>
+        <div class="item-name">${name}</div>
+        <div class="item-meta">${text}</div>
+        <div class="item-actions"><button class="primary-btn" data-boost="${key}">${selectedBoostTarget ? 'Применить' : 'Выбрать грядку'}</button></div>
+      </div>`).join('')}</div>`;
+  }
+
+  function renderShopTab(){
+    const shop = [
+      ['pecha','Пачка семян Печа',120],
+      ['oran','Пачка семян Оран',140],
+      ['sitrus','Пачка семян Ситрус',220],
+      ['spray','Спрей роста',180],
+      ['mulch','Умная мульча',90],
+      ['crystal','Кристалл солнца',340]
+    ];
+    return `<div class="grid">${shop.map(([key,name,price]) => {
+      const isBerry = !!berryCatalog[key];
+      return `
+      <div class="item-card">
+        <div class="item-top">
+          <div class="item-pic">${isBerry ? `<img src="${berryCatalog[key].iconUrl}" alt="${name}" onerror="this.src='${berryCatalog[key].fruitUrl}'" />` : `<div style="font-size:30px">${key==='spray'?'⚡':key==='mulch'?'🍃':'✨'}</div>`}</div>
+          <div class="qty">${price} 💰</div>
+        </div>
+        <div class="item-name">${name}</div>
+        <div class="item-meta">Современный внутриигровой магазин без перегруза. Один тап — и всё ясно.</div>
+        <div class="item-actions"><button class="primary-btn" data-buy="${key}" data-price="${price}">Купить</button></div>
+      </div>`;
+    }).join('')}</div>`;
+  }
+
+  function renderSheet(){
+    document.querySelectorAll('.segmented button').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === selectedTab));
+    sheetContentEl.innerHTML = selectedTab === 'berries' ? renderBerriesTab() : selectedTab === 'boosters' ? renderBoostersTab() : renderShopTab();
+
+    sheetContentEl.querySelectorAll('[data-preview]').forEach(btn => btn.addEventListener('click', () => {
+      const berry = berryCatalog[btn.dataset.preview];
+      showToast(`${berry.name}: базовый рост ${berry.baseHours} ч`);
+    }));
+    sheetContentEl.querySelectorAll('[data-openplant]').forEach(btn => btn.addEventListener('click', () => {
+      const key = btn.dataset.openplant;
+      const free = plots.find(p => !p.berry);
+      if(!free) return showToast('Свободных грядок нет');
+      plantBerry(free.id, key);
+      closeSheet();
+    }));
+    sheetContentEl.querySelectorAll('[data-boost]').forEach(btn => btn.addEventListener('click', () => {
+      if(!selectedBoostTarget){ showToast('Сначала нажми на грядку на поле'); return; }
+      boostPlot(selectedBoostTarget, btn.dataset.boost);
+    }));
+    sheetContentEl.querySelectorAll('[data-buy]').forEach(btn => btn.addEventListener('click', () => {
+      const key = btn.dataset.buy;
+      const price = Number(btn.dataset.price);
+      if(inventory.coins < price) return showToast('Недостаточно монет');
+      inventory.coins -= price;
+      if(berryCatalog[key]) inventory.berries[key] = (inventory.berries[key] || 0) + 2;
+      else inventory.boosters[key] += 1;
+      updateCounters();
+      renderSheet();
+      showToast('Покупка выполнена');
+    }));
+
+    sheetContentEl.querySelectorAll('.drag-chip').forEach(chip => {
+      chip.addEventListener('dragstart', () => {
+        draggedBerry = chip.dataset.berry;
+        chip.classList.add('dragging');
+      });
+      chip.addEventListener('dragend', () => {
+        draggedBerry = null;
+        chip.classList.remove('dragging');
+      });
+    });
+  }
+
+  function playWaterSound(){
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if(!AudioCtx) return;
+    if(!playWaterSound.ctx) playWaterSound.ctx = new AudioCtx();
+    const ctx = playWaterSound.ctx;
+    const now = ctx.currentTime;
+    const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.22, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i=0;i<data.length;i++){
+      const t = i / data.length;
+      data[i] = (Math.random()*2-1) * (1-t) * 0.12;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.setValueAtTime(500, now);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(.0001, now);
+    gain.gain.exponentialRampToValueAtTime(.28, now + .02);
+    gain.gain.exponentialRampToValueAtTime(.001, now + .22);
+    noise.connect(filter).connect(gain).connect(ctx.destination);
+    noise.start(now);
+    noise.stop(now + .22);
+  }
+
+  document.querySelectorAll('.action-btn').forEach(btn => btn.addEventListener('click', () => {
+    const next = btn.dataset.mode;
+    if(next === 'inventory') openSheet();
+    setMode(next);
+  }));
+  document.querySelectorAll('.segmented button').forEach(btn => btn.addEventListener('click', () => { selectedTab = btn.dataset.tab; renderSheet(); }));
+  document.getElementById('openInventoryBtn').addEventListener('click', () => { setMode('inventory'); openSheet(); });
+  document.getElementById('closeSheetBtn').addEventListener('click', closeSheet);
+  scrimEl.addEventListener('click', closeSheet);
+
+  updateCounters();
+  renderPlots();
+  renderSheet();
+  setInterval(renderPlots, 1000);
+})();
+</script>
+</body>
+</html>
