@@ -1,550 +1,559 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>PokePark Mobile Browser HUD</title>
+  <title>PokePark Mobile World</title>
   <style>
     :root {
-      --safe-top: max(16px, env(safe-area-inset-top));
-      --safe-bottom: max(16px, env(safe-area-inset-bottom));
-      --hud-dark: rgba(10, 27, 49, 0.72);
-      --hud-border: rgba(180, 220, 255, 0.32);
-      --glass-shadow: 0 16px 30px rgba(0, 0, 0, 0.35);
-      --text: #eef7ff;
-      --primary: #38a8ff;
-      --primary-strong: #2f8ef8;
-      --active: #0fb2ff;
+      --safe-top: max(12px, env(safe-area-inset-top));
+      --safe-bottom: max(12px, env(safe-area-inset-bottom));
+      --panel: rgba(8, 12, 18, 0.84);
+      --panel-strong: rgba(5, 8, 14, 0.95);
+      --panel-border: rgba(146, 183, 255, 0.26);
+      --accent: #41b3ff;
+      --accent-soft: #76d4ff;
+      --text: #f3f8ff;
+      --muted: #a8bdd8;
+      --shadow: 0 20px 36px rgba(0, 0, 0, 0.45);
     }
 
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
     html,
     body {
       margin: 0;
+      width: 100%;
       height: 100%;
       overflow: hidden;
       font-family: Inter, "SF Pro Display", system-ui, -apple-system, sans-serif;
-      background: #9bd0ff;
+      background: #03060b;
       color: var(--text);
+      user-select: none;
     }
 
     .game {
-      position: relative;
-      width: min(100vw, calc(100vh * 9 / 16));
-      aspect-ratio: 9 / 16;
-      height: 100dvh;
-      margin: 0 auto;
-      overflow: hidden;
-      isolation: isolate;
-      background: #94d2ff;
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at top, #0f1826, #020306 60%);
     }
 
-    .world-layer {
+    .viewport {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #0d1017;
+      isolation: isolate;
+    }
+
+    .scene-bg {
       position: absolute;
       inset: 0;
+      width: 100%;
+      height: 100%;
+      background-position: center;
+      background-size: cover;
+      transition: transform 450ms ease, filter 300ms ease;
+      transform: scale(1.01);
       z-index: 1;
-      background: url('http://castles-vk.ru/pokepark/img/location/1.png') center / cover no-repeat;
-      transform: translateZ(0);
     }
 
-    .buildings-layer {
+    .scene-bg.travel { animation: travelPulse 580ms ease; }
+
+    .scene-overlay {
       position: absolute;
       inset: 0;
       z-index: 2;
-    }
-
-    .hitbox {
-      position: absolute;
-      border: 0;
-      background: transparent;
-      cursor: pointer;
-      border-radius: 26px;
-      transform: translateZ(0);
-      touch-action: manipulation;
-    }
-
-    .hitbox:active {
-      transform: scale(0.98);
-    }
-
-    .hitbox.debug {
-      background: rgba(76, 193, 255, 0.18);
-      outline: 1px dashed rgba(158, 220, 255, 0.4);
-    }
-
-    .hud-layer {
-      position: absolute;
-      inset: 0;
-      z-index: 3;
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.45) 0%, rgba(5, 9, 14, 0.08) 34%, rgba(0, 0, 0, 0.58) 100%);
       pointer-events: none;
     }
+
+    .hitboxes,
+    .hud,
+    .dialogs,
+    .menu-overlay {
+      position: absolute;
+      inset: 0;
+    }
+
+    .hitboxes { z-index: 3; }
+    .hud { z-index: 4; pointer-events: none; }
+    .dialogs { z-index: 8; pointer-events: none; }
+    .menu-overlay { z-index: 7; pointer-events: none; }
+
+    .hotspot {
+      position: absolute;
+      border: 0;
+      border-radius: 20px;
+      background: transparent;
+      cursor: pointer;
+      pointer-events: auto;
+    }
+
+    .hotspot:active { transform: scale(0.98); }
+
+    .marker {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      min-width: 44px;
+      height: 44px;
+      padding: 0 12px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.34);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.38);
+      backdrop-filter: blur(5px);
+      animation: floatY 2.2s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    .marker.home { background: rgba(80, 140, 255, 0.72); }
+    .marker.lab { background: rgba(77, 228, 255, 0.78); }
+    .marker.exit { background: rgba(255, 163, 66, 0.82); }
+    .marker.npc { background: rgba(170, 104, 255, 0.85); }
 
     .top-hud {
       position: absolute;
       top: var(--safe-top);
-      left: 18px;
-      right: 18px;
-      height: 120px;
+      left: 12px;
+      right: 12px;
       display: flex;
-      gap: 14px;
+      gap: 10px;
       align-items: stretch;
       pointer-events: auto;
     }
 
     .panel {
-      background: var(--hud-dark);
-      border: 1px solid var(--hud-border);
-      backdrop-filter: blur(10px);
-      box-shadow: var(--glass-shadow);
-      border-radius: 26px;
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 18px;
+      backdrop-filter: blur(8px);
+      box-shadow: var(--shadow);
     }
 
-    .trainer-panel {
+    .profile {
       flex: 1;
-      min-width: 0;
       display: flex;
       align-items: center;
-      gap: 14px;
-      padding: 14px;
+      gap: 10px;
+      padding: 10px;
+      min-width: 0;
     }
 
     .avatar {
-      width: 72px;
-      height: 72px;
+      width: 54px;
+      height: 54px;
       border-radius: 50%;
-      border: 2px solid rgba(159, 220, 255, 0.8);
-      box-shadow: 0 0 0 3px rgba(41, 99, 166, 0.5);
       display: grid;
       place-items: center;
-      background: radial-gradient(circle at 35% 20%, #2b89ff, #0b2646);
-      font-size: 34px;
+      font-size: 28px;
+      background: radial-gradient(circle at 35% 20%, #3e96ff, #0a2242);
+      border: 2px solid rgba(129, 197, 255, 0.72);
+      flex-shrink: 0;
     }
 
-    .trainer-info {
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 10px;
-    }
+    .level { font-size: 30px; font-weight: 800; line-height: 1; }
 
-    .level {
-      font-size: 44px;
-      line-height: 1;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-    }
-
-    .xp-shell {
-      position: relative;
-      width: min(100%, 450px);
-      height: 24px;
+    .xp {
+      margin-top: 5px;
+      height: 14px;
       border-radius: 999px;
       overflow: hidden;
-      background: rgba(11, 28, 52, 0.8);
-      border: 1px solid rgba(157, 219, 255, 0.35);
+      background: rgba(17, 24, 37, 0.9);
+      border: 1px solid rgba(160, 198, 255, 0.35);
+      position: relative;
     }
 
     .xp-fill {
       position: absolute;
       inset: 0 auto 0 0;
       width: 45%;
-      border-radius: inherit;
-      background: linear-gradient(90deg, #2f9bff, #3cd9a8);
-      box-shadow: 0 0 10px rgba(72, 210, 173, 0.6);
-      transform-origin: left center;
-      transition: width 550ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      background: linear-gradient(90deg, #2f95ff, #54f0ba);
+      transition: width 360ms ease;
     }
 
     .xp-text {
-      position: absolute;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      font-size: 13px;
-      font-weight: 700;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
       letter-spacing: 0.3px;
-      text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
     }
 
-    .currency-panel {
-      min-width: 360px;
+    .currencies {
       display: flex;
       align-items: center;
-      gap: 18px;
-      padding: 0 18px;
-    }
-
-    .currency {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 40px;
-      font-weight: 700;
-    }
-
-    .action-icons {
-      position: absolute;
-      top: calc(var(--safe-top) + 132px);
-      right: 18px;
-      display: flex;
       gap: 10px;
+      padding: 0 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      font-size: 21px;
+    }
+
+    .actions {
+      position: absolute;
+      top: calc(var(--safe-top) + 82px);
+      right: 12px;
+      display: flex;
+      gap: 8px;
       pointer-events: auto;
     }
 
-    .action-btn {
-      position: relative;
-      width: 68px;
-      height: 68px;
-      border: 0;
+    .icon-btn {
+      width: 46px;
+      height: 46px;
       border-radius: 50%;
-      background: var(--hud-dark);
-      color: #f3fbff;
-      font-size: 30px;
-      border: 1px solid var(--hud-border);
+      border: 1px solid var(--panel-border);
+      background: var(--panel);
+      color: #fff;
+      font-size: 22px;
       cursor: pointer;
+      position: relative;
     }
 
     .badge {
       position: absolute;
-      top: -4px;
+      top: -5px;
       right: -3px;
-      min-width: 24px;
-      height: 24px;
+      min-width: 18px;
+      height: 18px;
       border-radius: 999px;
-      background: #ff4444;
-      color: white;
-      display: grid;
-      place-items: center;
-      font-size: 13px;
-      font-weight: 700;
-      padding: 0 6px;
-    }
-
-    .marker {
-      position: absolute;
-      width: 62px;
-      height: 62px;
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      font-size: 34px;
+      background: #ff4040;
       color: #fff;
-      pointer-events: none;
-      transform: translate(-50%, -50%);
-    }
-
-    .marker-lab {
-      background: radial-gradient(circle, rgba(105, 210, 255, 0.92), rgba(30, 110, 255, 0.65));
-      box-shadow: 0 0 22px rgba(84, 181, 255, 0.7);
-      animation: labPulse 2.5s ease-in-out infinite;
-    }
-
-    .marker-house {
-      background: rgba(35, 72, 129, 0.85);
-      box-shadow: 0 5px 14px rgba(0, 0, 0, 0.3);
-      animation: markerFloat 2.2s ease-in-out infinite;
-    }
-
-    .marker-home { background: rgba(80, 160, 255, 0.7); }
-    .marker-quest { background: rgba(255, 158, 35, 0.95); }
-    .marker-unknown { background: rgba(169, 89, 255, 0.88); }
-
-    .scan-ring {
-      position: absolute;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      border: 2px solid rgba(112, 212, 255, 0.8);
-      background: rgba(86, 182, 255, 0.18);
-      transform: translate(-50%, -50%);
-      pointer-events: none;
-      opacity: 0;
-    }
-
-    .scan-ring.active {
-      animation: scanPulse 950ms ease-out 1;
+      font-size: 11px;
+      font-weight: 700;
+      display: grid;
+      place-items: center;
+      padding: 0 5px;
     }
 
     .bottom-nav {
       position: absolute;
-      left: 16px;
-      right: 16px;
+      left: 10px;
+      right: 10px;
       bottom: var(--safe-bottom);
-      height: 160px;
-      border-radius: 32px 32px 24px 24px;
-      padding: 14px 10px 16px;
+      padding: 8px;
+      border-radius: 22px;
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 8px;
+      gap: 6px;
       pointer-events: auto;
     }
 
     .nav-btn {
       border: 0;
+      border-radius: 14px;
       background: transparent;
-      color: #edf6ff;
-      border-radius: 24px;
+      color: #e4edff;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 8px 4px;
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
-      gap: 8px;
-      font-size: 18px;
-      font-weight: 700;
+      gap: 4px;
       cursor: pointer;
-      transition: background 220ms ease, transform 160ms ease;
-    }
-
-    .nav-btn:active {
-      transform: translateY(2px);
-    }
-
-    .nav-icon {
-      font-size: 44px;
-      line-height: 1;
-      opacity: 0.95;
     }
 
     .nav-btn.active {
-      background: linear-gradient(160deg, rgba(26, 137, 255, 0.48), rgba(43, 186, 255, 0.22));
-      box-shadow: inset 0 0 0 1px rgba(127, 214, 255, 0.8), 0 0 16px rgba(62, 174, 255, 0.5);
+      background: linear-gradient(150deg, rgba(40, 123, 255, 0.44), rgba(55, 215, 255, 0.24));
+      box-shadow: inset 0 0 0 1px rgba(151, 226, 255, 0.7);
+    }
+
+    .nav-icon { font-size: 20px; }
+
+    .menu-overlay.open {
+      background: rgba(0, 0, 0, 0.5);
+      pointer-events: auto;
     }
 
     .menu-panel {
       position: absolute;
       top: 0;
-      right: -360px;
-      width: min(360px, 84vw);
+      right: -320px;
+      width: min(320px, 84vw);
       height: 100%;
-      padding: calc(var(--safe-top) + 24px) 20px 20px;
-      border-left: 1px solid rgba(150, 210, 255, 0.35);
-      background: linear-gradient(180deg, rgba(7, 28, 52, 0.95), rgba(11, 35, 61, 0.95));
-      transition: right 300ms cubic-bezier(0.2, 0.85, 0.2, 1);
-      z-index: 4;
-      pointer-events: auto;
-      box-shadow: -15px 0 24px rgba(0, 0, 0, 0.35);
+      background: linear-gradient(180deg, rgba(8, 13, 20, 0.97), rgba(10, 15, 26, 0.97));
+      border-left: 1px solid rgba(144, 184, 255, 0.25);
+      padding: calc(var(--safe-top) + 10px) 14px 14px;
+      transition: right 320ms cubic-bezier(0.2, 0.9, 0.2, 1);
     }
 
-    .menu-panel.open {
-      right: 0;
+    .menu-overlay.open .menu-panel { right: 0; }
+
+    .menu-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
     }
 
-    .menu-panel h2 {
-      margin: 0 0 18px;
-      font-size: 28px;
+    .close-btn {
+      border: 0;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: rgba(115, 145, 201, 0.2);
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
     }
 
     .menu-item {
-      border: 1px solid rgba(153, 208, 255, 0.25);
-      border-radius: 16px;
-      padding: 14px;
-      margin-bottom: 10px;
-      background: rgba(137, 192, 255, 0.08);
-      font-weight: 700;
-      font-size: 19px;
+      border: 1px solid rgba(143, 184, 255, 0.24);
+      border-radius: 14px;
+      background: rgba(66, 101, 167, 0.12);
+      padding: 12px;
+      margin-bottom: 8px;
+      font-weight: 600;
     }
 
     .toast {
       position: absolute;
       left: 50%;
-      bottom: calc(var(--safe-bottom) + 176px);
+      bottom: calc(var(--safe-bottom) + 88px);
       transform: translateX(-50%);
-      background: rgba(9, 26, 47, 0.86);
-      border: 1px solid rgba(165, 220, 255, 0.45);
       border-radius: 999px;
-      padding: 10px 16px;
-      font-size: 16px;
+      padding: 8px 14px;
+      background: rgba(7, 12, 20, 0.92);
+      border: 1px solid rgba(149, 199, 255, 0.36);
+      font-size: 13px;
       opacity: 0;
       transition: opacity 180ms ease;
-      z-index: 5;
       pointer-events: none;
     }
 
     .toast.show { opacity: 1; }
 
-    @keyframes markerFloat {
+    .dialog-wrap.show { pointer-events: auto; }
+
+    .dialog-wrap {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: end center;
+      padding: 14px;
+      background: rgba(0, 0, 0, 0.45);
+      opacity: 0;
+      transition: opacity 220ms ease;
+    }
+
+    .dialog-wrap.show { opacity: 1; }
+
+    .dialog {
+      width: min(700px, 100%);
+      background: linear-gradient(160deg, rgba(11, 19, 31, 0.97), rgba(11, 15, 23, 0.97));
+      border: 1px solid rgba(131, 177, 255, 0.35);
+      border-radius: 16px;
+      padding: 12px;
+      box-shadow: var(--shadow);
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .npc-avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 12px;
+      background: url('http://castles-vk.ru/pokepark/img/nps/1.png') center / cover no-repeat;
+      border: 1px solid rgba(168, 214, 255, 0.5);
+      flex-shrink: 0;
+    }
+
+    .dialog h3 { margin: 0 0 6px; }
+    .dialog p { margin: 0; color: #d6e4f8; font-size: 14px; line-height: 1.4; }
+
+    .dialog-actions {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .dialog-btn {
+      border: 0;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .dialog-btn.primary { background: var(--accent); color: #031120; }
+    .dialog-btn.secondary { background: rgba(130, 164, 224, 0.2); color: #f2f7ff; }
+
+    @keyframes floatY {
       50% { transform: translate(-50%, calc(-50% - 3px)); }
     }
 
-    @keyframes labPulse {
-      0%, 100% { transform: translate(-50%, -50%) scale(1); }
-      50% { transform: translate(-50%, -50%) scale(1.05); }
+    @keyframes travelPulse {
+      0% { filter: brightness(1); transform: scale(1.01); }
+      50% { filter: brightness(1.13); transform: scale(1.025); }
+      100% { filter: brightness(1); transform: scale(1.01); }
     }
 
-    @keyframes scanPulse {
-      0% { opacity: 0.8; width: 12px; height: 12px; }
-      100% { opacity: 0; width: 600px; height: 600px; }
+    @media (max-width: 420px) {
+      .level { font-size: 24px; }
+      .currencies { font-size: 18px; }
+      .avatar { width: 48px; height: 48px; font-size: 24px; }
+      .top-hud { gap: 8px; }
     }
   </style>
 </head>
 <body>
-  <main class="game" id="gameRoot">
-    <section class="world-layer"></section>
+  <main class="game">
+    <section class="viewport" id="gameRoot">
+      <section class="scene-bg" id="sceneBg"></section>
+      <section class="scene-overlay"></section>
+      <section class="hitboxes" id="hitboxes"></section>
 
-    <section class="buildings-layer" id="buildingLayer"></section>
-
-    <section class="hud-layer">
-      <header class="top-hud">
-        <div class="panel trainer-panel">
-          <div class="avatar">🧢</div>
-          <div class="trainer-info">
-            <div class="level">Lv.5</div>
-            <div class="xp-shell">
-              <div id="xpFill" class="xp-fill"></div>
-              <div id="xpText" class="xp-text">450 / 1000 XP</div>
+      <section class="hud">
+        <header class="top-hud">
+          <div class="panel profile">
+            <div class="avatar">🧢</div>
+            <div style="min-width:0;flex:1;">
+              <div class="level">Lv. 5</div>
+              <div class="xp"><div class="xp-fill" id="xpFill"></div></div>
+              <div class="xp-text" id="xpText">450 / 1000 XP</div>
             </div>
           </div>
+
+          <div class="panel currencies">
+            <span>🪙 12,500</span>
+            <span>💎 250</span>
+          </div>
+        </header>
+
+        <div class="actions">
+          <button class="icon-btn" aria-label="Mail">✉️<span class="badge">3</span></button>
+          <button class="icon-btn" aria-label="Notifications">🔔<span class="badge">1</span></button>
+          <button class="icon-btn" id="menuBtn" aria-label="Menu">☰</button>
         </div>
 
-        <div class="panel currency-panel">
-          <div class="currency">🪙 <span>12,500</span></div>
-          <div class="currency">💎 <span>250</span></div>
+        <div class="panel bottom-nav">
+          <button class="nav-btn active" data-nav="home"><span class="nav-icon">⌂</span>Home</button>
+          <button class="nav-btn" data-nav="world"><span class="nav-icon">🗺️</span>World</button>
+          <button class="nav-btn" id="searchBtn" data-nav="search"><span class="nav-icon">⌕</span>Search</button>
+          <button class="nav-btn" data-nav="bag"><span class="nav-icon">👜</span>Bag</button>
+          <button class="nav-btn" data-nav="menu"><span class="nav-icon">☰</span>Menu</button>
         </div>
-      </header>
 
-      <div class="action-icons">
-        <button class="action-btn" aria-label="Mail">✉️<span class="badge">3</span></button>
-        <button class="action-btn" aria-label="Notifications">🔔<span class="badge">1</span></button>
-        <button class="action-btn" aria-label="Gift">🎁</button>
-      </div>
+        <div id="toast" class="toast"></div>
+      </section>
 
-      <div id="scanRing" class="scan-ring"></div>
+      <section class="menu-overlay" id="menuOverlay">
+        <aside class="menu-panel">
+          <div class="menu-head">
+            <h3 style="margin:0;">Меню</h3>
+            <button class="close-btn" id="closeMenu">✕</button>
+          </div>
+          <div class="menu-item">Профиль</div>
+          <div class="menu-item">Покедекс</div>
+          <div class="menu-item">Квесты</div>
+          <div class="menu-item">Инвентарь</div>
+          <div class="menu-item">Настройки</div>
+        </aside>
+      </section>
 
-      <div id="toast" class="toast"></div>
-
-      <nav class="panel bottom-nav">
-        <button class="nav-btn active" data-nav="home"><span class="nav-icon">⌂</span>Home</button>
-        <button class="nav-btn" data-nav="world"><span class="nav-icon">🗺️</span>World</button>
-        <button class="nav-btn" id="searchBtn" data-nav="search"><span class="nav-icon">⌕</span>Search</button>
-        <button class="nav-btn" data-nav="bag"><span class="nav-icon">👜</span>Bag</button>
-        <button class="nav-btn" id="menuBtn" data-nav="menu"><span class="nav-icon">☰</span>Menu</button>
-      </nav>
+      <section class="dialogs">
+        <div class="dialog-wrap" id="npcDialog">
+          <article class="dialog">
+            <div class="npc-avatar"></div>
+            <div>
+              <h3>Профессор</h3>
+              <p>Добро пожаловать в лабораторию! Здесь ты узнаешь о мире, героях и путешествиях. Готов начать приключение?</p>
+              <div class="dialog-actions">
+                <button class="dialog-btn primary" id="dialogTalk">Поговорить</button>
+                <button class="dialog-btn secondary" id="dialogClose">Закрыть</button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
     </section>
-
-    <aside id="menuPanel" class="menu-panel">
-      <h2>Menu</h2>
-      <div class="menu-item">Settings</div>
-      <div class="menu-item">Friends</div>
-      <div class="menu-item">Achievements</div>
-      <div class="menu-item">Events</div>
-      <div class="menu-item">Help</div>
-    </aside>
   </main>
 
   <script>
-    const buildingHitboxes = [
-      { id: 'lab-main', type: 'lab', x: 350, y: 615, width: 385, height: 360, marker: '🔬', markerX: 540, markerY: 610, markerClass: 'marker-lab', label: 'Professor Laboratory' },
-      { id: 'house-left', type: 'house', x: 35, y: 610, width: 280, height: 330, marker: '⌂', markerX: 160, markerY: 610, markerClass: 'marker-house marker-home', label: 'Northwest House' },
-      { id: 'house-right', type: 'house', x: 760, y: 700, width: 265, height: 320, marker: '?', markerX: 868, markerY: 695, markerClass: 'marker-house marker-unknown', label: 'Northeast House' },
-      { id: 'house-left-bottom', type: 'house', x: 15, y: 1025, width: 300, height: 325, marker: '⌂', markerX: 148, markerY: 1018, markerClass: 'marker-house marker-home', label: 'Southwest House' },
-      { id: 'house-right-bottom', type: 'house', x: 735, y: 980, width: 302, height: 334, marker: '!', markerX: 870, markerY: 980, markerClass: 'marker-house marker-quest', label: 'Southeast House' },
-      { id: 'road-exit', type: 'road_exit', x: 430, y: 360, width: 220, height: 220, marker: '⚑', markerX: 560, markerY: 515, markerClass: 'marker-house marker-home', label: 'Road Exit' }
-    ];
+    const DESIGN_WIDTH = 1920;
+    const DESIGN_HEIGHT = 1080;
 
-    const DESIGN_WIDTH = 1080;
-    const DESIGN_HEIGHT = 1920;
+    const scenes = {
+      main: {
+        bg: 'http://castles-vk.ru/pokepark/img/location/1.png',
+        hotspots: [
+          { id: 'lab', x: 760, y: 330, width: 420, height: 360, marker: '🧪', markerClass: 'lab', markerX: 980, markerY: 350, action: { type: 'scene', to: 'lab-entry', toast: 'Переход в лабораторию...' } },
+          { id: 'house-a', x: 280, y: 300, width: 320, height: 320, marker: '⌂', markerClass: 'home', markerX: 430, markerY: 300, action: { type: 'scene', to: 'house-6', toast: 'Входим в дом №1' } },
+          { id: 'house-b', x: 1160, y: 350, width: 300, height: 300, marker: '⌂', markerClass: 'home', markerX: 1300, markerY: 330, action: { type: 'scene', to: 'house-4', toast: 'Входим в дом №2' } },
+          { id: 'house-c', x: 1190, y: 680, width: 340, height: 300, marker: '⌂', markerClass: 'home', markerX: 1360, markerY: 670, action: { type: 'scene', to: 'house-5', toast: 'Входим в дом №3' } }
+        ]
+      },
+      'house-6': {
+        bg: 'https://castles-vk.ru/pokepark/img/location/6.png',
+        hotspots: [
+          { id: 'door-out', x: 850, y: 560, width: 220, height: 300, marker: '⇦', markerClass: 'exit', markerX: 960, markerY: 520, action: { type: 'scene', to: 'main', toast: 'Вы вышли из дома' } }
+        ]
+      },
+      'house-4': {
+        bg: 'https://castles-vk.ru/pokepark/img/location/4.png',
+        hotspots: [
+          { id: 'door-out', x: 850, y: 560, width: 220, height: 300, marker: '⇦', markerClass: 'exit', markerX: 960, markerY: 520, action: { type: 'scene', to: 'main', toast: 'Вы вышли из дома' } }
+        ]
+      },
+      'house-5': {
+        bg: 'https://castles-vk.ru/pokepark/img/location/5.png',
+        hotspots: [
+          { id: 'door-out', x: 850, y: 560, width: 220, height: 300, marker: '⇦', markerClass: 'exit', markerX: 960, markerY: 520, action: { type: 'scene', to: 'main', toast: 'Вы вышли из дома' } }
+        ]
+      },
+      'lab-entry': {
+        bg: 'http://castles-vk.ru/pokepark/img/location/2.png',
+        hotspots: [
+          { id: 'to-city-lab', x: 820, y: 360, width: 300, height: 350, marker: '🧬', markerClass: 'lab', markerX: 970, markerY: 330, action: { type: 'scene', to: 'lab-city', toast: 'Переход в городскую лабораторию...' } },
+          { id: 'exit-to-main', x: 40, y: 380, width: 220, height: 300, marker: '⇦', markerClass: 'exit', markerX: 170, markerY: 350, action: { type: 'scene', to: 'main', toast: 'Возврат на главную локацию' } }
+        ]
+      },
+      'lab-city': {
+        bg: 'http://castles-vk.ru/pokepark/img/location/3.png',
+        hotspots: [
+          { id: 'npc-professor', x: 875, y: 390, width: 220, height: 430, marker: 'NPC', markerClass: 'npc', markerX: 995, markerY: 370, action: { type: 'dialog', toast: 'Профессор готов к разговору' } },
+          { id: 'exit-lab-city', x: 32, y: 390, width: 220, height: 300, marker: '⇦', markerClass: 'exit', markerX: 165, markerY: 360, action: { type: 'scene', to: 'main', toast: 'Вы покинули лабораторию' } }
+        ]
+      }
+    };
 
-    const gameRoot = document.getElementById('gameRoot');
-    const buildingLayer = document.getElementById('buildingLayer');
-    const menuPanel = document.getElementById('menuPanel');
-    const menuBtn = document.getElementById('menuBtn');
-    const searchBtn = document.getElementById('searchBtn');
-    const scanRing = document.getElementById('scanRing');
+    const sceneBg = document.getElementById('sceneBg');
+    const hitboxes = document.getElementById('hitboxes');
+    const toast = document.getElementById('toast');
     const xpFill = document.getElementById('xpFill');
     const xpText = document.getElementById('xpText');
-    const toast = document.getElementById('toast');
+    const gameRoot = document.getElementById('gameRoot');
+    const menuOverlay = document.getElementById('menuOverlay');
+    const menuBtn = document.getElementById('menuBtn');
+    const closeMenu = document.getElementById('closeMenu');
+    const searchBtn = document.getElementById('searchBtn');
+    const npcDialog = document.getElementById('npcDialog');
+    const dialogClose = document.getElementById('dialogClose');
+    const dialogTalk = document.getElementById('dialogTalk');
 
     const state = {
+      scene: 'main',
       xpCurrent: 450,
       xpTotal: 1000,
-      searchMode: false,
-      toastTimer: null,
-      debugHitbox: false
-    };
-
-    const setCssVarsForScale = () => {
-      const rect = gameRoot.getBoundingClientRect();
-      const scaleX = rect.width / DESIGN_WIDTH;
-      const scaleY = rect.height / DESIGN_HEIGHT;
-      buildingLayer.innerHTML = '';
-
-      buildingHitboxes.forEach((entry) => {
-        const hitbox = document.createElement('button');
-        hitbox.className = `hitbox${state.debugHitbox ? ' debug' : ''}`;
-        hitbox.dataset.id = entry.id;
-        hitbox.dataset.type = entry.type;
-        hitbox.ariaLabel = entry.label;
-
-        const marker = document.createElement('div');
-        marker.className = `marker ${entry.markerClass}`;
-        marker.textContent = entry.marker;
-
-        hitbox.style.left = `${entry.x * scaleX}px`;
-        hitbox.style.top = `${entry.y * scaleY}px`;
-        hitbox.style.width = `${entry.width * scaleX}px`;
-        hitbox.style.height = `${entry.height * scaleY}px`;
-
-        marker.style.left = `${entry.markerX * scaleX}px`;
-        marker.style.top = `${entry.markerY * scaleY}px`;
-
-        hitbox.addEventListener('click', () => onBuildingTap(entry));
-
-        buildingLayer.append(hitbox, marker);
-      });
-    };
-
-    const animateXpTo = (target) => {
-      const clamped = Math.max(0, Math.min(state.xpTotal, target));
-      state.xpCurrent = clamped;
-      const percent = (clamped / state.xpTotal) * 100;
-      xpFill.style.width = `${percent}%`;
-      xpText.textContent = `${clamped} / ${state.xpTotal} XP`;
+      toastTimer: null
     };
 
     const showToast = (text) => {
       toast.textContent = text;
       toast.classList.add('show');
       clearTimeout(state.toastTimer);
-      state.toastTimer = setTimeout(() => toast.classList.remove('show'), 1450);
-    };
-
-    const onBuildingTap = (entry) => {
-      if (entry.type === 'lab') {
-        console.log('Lab Scene opened:', entry.id);
-        animateXpTo(470);
-        showToast('Laboratory tapped — opening Lab Scene...');
-        return;
-      }
-
-      if (entry.type === 'road_exit') {
-        console.log('Road exit tapped:', entry.id);
-        showToast('Road Exit tapped — world travel soon.');
-        return;
-      }
-
-      console.log('House tapped:', entry.id);
-      animateXpTo(Math.min(state.xpTotal, state.xpCurrent + 10));
-      showToast(`House interaction: ${entry.label}`);
-    };
-
-    const triggerScan = () => {
-      const rect = gameRoot.getBoundingClientRect();
-      const centerX = rect.width * 0.5;
-      const centerY = rect.height * 0.56;
-      scanRing.style.left = `${centerX}px`;
-      scanRing.style.top = `${centerY}px`;
-      scanRing.classList.remove('active');
-      void scanRing.offsetWidth;
-      scanRing.classList.add('active');
-      showToast('Search Mode: scanning for creatures...');
-      console.log('Search mode placeholder activated');
+      state.toastTimer = setTimeout(() => toast.classList.remove('show'), 1400);
     };
 
     const setActiveNav = (target) => {
@@ -553,31 +562,108 @@
       });
     };
 
+    const animateXpTo = (target) => {
+      const value = Math.max(0, Math.min(state.xpTotal, target));
+      state.xpCurrent = value;
+      xpFill.style.width = `${(value / state.xpTotal) * 100}%`;
+      xpText.textContent = `${value} / ${state.xpTotal} XP`;
+    };
+
+    const setScene = (sceneId) => {
+      if (!scenes[sceneId]) return;
+      state.scene = sceneId;
+      sceneBg.style.backgroundImage = `url('${scenes[sceneId].bg}')`;
+      sceneBg.classList.remove('travel');
+      void sceneBg.offsetWidth;
+      sceneBg.classList.add('travel');
+      npcDialog.classList.remove('show');
+      renderHotspots();
+    };
+
+    const actionByHotspot = (spot) => {
+      if (!spot.action) return;
+      if (spot.action.toast) showToast(spot.action.toast);
+
+      if (spot.action.type === 'scene') {
+        animateXpTo(state.xpCurrent + 8);
+        setTimeout(() => setScene(spot.action.to), 120);
+      }
+
+      if (spot.action.type === 'dialog') {
+        npcDialog.classList.add('show');
+      }
+    };
+
+    const renderHotspots = () => {
+      const current = scenes[state.scene];
+      if (!current) return;
+
+      const rect = gameRoot.getBoundingClientRect();
+      const sx = rect.width / DESIGN_WIDTH;
+      const sy = rect.height / DESIGN_HEIGHT;
+      hitboxes.innerHTML = '';
+
+      current.hotspots.forEach((spot) => {
+        const button = document.createElement('button');
+        button.className = 'hotspot';
+        button.style.left = `${spot.x * sx}px`;
+        button.style.top = `${spot.y * sy}px`;
+        button.style.width = `${spot.width * sx}px`;
+        button.style.height = `${spot.height * sy}px`;
+        button.ariaLabel = spot.id;
+        button.addEventListener('click', () => actionByHotspot(spot));
+
+        const marker = document.createElement('div');
+        marker.className = `marker ${spot.markerClass}`;
+        marker.style.left = `${spot.markerX * sx}px`;
+        marker.style.top = `${spot.markerY * sy}px`;
+        marker.textContent = spot.marker;
+
+        hitboxes.append(button, marker);
+      });
+    };
+
     document.querySelectorAll('.nav-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        if (btn.dataset.nav !== 'menu') {
-          setActiveNav(btn.dataset.nav);
-          menuPanel.classList.remove('open');
+        const nav = btn.dataset.nav;
+        setActiveNav(nav);
+        if (nav === 'menu') {
+          menuOverlay.classList.add('open');
+        } else {
+          menuOverlay.classList.remove('open');
         }
       });
     });
 
+    searchBtn.addEventListener('click', () => {
+      showToast('Сканирование мира...');
+      animateXpTo(state.xpCurrent + 12);
+    });
+
     menuBtn.addEventListener('click', () => {
-      menuPanel.classList.toggle('open');
+      menuOverlay.classList.add('open');
       setActiveNav('menu');
     });
 
-    searchBtn.addEventListener('click', () => {
-      state.searchMode = true;
-      triggerScan();
+    closeMenu.addEventListener('click', () => {
+      menuOverlay.classList.remove('open');
+      setActiveNav('home');
     });
 
-    window.addEventListener('resize', () => {
-      window.requestAnimationFrame(setCssVarsForScale);
-    }, { passive: true });
+    menuOverlay.addEventListener('click', (event) => {
+      if (event.target === menuOverlay) {
+        menuOverlay.classList.remove('open');
+        setActiveNav('home');
+      }
+    });
 
+    dialogClose.addEventListener('click', () => npcDialog.classList.remove('show'));
+    dialogTalk.addEventListener('click', () => showToast('Профессор рассказал о мире и квестах.'));
+
+    window.addEventListener('resize', () => window.requestAnimationFrame(renderHotspots), { passive: true });
+
+    setScene('main');
     animateXpTo(state.xpCurrent);
-    setCssVarsForScale();
   </script>
 </body>
 </html>
