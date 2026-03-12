@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>PokéBerry Farm — мобильная мини-игра</title>
+  <style>
+    :root{
+      --bg:#f5f7ff;
+      --card:#ffffffcc;
+      --ink:#24304f;
+      --muted:#6c789b;
+      --accent:#4ea9ff;
+      --success:#38c970;
+      --plot:#6e4729;
+      --plot-edge:#8f6039;
+      --chip:#ffffff;
+      --danger:#ff6b6b;
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#d6f2d8;color:var(--ink)}
+    body{display:grid;place-items:center;padding:8px}
+
+    .app{
+      width:min(430px,100%);
+      aspect-ratio:9/16;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.45),rgba(255,255,255,.05)),
+        url('https://images.unsplash.com/photo-1472396961693-142e6e269027?auto=format&fit=crop&w=1100&q=80') center/cover;
+      border-radius:30px;
+      overflow:hidden;
+      box-shadow:0 22px 55px rgba(0,0,0,.35);
+      border:1px solid #ffffff9e;
+      display:grid;
+      grid-template-rows:auto 1fr auto;
+      position:relative;
+      isolation:isolate;
+    }
+    .veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(18,36,18,.38),rgba(10,20,12,.2) 40%,rgba(16,19,31,.28));z-index:-1}
+
+    .topbar{padding:12px 12px 6px;display:flex;gap:10px;align-items:center;justify-content:space-between}
+    .titleCard,.wallet{background:var(--card);backdrop-filter:blur(8px);border:1px solid #fff;padding:8px 10px;border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,.15)}
+    .titleCard h1{margin:0;font-size:14px;letter-spacing:.2px}
+    .titleCard small{font-size:11px;color:var(--muted)}
+    .wallet{font-weight:800;font-size:14px;white-space:nowrap}
+
+    .farm{
+      padding:8px 10px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      grid-template-rows:repeat(3,1fr);
+      gap:10px;
+      align-content:center;
+    }
+    .plot{
+      background:linear-gradient(160deg,var(--plot),#4f3017);
+      border:2px solid var(--plot-edge);
+      border-radius:18px;
+      position:relative;
+      overflow:hidden;
+      box-shadow:inset 0 8px 12px rgba(255,255,255,.08),0 10px 14px rgba(0,0,0,.2);
+      padding:8px;
+      touch-action:none;
+    }
+    .plot.drag-over{outline:3px dashed #fff;outline-offset:-5px}
+    .timer{
+      position:absolute;left:50%;top:8px;transform:translateX(-50%);
+      background:var(--chip);border-radius:99px;padding:3px 9px;
+      font-size:11px;font-weight:900;color:#52608e;border:1px solid #f2f4ff;
+      box-shadow:0 4px 10px rgba(0,0,0,.17)
+    }
+    .plantWrap{position:absolute;inset:0;display:grid;place-items:center;padding-top:14px}
+    .stage{width:62%;max-height:72%;object-fit:contain;filter:drop-shadow(0 5px 8px rgba(0,0,0,.35));transition:transform .25s ease}
+    .plot.ready .stage{animation:pulse 1s infinite alternate}
+    @keyframes pulse{from{transform:scale(1)}to{transform:scale(1.08)}}
+
+    .water-splash{
+      position:absolute;inset:auto 20% 10% 20%;height:45%;
+      background:radial-gradient(circle at 50% 80%,#54ceff7d,transparent 60%);
+      animation:splash .75s ease;
+      pointer-events:none
+    }
+    @keyframes splash{0%{opacity:0;transform:translateY(20px) scale(.6)}40%{opacity:1}100%{opacity:0;transform:translateY(-8px) scale(1.2)}}
+
+    .controls{padding:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:linear-gradient(180deg,#ffffffde,#fffffff2);border-top:1px solid #ffffff}
+    .btn{border:none;border-radius:16px;padding:9px 4px;font-weight:900;font-size:12px;color:#3e4a75;background:#fff;box-shadow:0 5px 12px rgba(42,50,85,.2);display:grid;gap:4px;place-items:center;cursor:pointer}
+    .btn.active{background:linear-gradient(180deg,#5cc3ff,#3e9fff);color:#fff}
+    .btn span{font-size:24px;line-height:1}
+
+    .panel{
+      position:absolute;left:10px;right:10px;bottom:78px;max-height:48%;
+      background:#ffffffee;border-radius:18px;border:1px solid #fff;box-shadow:0 18px 35px rgba(16,25,58,.25);
+      display:none;flex-direction:column;overflow:hidden
+    }
+    .panel.show{display:flex}
+    .panelHead{padding:10px 12px;border-bottom:1px solid #e7ecff;font-weight:900;display:flex;justify-content:space-between;align-items:center}
+    .panelBody{padding:10px;display:grid;gap:8px;overflow:auto}
+    .seedList{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .seedItem{background:#f3f7ff;border:1px solid #e2eaff;border-radius:12px;padding:8px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;cursor:grab}
+    .seedItem img{width:34px;height:34px;image-rendering:auto}
+    .seedItem b{font-size:12px}
+    .seedItem small{display:block;font-size:10px;color:#65729c}
+    .tag{font-size:10px;font-weight:800;background:#fff;border:1px solid #e0e7ff;padding:3px 6px;border-radius:999px}
+
+    .inventoryCard{background:#f4f8ff;border:1px solid #dce6ff;border-radius:12px;padding:9px;display:flex;justify-content:space-between;align-items:center}
+    .inventoryCard button{border:none;background:linear-gradient(180deg,#58c8ff,#379dff);color:#fff;font-weight:800;border-radius:10px;padding:7px 9px;cursor:pointer}
+
+    .hint{position:absolute;top:46px;left:50%;transform:translateX(-50%);font-size:11px;background:#ffffffd9;border:1px solid #fff;border-radius:10px;padding:5px 9px;font-weight:700;color:#4f5d86}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="veil"></div>
+    <div class="topbar">
+      <div class="titleCard">
+        <h1>🌱 PokéBerry Farm</h1>
+        <small>Перетаскивай ягоды на грядки • 6 участков</small>
+      </div>
+      <div class="wallet" id="coins">💰 120</div>
+    </div>
+
+    <div class="hint">Стадии роста: листочки → саженец → куст с ягодой</div>
+
+    <section class="farm" id="farm"></section>
+
+    <nav class="controls">
+      <button class="btn active" data-mode="plant"><span>🌿</span>Посадить</button>
+      <button class="btn" data-mode="water"><span>💧</span>Полить</button>
+      <button class="btn" data-mode="harvest"><span>🧺</span>Собрать</button>
+      <button class="btn" data-mode="inventory"><span>🎒</span>Инвентарь</button>
+    </nav>
+
+    <section class="panel" id="panel"></section>
+  </main>
+
+  <script>
+    const BERRIES = [
+      { id:'cheri', ru:'Чери', grow:90, sprite:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/cheri-berry.png' },
+      { id:'chesto', ru:'Често', grow:110, sprite:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/chesto-berry.png' },
+      { id:'pecha', ru:'Печа', grow:100, sprite:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/pecha-berry.png' },
+      { id:'rawst', ru:'Роаст', grow:120, sprite:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/rawst-berry.png' },
+      { id:'aspear', ru:'Аспир', grow:140, sprite:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/aspear-berry.png' },
+      { id:'leppa', ru:'Леппа', grow:95, sprite:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/leppa-berry.png' }
+    ];
+
+    const STAGES = {
+      seedling: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/43.png',
+      sapling: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/44.png'
+    };
+
+    const state = {
+      mode:'plant',
+      coins:120,
+      boosts:{ fertilizer:2, spray:1 },
+      selectedBerry:BERRIES[0],
+      plots:Array.from({length:6},()=>({
+        berry:null, stage:0, plantedAt:0, growthLeft:0, watered:false, ready:false
+      }))
+    };
+
+    const farmEl = document.getElementById('farm');
+    const panel = document.getElementById('panel');
+    const coinsEl = document.getElementById('coins');
+
+    function fmt(sec){
+      if(sec<=0) return 'Готово';
+      const m = Math.floor(sec/60), s = sec%60;
+      return `${m}:${String(s).padStart(2,'0')}`;
+    }
+
+    function playWaterSound(){
+      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+      const dur = 0.45;
+      const now = ctx.currentTime;
+      for(let i=0;i<4;i++){
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type='triangle';
+        o.frequency.value = 720 - i*130;
+        g.gain.setValueAtTime(0.0001, now + i*0.06);
+        g.gain.exponentialRampToValueAtTime(0.07, now + i*0.06 + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + i*0.06 + dur);
+        o.connect(g).connect(ctx.destination);
+        o.start(now + i*0.06);
+        o.stop(now + i*0.06 + dur);
+      }
+    }
+
+    function currentStage(plot){
+      if(!plot.berry) return null;
+      if(plot.ready) return plot.berry.sprite;
+      if(plot.stage===1) return STAGES.seedling;
+      if(plot.stage===2) return STAGES.sapling;
+      return STAGES.seedling;
+    }
+
+    function renderFarm(){
+      farmEl.innerHTML = '';
+      state.plots.forEach((plot,idx)=>{
+        const el = document.createElement('article');
+        el.className = 'plot' + (plot.ready?' ready':'');
+        el.dataset.idx = idx;
+        el.innerHTML = `<div class="timer">${plot.berry?fmt(plot.growthLeft):'Пусто'}</div><div class="plantWrap">${plot.berry?`<img class="stage" src="${currentStage(plot)}" alt="${plot.berry.ru}">`:''}</div>`;
+
+        el.addEventListener('dragover',e=>{e.preventDefault();if(state.mode==='plant') el.classList.add('drag-over');});
+        el.addEventListener('dragleave',()=>el.classList.remove('drag-over'));
+        el.addEventListener('drop',e=>{
+          e.preventDefault();el.classList.remove('drag-over');
+          if(state.mode!=='plant') return;
+          const berryId = e.dataTransfer.getData('text/plain');
+          const berry = BERRIES.find(b=>b.id===berryId);
+          if(berry) plant(idx,berry);
+        });
+
+        el.addEventListener('click',()=>onPlotAction(idx,el));
+        farmEl.appendChild(el);
+      });
+      coinsEl.textContent = `💰 ${state.coins}`;
+    }
+
+    function plant(idx,berry){
+      const plot = state.plots[idx];
+      if(plot.berry) return;
+      plot.berry = berry;
+      plot.stage = 1;
+      plot.plantedAt = Date.now();
+      plot.growthLeft = berry.grow;
+      plot.watered = false;
+      plot.ready = false;
+      renderFarm();
+    }
+
+    function water(idx,el){
+      const plot = state.plots[idx];
+      if(!plot.berry || plot.ready) return;
+      if(!plot.watered){
+        plot.watered = true;
+        plot.growthLeft = Math.max(8,Math.floor(plot.growthLeft*0.75));
+      } else {
+        plot.growthLeft = Math.max(4,plot.growthLeft-6);
+      }
+      playWaterSound();
+      const splash = document.createElement('div');
+      splash.className='water-splash';
+      el.appendChild(splash);
+      setTimeout(()=>splash.remove(),720);
+      renderFarm();
+    }
+
+    function harvest(idx){
+      const plot = state.plots[idx];
+      if(!plot.ready) return;
+      state.coins += 18;
+      state.plots[idx] = { berry:null, stage:0, plantedAt:0, growthLeft:0, watered:false, ready:false };
+      renderFarm();
+    }
+
+    function onPlotAction(idx,el){
+      if(state.mode==='plant'){
+        const plot = state.plots[idx];
+        if(!plot.berry) plant(idx,state.selectedBerry);
+      }
+      if(state.mode==='water') water(idx,el);
+      if(state.mode==='harvest') harvest(idx);
+    }
+
+    function tick(){
+      state.plots.forEach(plot=>{
+        if(!plot.berry || plot.ready) return;
+        plot.growthLeft = Math.max(0, plot.growthLeft-1);
+        const ratio = 1 - (plot.growthLeft / plot.berry.grow);
+        if(ratio>0.33 && plot.stage<2) plot.stage = 2;
+        if(ratio>=1){ plot.stage = 3; plot.ready = true; }
+      });
+      renderFarm();
+    }
+
+    function openPanel(type){
+      panel.classList.add('show');
+      if(type==='plant'){
+        panel.innerHTML = `
+          <div class="panelHead">Выбери поке-ягоду <button id="closePanel">✖</button></div>
+          <div class="panelBody">
+            <div class="seedList">
+              ${BERRIES.map(b=>`
+                <div class="seedItem" draggable="true" data-berry="${b.id}">
+                  <img src="${b.sprite}" alt="${b.ru}">
+                  <div><b>${b.ru}</b><small>Оригинал: ${b.id}</small></div>
+                  <span class="tag">${b.grow}с</span>
+                </div>`).join('')}
+            </div>
+            <small>Совет: зажми ягоду и перетащи на любую пустую грядку.</small>
+          </div>`;
+
+        panel.querySelectorAll('.seedItem').forEach(item=>{
+          item.addEventListener('click',()=>{
+            state.selectedBerry = BERRIES.find(b=>b.id===item.dataset.berry);
+            [...panel.querySelectorAll('.seedItem')].forEach(n=>n.style.outline='none');
+            item.style.outline='3px solid #6db5ff';
+          });
+          item.addEventListener('dragstart',e=>e.dataTransfer.setData('text/plain',item.dataset.berry));
+        });
+      } else if(type==='inventory'){
+        panel.innerHTML = `
+          <div class="panelHead">Инвентарь и магазин <button id="closePanel">✖</button></div>
+          <div class="panelBody">
+            <div class="inventoryCard"><div><b>⚡ Удобрение роста</b><div>Ускоряет выбранную грядку на 25%</div></div><button data-use="fert">Исп. (${state.boosts.fertilizer})</button></div>
+            <div class="inventoryCard"><div><b>💨 Спрей созревания</b><div>Сразу снижает таймер на 15 секунд</div></div><button data-use="spray">Исп. (${state.boosts.spray})</button></div>
+            <div class="inventoryCard"><div><b>🛒 Магазин: +1 удобрение</b><div>Цена: 30 монет</div></div><button data-buy="fert">Купить</button></div>
+            <div class="inventoryCard"><div><b>🛒 Магазин: +1 спрей</b><div>Цена: 45 монет</div></div><button data-buy="spray">Купить</button></div>
+            <small>Использование бустов: автоматически применяется к грядке с наибольшим временем роста.</small>
+          </div>`;
+
+        panel.querySelectorAll('[data-use]').forEach(btn=>btn.addEventListener('click',()=>useBoost(btn.dataset.use)));
+        panel.querySelectorAll('[data-buy]').forEach(btn=>btn.addEventListener('click',()=>buyBoost(btn.dataset.buy)));
+      } else {
+        panel.classList.remove('show');
+        return;
+      }
+      document.getElementById('closePanel').addEventListener('click',()=>panel.classList.remove('show'));
+    }
+
+    function getLongestPlot(){
+      return state.plots
+        .map((p,i)=>({p,i}))
+        .filter(x=>x.p.berry && !x.p.ready)
+        .sort((a,b)=>b.p.growthLeft-a.p.growthLeft)[0];
+    }
+
+    function useBoost(type){
+      const target = getLongestPlot();
+      if(!target) return;
+      if(type==='fert' && state.boosts.fertilizer>0){
+        state.boosts.fertilizer--;
+        target.p.growthLeft = Math.max(1,Math.floor(target.p.growthLeft*0.75));
+      }
+      if(type==='spray' && state.boosts.spray>0){
+        state.boosts.spray--;
+        target.p.growthLeft = Math.max(1,target.p.growthLeft-15);
+      }
+      openPanel('inventory');
+      renderFarm();
+    }
+
+    function buyBoost(type){
+      const price = type==='fert'?30:45;
+      if(state.coins<price) return;
+      state.coins -= price;
+      if(type==='fert') state.boosts.fertilizer++;
+      else state.boosts.spray++;
+      openPanel('inventory');
+      renderFarm();
+    }
+
+    document.querySelectorAll('.btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        document.querySelectorAll('.btn').forEach(x=>x.classList.remove('active'));
+        btn.classList.add('active');
+        state.mode = btn.dataset.mode;
+        if(state.mode==='plant' || state.mode==='inventory') openPanel(state.mode);
+        else panel.classList.remove('show');
+      });
+    });
+
+    openPanel('plant');
+    renderFarm();
+    setInterval(tick,1000);
+  </script>
+</body>
+</html>
