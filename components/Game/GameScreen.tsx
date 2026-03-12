@@ -246,10 +246,11 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
       event.preventDefault();
       if (!gameStateRef.current) return;
       const { camera: cam, scene: currentScene, units: currentUnits } = gameStateRef.current;
+      const bounds = renderer.domElement.getBoundingClientRect();
       const raycaster = new THREE.Raycaster();
       const pointer = new THREE.Vector2(
-        (event.clientX / window.innerWidth) * 2 - 1,
-        -(event.clientY / window.innerHeight) * 2 + 1
+        ((event.clientX - bounds.left) / bounds.width) * 2 - 1,
+        -((event.clientY - bounds.top) / bounds.height) * 2 + 1
       );
       raycaster.setFromCamera(pointer, cam);
       const intersections = raycaster.intersectObjects(currentScene.children, true);
@@ -301,6 +302,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
     window.addEventListener('contextmenu', handleContextMenu);
     window.addEventListener('keydown', handleKeyDown);
 
+    let animationId = 0;
     const loop = () => {
       if (!gameStateRef.current) return;
       const state = gameStateRef.current;
@@ -314,7 +316,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
       updateMinimap(state, minimapRef.current);
 
       state.renderer.render(state.scene, state.camera);
-      requestAnimationFrame(loop);
+      animationId = requestAnimationFrame(loop);
     };
 
     loop();
@@ -324,6 +326,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('contextmenu', handleContextMenu);
       window.removeEventListener('keydown', handleKeyDown);
+      window.cancelAnimationFrame(animationId);
       renderer.dispose();
       containerRef.current?.removeChild(renderer.domElement);
       gameStateRef.current = null;
@@ -345,20 +348,23 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
 
   const currentHeroImage = heroData.image;
   const abilityCooldowns = gameStateRef.current?.abilityCooldowns ?? { Q: 0, W: 0, E: 0, R: 0 };
-  const now = performance.now() + cooldownTick;
+  const now = useMemo(() => performance.now(), [cooldownTick]);
 
   const abilities = heroData.abilities;
 
   return (
-    <div ref={containerRef} className="relative h-screen w-screen overflow-hidden bg-[#0f1012]">
+    <div ref={containerRef} className="relative h-screen w-screen overflow-hidden bg-[#08090d]">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-[#0f1012]/20 to-[#0f1012]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_25%,rgba(194,60,42,0.17),transparent_35%),radial-gradient(circle_at_82%_70%,rgba(50,120,218,0.14),transparent_35%)]" />
+      <div className="pointer-events-none absolute left-[-140px] top-10 h-80 w-80 rounded-full bg-[#c23c2a]/20 blur-[120px]" />
+      <div className="pointer-events-none absolute bottom-[-120px] right-[-100px] h-[24rem] w-[24rem] rounded-full bg-[#2f63c9]/15 blur-[130px]" />
 
       <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between px-6 pb-4 text-white">
         <div className="flex items-end gap-4">
-          <div className="h-24 w-24 overflow-hidden rounded-md border border-[#2a2d33]">
+          <div className="h-24 w-24 overflow-hidden rounded-md border border-[#444b57] shadow-[0_12px_35px_rgba(0,0,0,0.55)]">
             <img src={currentHeroImage} alt={heroData.name} className="h-full w-full object-cover" />
           </div>
-          <div className="space-y-3">
+          <div className="space-y-3 rounded-lg border border-[#2a2d33] bg-[#090b10]/65 p-3 backdrop-blur-sm">
             <div className="font-[Cinzel] text-lg uppercase tracking-[0.3em] text-[#f7e7c0]">
               {heroData.name}
             </div>
@@ -394,7 +400,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
         </div>
 
         <div className="flex flex-col items-end gap-3">
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-4 gap-3 rounded-lg border border-[#2a2d33] bg-[#090b10]/65 p-3 backdrop-blur-sm">
             {abilities.map((ability, index) => {
               const key = ['Q', 'W', 'E', 'R'][index];
               const remaining = Math.max(0, Math.ceil((abilityCooldowns[key] - now) / 1000));
@@ -419,13 +425,13 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
           <div className="flex items-center gap-4">
             <button
               onClick={() => setShopOpen((prev) => !prev)}
-              className="flex items-center gap-2 rounded-md border border-[#2a2d33] bg-[#121419]/80 px-4 py-2 text-xs uppercase tracking-[0.2em] text-[#f7e7c0]"
+              className="flex items-center gap-2 rounded-md border border-[#454d59] bg-[#121419]/85 px-4 py-2 text-xs uppercase tracking-[0.2em] text-[#f7e7c0] shadow-[0_8px_20px_rgba(0,0,0,0.35)]"
             >
               <ShoppingBag className="h-4 w-4" />
               Shop
             </button>
-            <div className="rounded-md border border-[#2a2d33] bg-[#121419]/80 px-4 py-2 text-xs uppercase tracking-[0.2em] text-[#c8ccd4]">
-              Gold: <span className="text-white">{gold}</span>
+            <div className="rounded-md border border-[#454d59] bg-[#121419]/85 px-4 py-2 text-xs uppercase tracking-[0.2em] text-[#c8ccd4] shadow-[0_8px_20px_rgba(0,0,0,0.35)]">
+              Gold: <span className="text-[#ffe39a]">{gold}</span>
             </div>
             {onExit && (
               <button
@@ -439,7 +445,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
         </div>
       </div>
 
-      <div className="absolute bottom-4 left-4 space-y-3">
+      <div className="absolute bottom-4 left-4 space-y-3 rounded-lg border border-[#2a2d33] bg-[#090b10]/65 p-3 backdrop-blur-sm">
         <canvas ref={minimapRef} width={180} height={180} className="rounded-md border border-[#2a2d33]" />
         <div className="grid grid-cols-6 gap-2">
           {Array.from({ length: 6 }).map((_, index) => (

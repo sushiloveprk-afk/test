@@ -104,18 +104,27 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
     setSelectedHero(hero);
   };
 
-  const handleLockIn = () => {
-    if (!selectedHero) return;
-    setLockedHero(selectedHero);
-    setPickedIds((ids) => new Set(ids).add(selectedHero.id));
-    onLockIn(selectedHero);
+  const handleLockIn = (heroToLock = selectedHero) => {
+    if (!heroToLock) return;
+    setLockedHero(heroToLock);
+    setPickedIds((ids) => new Set(ids).add(heroToLock.id));
+    setRadiantSlots((prev) => {
+      const updated = [...prev];
+      const firstEmpty = updated.findIndex((slot) => !slot);
+      if (firstEmpty !== -1) updated[firstEmpty] = heroToLock;
+      return updated;
+    });
+    onLockIn(heroToLock);
   };
 
   const heroPreview = selectedHero ?? heroList[0];
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-[#0f1012] text-white">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_#1a1c20,_#0f1012_70%)] opacity-80" />
+    <div className="relative h-screen w-screen overflow-hidden bg-[#0b0d12] text-white">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_#232732,_#0b0d12_68%)] opacity-90" />
+      <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(194,60,42,0.08),transparent_25%,transparent_75%,rgba(111,153,255,0.08))]" />
+      <div className="pointer-events-none absolute -left-28 top-14 h-72 w-72 rounded-full bg-[#c23c2a]/20 blur-[120px]" />
+      <div className="pointer-events-none absolute -right-20 bottom-24 h-80 w-80 rounded-full bg-[#4b74d4]/20 blur-[130px]" />
 
       <header className="relative z-10 flex items-center justify-between px-8 pt-6 font-[Cinzel] uppercase tracking-[0.3em] text-sm text-[#f5e7cf]">
         <div className="flex flex-col gap-3">
@@ -162,13 +171,13 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
 
       <div className="relative z-10 mt-6 grid h-[calc(100%-8rem)] grid-cols-[1.4fr_2.2fr_1.4fr] gap-6 px-8 pb-8">
         <div className="flex flex-col gap-5">
-          <div className="rounded-xl border border-[#2c2f35] bg-[#14161b]/80 p-4">
+          <div className="rounded-xl border border-[#343943] bg-[#14161b]/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.45)] backdrop-blur-sm">
             <h2 className="mb-4 font-[Cinzel] text-xs uppercase tracking-[0.4em] text-[#d7c9ac]">Radiant</h2>
             <div className="space-y-3">
               {radiantSlots.map((slot, index) => (
                 <div
                   key={`radiant-${index}`}
-                  className="flex items-center gap-3 rounded-md border border-[#2a2d33] bg-[#101215]/80 px-3 py-2"
+                  className="flex items-center gap-3 rounded-md border border-[#2a2d33] bg-[#101215]/85 px-3 py-2"
                 >
                   <div className="h-12 w-12 -skew-x-12 overflow-hidden rounded-sm border border-[#2f3238]">
                     {slot ? (
@@ -227,12 +236,12 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
             </div>
           </div>
 
-          <div className="grid flex-1 grid-cols-4 gap-3 overflow-y-auto rounded-xl border border-[#2c2f35] bg-[#14161b]/80 p-4">
+          <div className="grid flex-1 grid-cols-4 gap-3 overflow-y-auto rounded-xl border border-[#343943] bg-[#14161b]/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
             {filteredHeroes.map((hero) => (
               <button
                 key={hero.id}
                 onClick={() => handleSelectHero(hero)}
-                onDoubleClick={handleLockIn}
+                onDoubleClick={() => handleLockIn(hero)}
                 disabled={pickedIds.has(hero.id)}
                 className={`group relative flex h-28 flex-col items-start justify-end overflow-hidden rounded-md border border-transparent bg-[#0f1116] text-left transition hover:border-[#c23c2a] hover:brightness-125 disabled:cursor-not-allowed disabled:opacity-50 ${
                   selectedHero?.id === hero.id ? 'border-[#c23c2a] ring-2 ring-[#c23c2a]/40' : ''
@@ -251,10 +260,15 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
                 </div>
               </button>
             ))}
+            {filteredHeroes.length === 0 && (
+              <div className="col-span-4 rounded-md border border-dashed border-[#3b3f48] bg-[#101218]/70 p-6 text-center text-xs uppercase tracking-[0.25em] text-[#737983]">
+                No heroes found for this filter.
+              </div>
+            )}
           </div>
         </div>
 
-        <aside className="flex flex-col gap-6 rounded-xl border border-[#2c2f35] bg-[#111318]/80 p-6">
+        <aside className="flex flex-col gap-6 rounded-xl border border-[#343943] bg-[#111318]/85 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.45)] backdrop-blur-sm">
           <div className="flex items-center justify-between">
             <div>
               <div className="text-xs uppercase tracking-[0.3em] text-[#9aa0a8]">Hero Preview</div>
