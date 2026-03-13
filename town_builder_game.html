@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkyHarbor Builder</title>
+  <style>
+    :root {
+      --bg: #0b1223;
+      --panel: rgba(10, 17, 33, 0.85);
+      --text: #e9f0ff;
+      --muted: #a8b9d8;
+      --accent: #8fd3ff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at 20% 20%, #14233f, #070b16 60%);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+    }
+
+    .app {
+      width: min(1150px, 100%);
+      display: grid;
+      grid-template-columns: 1fr 290px;
+      gap: 16px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid rgba(173, 215, 255, 0.25);
+      backdrop-filter: blur(8px);
+      border-radius: 14px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.38);
+    }
+
+    canvas {
+      width: 100%;
+      height: 76vh;
+      min-height: 560px;
+      display: block;
+      border-radius: 14px;
+      cursor: crosshair;
+      background: linear-gradient(#8dc7ff 0%, #64aff9 55%, #4b93dd 100%);
+    }
+
+    .sidebar {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.2rem;
+      letter-spacing: 0.01em;
+    }
+
+    .muted { color: var(--muted); font-size: 0.9rem; line-height: 1.45; }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    button {
+      border: 1px solid rgba(143, 211, 255, 0.38);
+      background: rgba(32, 52, 93, 0.72);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: transform 0.12s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(177, 229, 255, 0.7);
+      background: rgba(43, 67, 116, 0.9);
+    }
+
+    .label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    input[type='range'] { width: 100%; accent-color: var(--accent); }
+
+    .palette { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .swatch {
+      width: 24px;
+      height: 24px;
+      border-radius: 7px;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      cursor: pointer;
+    }
+
+    .swatch.active { border-color: white; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35); }
+
+    @media (max-width: 940px) {
+      .app { grid-template-columns: 1fr; }
+      canvas { height: 65vh; min-height: 470px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="panel"><canvas id="world"></canvas></div>
+    <aside class="panel sidebar">
+      <h1>SkyHarbor Builder</h1>
+      <p class="muted">
+        Клик — добавить блок, Shift + клик — убрать блок. Зажми и веди мышью чтобы быстро строить.
+        Колесо мыши меняет масштаб, ПКМ + drag двигает камеру.
+      </p>
+
+      <div class="label"><span>Выбранный цвет</span><span id="selectedColorName">Rose</span></div>
+      <div class="palette" id="palette"></div>
+
+      <div class="label"><span>Громкость звука</span><span id="volumeLabel">70%</span></div>
+      <input id="volume" type="range" min="0" max="100" value="70" />
+
+      <div class="controls">
+        <button id="rainbow">Случайный стиль</button>
+        <button id="flatten">Сгладить</button>
+        <button id="clear">Очистить</button>
+        <button id="demo">Демо-остров</button>
+      </div>
+
+      <p class="muted" id="stats">Клеток: 0 · Башен: 0</p>
+      <p class="muted">Сделано как оригинальная авторская игра в духе "строительного медитативного пазла".</p>
+    </aside>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('world');
+    const ctx = canvas.getContext('2d');
+
+    const palette = [
+      { name: 'Rose', wall: '#ec6a87', roof: '#ffc4cd' },
+      { name: 'Sun', wall: '#f5a548', roof: '#ffe0aa' },
+      { name: 'Mint', wall: '#4cb89a', roof: '#a5f0db' },
+      { name: 'Ocean', wall: '#4c83d7', roof: '#b8d0ff' },
+      { name: 'Lilac', wall: '#9370db', roof: '#dbcdfc' }
+    ];
+
+    const state = {
+      cameraX: 0,
+      cameraY: -120,
+      zoom: 1,
+      tileW: 58,
+      tileH: 29,
+      cells: new Map(),
+      hovered: null,
+      paintIndex: 0,
+      dragPaint: null,
+      panning: false,
+      lastPan: null,
+      volume: 0.7,
+      randomStyle: false
+    };
+
+    function key(x, y) { return `${x},${y}`; }
+
+    function getCell(x, y) { return state.cells.get(key(x, y)); }
+
+    function setCell(x, y, cell) {
+      if (!cell || cell.h <= 0) state.cells.delete(key(x, y));
+      else state.cells.set(key(x, y), cell);
+    }
+
+    function worldToScreen(x, y, h) {
+      return {
+        sx: (x - y) * state.tileW * 0.5 * state.zoom + canvas.width * 0.5 + state.cameraX,
+        sy: (x + y) * state.tileH * 0.5 * state.zoom + canvas.height * 0.33 + state.cameraY - h * 24 * state.zoom
+      };
+    }
+
+    function screenToWorld(px, py) {
+      const x = ((px - canvas.width * 0.5 - state.cameraX) / (state.tileW * 0.5 * state.zoom) +
+        (py - canvas.height * 0.33 - state.cameraY) / (state.tileH * 0.5 * state.zoom)) / 2;
+      const y = ((py - canvas.height * 0.33 - state.cameraY) / (state.tileH * 0.5 * state.zoom) -
+        (px - canvas.width * 0.5 - state.cameraX) / (state.tileW * 0.5 * state.zoom)) / 2;
+      return { x: Math.round(x), y: Math.round(y) };
+    }
+
+    function neighborHeights(x, y) {
+      const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+      const heights = [];
+      for (const [dx, dy] of dirs) {
+        heights.push(getCell(x + dx, y + dy)?.h || 0);
+      }
+      return heights;
+    }
+
+    function heightForBuild(x, y) {
+      const current = getCell(x, y)?.h || 0;
+      const n = neighborHeights(x, y);
+      const target = Math.max(current + 1, Math.min(7, Math.max(...n) + (Math.random() < 0.5 ? 0 : 1)));
+      return Math.max(1, Math.min(7, target));
+    }
+
+    function colorForCell(cell) {
+      const p = palette[cell.color ?? 0];
+      return p;
+    }
+
+    function drawPrism(x, y, cell) {
+      const { sx, sy } = worldToScreen(x, y, cell.h);
+      const tw = state.tileW * state.zoom;
+      const th = state.tileH * state.zoom;
+      const hh = 24 * state.zoom;
+      const c = colorForCell(cell);
+
+      ctx.beginPath();
+      ctx.moveTo(sx, sy - th / 2);
+      ctx.lineTo(sx + tw / 2, sy);
+      ctx.lineTo(sx, sy + th / 2);
+      ctx.lineTo(sx - tw / 2, sy);
+      ctx.closePath();
+      ctx.fillStyle = c.roof;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(sx - tw / 2, sy);
+      ctx.lineTo(sx, sy + th / 2);
+      ctx.lineTo(sx, sy + th / 2 + hh);
+      ctx.lineTo(sx - tw / 2, sy + hh);
+      ctx.closePath();
+      ctx.fillStyle = shade(c.wall, -16);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(sx + tw / 2, sy);
+      ctx.lineTo(sx, sy + th / 2);
+      ctx.lineTo(sx, sy + th / 2 + hh);
+      ctx.lineTo(sx + tw / 2, sy + hh);
+      ctx.closePath();
+      ctx.fillStyle = shade(c.wall, -34);
+      ctx.fill();
+
+      if (cell.h >= 4) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+        ctx.fillRect(sx - 2 * state.zoom, sy + 3 * state.zoom, 4 * state.zoom, 8 * state.zoom);
+      }
+    }
+
+    function drawWaterTile(x, y) {
+      const { sx, sy } = worldToScreen(x, y, 0);
+      const tw = state.tileW * state.zoom;
+      const th = state.tileH * state.zoom;
+      ctx.beginPath();
+      ctx.moveTo(sx, sy - th / 2);
+      ctx.lineTo(sx + tw / 2, sy);
+      ctx.lineTo(sx, sy + th / 2);
+      ctx.lineTo(sx - tw / 2, sy);
+      ctx.closePath();
+      const hue = 205 + ((x * 13 + y * 7) % 12);
+      ctx.fillStyle = `hsla(${hue}, 62%, ${45 + ((x + y) % 3)}%, 0.9)`;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(180,220,255,0.12)';
+      ctx.stroke();
+    }
+
+    function shade(hex, amt) {
+      const n = hex.replace('#', '');
+      const num = parseInt(n, 16);
+      const r = Math.max(0, Math.min(255, (num >> 16) + amt));
+      const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00ff) + amt));
+      const b = Math.max(0, Math.min(255, (num & 0x0000ff) + amt));
+      return `rgb(${r},${g},${b})`;
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const range = 16;
+      for (let gy = -range; gy <= range; gy++) {
+        for (let gx = -range; gx <= range; gx++) drawWaterTile(gx, gy);
+      }
+
+      const entries = [...state.cells.entries()].map(([k, c]) => {
+        const [x, y] = k.split(',').map(Number);
+        return { x, y, c };
+      }).sort((a, b) => (a.x + a.y) - (b.x + b.y));
+
+      for (const entry of entries) drawPrism(entry.x, entry.y, entry.c);
+
+      if (state.hovered) {
+        const cell = getCell(state.hovered.x, state.hovered.y);
+        const mock = { h: Math.max(1, (cell?.h || 0) + 1), color: state.paintIndex };
+        const { sx, sy } = worldToScreen(state.hovered.x, state.hovered.y, mock.h);
+        const tw = state.tileW * state.zoom;
+        const th = state.tileH * state.zoom;
+        ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+        ctx.beginPath();
+        ctx.moveTo(sx, sy - th / 2);
+        ctx.lineTo(sx + tw / 2, sy);
+        ctx.lineTo(sx, sy + th / 2);
+        ctx.lineTo(sx - tw / 2, sy);
+        ctx.closePath();
+        ctx.stroke();
+      }
+
+      requestAnimationFrame(render);
+    }
+
+    function ensureAudio() {
+      if (!window.audioCtx) window.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    function playTone(freq, duration, type = 'sine', gain = 0.06) {
+      ensureAudio();
+      const t = window.audioCtx.currentTime;
+      const osc = window.audioCtx.createOscillator();
+      const g = window.audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(gain * state.volume, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+      osc.connect(g).connect(window.audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + duration + 0.03);
+    }
+
+    function place(x, y) {
+      const h = heightForBuild(x, y);
+      const color = state.randomStyle ? Math.floor(Math.random() * palette.length) : state.paintIndex;
+      setCell(x, y, { h, color });
+      playTone(180 + h * 35, 0.22, 'triangle', 0.08);
+      updateStats();
+    }
+
+    function remove(x, y) {
+      const cell = getCell(x, y);
+      if (!cell) return;
+      if (cell.h > 1) setCell(x, y, { ...cell, h: cell.h - 1 });
+      else setCell(x, y, null);
+      playTone(140, 0.16, 'sawtooth', 0.05);
+      updateStats();
+    }
+
+    function performAtPointer(e) {
+      const rect = canvas.getBoundingClientRect();
+      const p = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
+      state.hovered = p;
+      if (!state.dragPaint) return;
+      if (state.dragPaint === 'place') place(p.x, p.y);
+      else remove(p.x, p.y);
+    }
+
+    function resize() {
+      const ratio = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.floor(rect.width * ratio);
+      canvas.height = Math.floor(rect.height * ratio);
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    }
+
+    function makePalette() {
+      const holder = document.getElementById('palette');
+      holder.innerHTML = '';
+      palette.forEach((c, i) => {
+        const b = document.createElement('button');
+        b.className = `swatch ${i === state.paintIndex ? 'active' : ''}`;
+        b.style.background = c.wall;
+        b.title = c.name;
+        b.onclick = () => {
+          state.paintIndex = i;
+          document.getElementById('selectedColorName').textContent = c.name;
+          makePalette();
+        };
+        holder.appendChild(b);
+      });
+    }
+
+    function updateStats() {
+      let towers = 0;
+      for (const c of state.cells.values()) if (c.h >= 5) towers++;
+      document.getElementById('stats').textContent = `Клеток: ${state.cells.size} · Башен: ${towers}`;
+    }
+
+    function demoIsland() {
+      state.cells.clear();
+      for (let x = -6; x <= 6; x++) {
+        for (let y = -6; y <= 6; y++) {
+          const d = Math.hypot(x, y);
+          if (d < 5.6 && Math.random() > 0.12) {
+            const h = Math.max(1, Math.floor((5.7 - d) + Math.random() * 2));
+            setCell(x, y, { h: Math.min(h, 7), color: (x - y + palette.length * 3) % palette.length });
+          }
+        }
+      }
+      updateStats();
+    }
+
+    function smooth() {
+      const next = new Map();
+      for (const [k, cell] of state.cells.entries()) {
+        const [x, y] = k.split(',').map(Number);
+        const n = neighborHeights(x, y);
+        const avg = Math.round((cell.h + n.reduce((a, b) => a + b, 0) / n.length) / 2);
+        next.set(k, { ...cell, h: Math.max(1, Math.min(7, avg)) });
+      }
+      state.cells = next;
+      updateStats();
+      playTone(260, 0.3, 'triangle', 0.05);
+    }
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (state.panning) {
+        const dx = e.clientX - state.lastPan.x;
+        const dy = e.clientY - state.lastPan.y;
+        state.cameraX += dx;
+        state.cameraY += dy;
+        state.lastPan = { x: e.clientX, y: e.clientY };
+      }
+      performAtPointer(e);
+    });
+
+    canvas.addEventListener('mousedown', (e) => {
+      if (e.button === 2) {
+        state.panning = true;
+        state.lastPan = { x: e.clientX, y: e.clientY };
+        return;
+      }
+      const mode = e.shiftKey ? 'remove' : 'place';
+      state.dragPaint = mode;
+      performAtPointer(e);
+    });
+
+    window.addEventListener('mouseup', () => {
+      state.dragPaint = null;
+      state.panning = false;
+    });
+
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = Math.sign(e.deltaY) * -0.08;
+      state.zoom = Math.max(0.55, Math.min(1.8, state.zoom + delta));
+    }, { passive: false });
+
+    document.getElementById('volume').addEventListener('input', (e) => {
+      state.volume = Number(e.target.value) / 100;
+      document.getElementById('volumeLabel').textContent = `${e.target.value}%`;
+    });
+
+    document.getElementById('clear').onclick = () => { state.cells.clear(); updateStats(); };
+    document.getElementById('demo').onclick = demoIsland;
+    document.getElementById('flatten').onclick = smooth;
+    document.getElementById('rainbow').onclick = () => {
+      state.randomStyle = !state.randomStyle;
+      document.getElementById('rainbow').textContent = state.randomStyle ? 'Случайный стиль: ON' : 'Случайный стиль';
+      playTone(state.randomStyle ? 440 : 220, 0.18, 'square', 0.06);
+    };
+
+    window.addEventListener('resize', resize);
+
+    resize();
+    makePalette();
+    demoIsland();
+    render();
+  </script>
+</body>
+</html>
