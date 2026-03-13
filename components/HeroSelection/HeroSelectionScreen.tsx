@@ -13,8 +13,6 @@ type AttributeFilter = 'all' | 'str' | 'agi' | 'int';
 const RADIANT_SLOTS = 5;
 const DIRE_SLOTS = 5;
 
-const roleKeywords = ['carry', 'support', 'mid', 'offlane', 'roamer'];
-
 const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) => {
   const [selectedHero, setSelectedHero] = useState<HeroData | null>(null);
   const [lockedHero, setLockedHero] = useState<HeroData | null>(null);
@@ -42,9 +40,14 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
       const matchesAttribute = attributeFilter === 'all' || hero.attribute === attributeFilter;
       if (!matchesAttribute) return false;
       if (!search) return true;
-      const inName = hero.name.toLowerCase().includes(search) || hero.id.toLowerCase().includes(search);
-      const inRole = roleKeywords.some((role) => search.includes(role));
-      return inName || inRole;
+
+      return (
+        hero.name.toLowerCase().includes(search) ||
+        hero.id.toLowerCase().includes(search) ||
+        hero.attackType.toLowerCase().includes(search) ||
+        hero.attribute.toLowerCase().includes(search) ||
+        hero.abilities.some((ability) => ability.name.toLowerCase().includes(search))
+      );
     });
   }, [attributeFilter, searchTerm]);
 
@@ -58,18 +61,22 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
   useEffect(() => {
     let timeoutId: number | null = null;
     const tick = () => {
-      const currentPicked = pickedIdsRef.current;
       const currentSelected = selectedHeroRef.current;
+      const nextPicked = new Set(pickedIdsRef.current);
+
+      if (currentSelected) {
+        nextPicked.add(currentSelected.id);
+      }
 
       setDireSlots((prev) => {
         const updated = [...prev];
         const emptyIndex = updated.findIndex((slot) => !slot);
         if (emptyIndex !== -1) {
-          const available = heroList.filter((hero) => !currentPicked.has(hero.id) && hero.id !== currentSelected?.id);
+          const available = heroList.filter((hero) => !nextPicked.has(hero.id));
           if (available.length > 0) {
             const choice = available[Math.floor(Math.random() * available.length)];
             updated[emptyIndex] = choice;
-            setPickedIds((ids) => new Set(ids).add(choice.id));
+            nextPicked.add(choice.id);
           }
         }
         return updated;
@@ -79,15 +86,17 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
         const updated = [...prev];
         const emptyIndex = updated.findIndex((slot) => !slot);
         if (emptyIndex !== -1) {
-          const available = heroList.filter((hero) => !currentPicked.has(hero.id) && hero.id !== currentSelected?.id);
+          const available = heroList.filter((hero) => !nextPicked.has(hero.id));
           if (available.length > 0) {
             const choice = available[Math.floor(Math.random() * available.length)];
             updated[emptyIndex] = choice;
-            setPickedIds((ids) => new Set(ids).add(choice.id));
+            nextPicked.add(choice.id);
           }
         }
         return updated;
       });
+
+      setPickedIds(nextPicked);
 
       timeoutId = window.setTimeout(tick, 150 + Math.random() * 350);
     };
