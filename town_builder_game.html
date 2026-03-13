@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SkyHarbor Builder</title>
+  <title>Pokemon Cozy Builder 3D</title>
   <style>
     :root {
-      --bg: #0b1223;
-      --panel: rgba(10, 17, 33, 0.85);
-      --text: #e9f0ff;
+      --bg: #091426;
+      --panel: rgba(6, 16, 33, 0.83);
+      --text: #eaf3ff;
       --muted: #a8b9d8;
-      --accent: #8fd3ff;
+      --accent: #90d9ff;
     }
 
     * { box-sizing: border-box; }
@@ -19,36 +19,35 @@
       margin: 0;
       font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
       color: var(--text);
-      background: radial-gradient(circle at 20% 20%, #14233f, #070b16 60%);
+      background: radial-gradient(circle at 15% 15%, #1f3b63, #070d19 65%);
       min-height: 100vh;
       display: grid;
       place-items: center;
-      padding: 16px;
+      padding: 14px;
     }
 
     .app {
-      width: min(1150px, 100%);
+      width: min(1240px, 100%);
       display: grid;
-      grid-template-columns: 1fr 290px;
+      grid-template-columns: 1fr 320px;
       gap: 16px;
     }
 
     .panel {
       background: var(--panel);
-      border: 1px solid rgba(173, 215, 255, 0.25);
-      backdrop-filter: blur(8px);
+      border: 1px solid rgba(171, 223, 255, 0.24);
       border-radius: 14px;
-      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.38);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 22px 45px rgba(0, 0, 0, 0.38);
     }
 
-    canvas {
+    #scene {
       width: 100%;
-      height: 76vh;
+      height: 78vh;
       min-height: 560px;
       display: block;
       border-radius: 14px;
       cursor: crosshair;
-      background: linear-gradient(#8dc7ff 0%, #64aff9 55%, #4b93dd 100%);
     }
 
     .sidebar {
@@ -60,422 +59,457 @@
 
     h1 {
       margin: 0;
-      font-size: 1.2rem;
-      letter-spacing: 0.01em;
+      font-size: 1.25rem;
     }
 
-    .muted { color: var(--muted); font-size: 0.9rem; line-height: 1.45; }
+    .muted { color: var(--muted); font-size: .9rem; line-height: 1.45; }
 
-    .controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
+    .tools, .presets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
     button {
-      border: 1px solid rgba(143, 211, 255, 0.38);
-      background: rgba(32, 52, 93, 0.72);
-      color: var(--text);
+      border: 1px solid rgba(146, 213, 255, 0.36);
       border-radius: 10px;
+      background: rgba(37, 61, 104, 0.75);
+      color: var(--text);
       padding: 8px 10px;
-      font-size: 0.9rem;
+      font-size: .9rem;
       cursor: pointer;
-      transition: transform 0.12s ease, border-color 0.2s ease, background 0.2s ease;
+      transition: transform .12s ease, border-color .2s ease, background .2s ease;
     }
 
     button:hover {
       transform: translateY(-1px);
-      border-color: rgba(177, 229, 255, 0.7);
-      background: rgba(43, 67, 116, 0.9);
+      border-color: rgba(194, 234, 255, .8);
+      background: rgba(52, 82, 136, 0.9);
+    }
+
+    button.active {
+      border-color: #fff;
+      background: rgba(90, 130, 195, 0.95);
     }
 
     .label {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.85rem;
+      font-size: .85rem;
       color: var(--muted);
       margin-top: 4px;
     }
 
     input[type='range'] { width: 100%; accent-color: var(--accent); }
 
-    .palette { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 
-    .swatch {
-      width: 24px;
-      height: 24px;
-      border-radius: 7px;
+    .chip {
+      width: 28px;
+      height: 28px;
+      border-radius: 10px;
       border: 2px solid rgba(255, 255, 255, 0.35);
       cursor: pointer;
     }
 
-    .swatch.active { border-color: white; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35); }
+    .chip.active { border-color: white; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35); }
 
-    @media (max-width: 940px) {
+    @media (max-width: 980px) {
       .app { grid-template-columns: 1fr; }
-      canvas { height: 65vh; min-height: 470px; }
+      #scene { height: 64vh; min-height: 470px; }
     }
   </style>
 </head>
 <body>
-  <div class="app">
-    <div class="panel"><canvas id="world"></canvas></div>
-    <aside class="panel sidebar">
-      <h1>SkyHarbor Builder</h1>
-      <p class="muted">
-        Клик — добавить блок, Shift + клик — убрать блок. Зажми и веди мышью чтобы быстро строить.
-        Колесо мыши меняет масштаб, ПКМ + drag двигает камеру.
-      </p>
+<div class="app">
+  <div class="panel"><canvas id="scene"></canvas></div>
+  <aside class="panel sidebar">
+    <h1>Pokemon Cozy Builder 3D</h1>
+    <p class="muted">ЛКМ: строить/менять. Shift+ЛКМ: убрать. ПКМ+drag: поворот камеры, колесо: zoom. Всё на мягкой гекс-сетке без квадратных блоков.</p>
 
-      <div class="label"><span>Выбранный цвет</span><span id="selectedColorName">Rose</span></div>
-      <div class="palette" id="palette"></div>
+    <div class="label"><span>Инструменты</span><span id="modeLabel">Домик</span></div>
+    <div class="tools" id="tools"></div>
 
-      <div class="label"><span>Громкость звука</span><span id="volumeLabel">70%</span></div>
-      <input id="volume" type="range" min="0" max="100" value="70" />
+    <div class="label"><span>Цвет крыши</span><span id="roofLabel">Sun</span></div>
+    <div class="chips" id="roofColors"></div>
 
-      <div class="controls">
-        <button id="rainbow">Случайный стиль</button>
-        <button id="flatten">Сгладить</button>
-        <button id="clear">Очистить</button>
-        <button id="demo">Демо-остров</button>
-      </div>
+    <div class="label"><span>Уровень земли</span><span id="groundLevelText">2</span></div>
+    <input id="groundLevel" type="range" min="1" max="4" value="2"/>
 
-      <p class="muted" id="stats">Клеток: 0 · Башен: 0</p>
-      <p class="muted">Сделано как оригинальная авторская игра в духе "строительного медитативного пазла".</p>
-    </aside>
-  </div>
+    <div class="label"><span>Глубина речки</span><span id="riverDepthText">1</span></div>
+    <input id="riverDepth" type="range" min="1" max="3" value="1"/>
 
-  <script>
-    const canvas = document.getElementById('world');
-    const ctx = canvas.getContext('2d');
+    <div class="presets">
+      <button id="presetVillage">Построить деревню</button>
+      <button id="presetRiver">Сделать речку</button>
+      <button id="clear">Очистить</button>
+      <button id="randomize">Случайный стиль</button>
+    </div>
 
-    const palette = [
-      { name: 'Rose', wall: '#ec6a87', roof: '#ffc4cd' },
-      { name: 'Sun', wall: '#f5a548', roof: '#ffe0aa' },
-      { name: 'Mint', wall: '#4cb89a', roof: '#a5f0db' },
-      { name: 'Ocean', wall: '#4c83d7', roof: '#b8d0ff' },
-      { name: 'Lilac', wall: '#9370db', roof: '#dbcdfc' }
-    ];
+    <p id="stats" class="muted">Домиков: 0 · Деревьев: 0 · Водных клеток: 0</p>
+    <p class="muted">Вдохновлено Townscaper + духом Pokemon: округлые формы, яркая палитра, уютный мир для творчества.</p>
+  </aside>
+</div>
 
-    const state = {
-      cameraX: 0,
-      cameraY: -120,
-      zoom: 1,
-      tileW: 58,
-      tileH: 29,
-      cells: new Map(),
-      hovered: null,
-      paintIndex: 0,
-      dragPaint: null,
-      panning: false,
-      lastPan: null,
-      volume: 0.7,
-      randomStyle: false
-    };
+<script type="module">
+  import * as THREE from 'https://unpkg.com/three@0.161.0/build/three.module.js';
+  import { OrbitControls } from 'https://unpkg.com/three@0.161.0/examples/jsm/controls/OrbitControls.js';
 
-    function key(x, y) { return `${x},${y}`; }
+  const canvas = document.getElementById('scene');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.shadowMap.enabled = true;
 
-    function getCell(x, y) { return state.cells.get(key(x, y)); }
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#8ec8ff');
+  scene.fog = new THREE.Fog('#8ec8ff', 20, 70);
 
-    function setCell(x, y, cell) {
-      if (!cell || cell.h <= 0) state.cells.delete(key(x, y));
-      else state.cells.set(key(x, y), cell);
-    }
+  const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 160);
+  camera.position.set(14, 15, 16);
 
-    function worldToScreen(x, y, h) {
-      return {
-        sx: (x - y) * state.tileW * 0.5 * state.zoom + canvas.width * 0.5 + state.cameraX,
-        sy: (x + y) * state.tileH * 0.5 * state.zoom + canvas.height * 0.33 + state.cameraY - h * 24 * state.zoom
-      };
-    }
+  const controls = new OrbitControls(camera, canvas);
+  controls.enableDamping = true;
+  controls.target.set(0, 1.5, 0);
+  controls.maxPolarAngle = Math.PI * 0.48;
+  controls.minDistance = 6;
+  controls.maxDistance = 40;
 
-    function screenToWorld(px, py) {
-      const x = ((px - canvas.width * 0.5 - state.cameraX) / (state.tileW * 0.5 * state.zoom) +
-        (py - canvas.height * 0.33 - state.cameraY) / (state.tileH * 0.5 * state.zoom)) / 2;
-      const y = ((py - canvas.height * 0.33 - state.cameraY) / (state.tileH * 0.5 * state.zoom) -
-        (px - canvas.width * 0.5 - state.cameraX) / (state.tileW * 0.5 * state.zoom)) / 2;
-      return { x: Math.round(x), y: Math.round(y) };
-    }
+  const hemi = new THREE.HemisphereLight('#e5f4ff', '#4b668f', 0.95);
+  scene.add(hemi);
 
-    function neighborHeights(x, y) {
-      const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
-      const heights = [];
-      for (const [dx, dy] of dirs) {
-        heights.push(getCell(x + dx, y + dy)?.h || 0);
+  const sun = new THREE.DirectionalLight('#fff7e8', 1.2);
+  sun.position.set(12, 20, 8);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(1024, 1024);
+  scene.add(sun);
+
+  const waterMat = new THREE.MeshPhysicalMaterial({
+    color: '#4da3ff',
+    roughness: 0.15,
+    transmission: 0.32,
+    transparent: true,
+    opacity: 0.9
+  });
+
+  const grassMat = new THREE.MeshStandardMaterial({ color: '#76c27c', roughness: 0.95 });
+  const dirtMat = new THREE.MeshStandardMaterial({ color: '#7f5f43', roughness: 1 });
+  const trunkMat = new THREE.MeshStandardMaterial({ color: '#6d4f34', roughness: 1 });
+
+  const roofPalette = [
+    { name: 'Sun', color: '#ffc983' },
+    { name: 'Rose', color: '#ef7b9e' },
+    { name: 'Ocean', color: '#5f95e8' },
+    { name: 'Mint', color: '#73ceb1' },
+    { name: 'Lavender', color: '#b193ea' }
+  ];
+
+  const state = {
+    radius: 8,
+    tileSize: 1.1,
+    mode: 'house',
+    roofIndex: 0,
+    groundLevel: 2,
+    riverDepth: 1,
+    randomStyle: false,
+    cells: new Map()
+  };
+
+  const groups = {
+    terrain: new THREE.Group(),
+    water: new THREE.Group(),
+    decor: new THREE.Group(),
+    houses: new THREE.Group()
+  };
+  Object.values(groups).forEach(group => scene.add(group));
+
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
+
+  function key(q, r) { return `${q},${r}`; }
+
+  function axialToWorld(q, r) {
+    const x = state.tileSize * (Math.sqrt(3) * q + Math.sqrt(3) / 2 * r);
+    const z = state.tileSize * (1.5 * r);
+    return new THREE.Vector3(x, 0, z);
+  }
+
+  function makeHex(height, matTop, matSide) {
+    const g = new THREE.CylinderGeometry(state.tileSize, state.tileSize, height, 6, 1, false);
+    const mesh = new THREE.Mesh(g, [matSide, matTop, matTop]);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    return mesh;
+  }
+
+  function makeHouse(cell) {
+    const house = new THREE.Group();
+
+    const base = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.52, 0.56, 0.7, 12),
+      new THREE.MeshStandardMaterial({ color: '#fff4dd', roughness: 0.8 })
+    );
+    base.position.y = 0.35;
+
+    const roofColor = state.randomStyle
+      ? roofPalette[Math.floor(Math.random() * roofPalette.length)].color
+      : roofPalette[cell.roofIndex].color;
+
+    const roof = new THREE.Mesh(
+      new THREE.ConeGeometry(0.64, 0.58, 14),
+      new THREE.MeshStandardMaterial({ color: roofColor, roughness: 0.65 })
+    );
+    roof.position.y = 0.95;
+
+    const door = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.1, 0.22, 3, 7),
+      new THREE.MeshStandardMaterial({ color: '#8c5f3f' })
+    );
+    door.rotation.x = Math.PI / 2;
+    door.position.set(0, 0.28, 0.5);
+
+    house.add(base, roof, door);
+    house.traverse(obj => {
+      if (obj.isMesh) {
+        obj.castShadow = true;
+        obj.receiveShadow = true;
       }
-      return heights;
-    }
+    });
+    return house;
+  }
 
-    function heightForBuild(x, y) {
-      const current = getCell(x, y)?.h || 0;
-      const n = neighborHeights(x, y);
-      const target = Math.max(current + 1, Math.min(7, Math.max(...n) + (Math.random() < 0.5 ? 0 : 1)));
-      return Math.max(1, Math.min(7, target));
-    }
-
-    function colorForCell(cell) {
-      const p = palette[cell.color ?? 0];
-      return p;
-    }
-
-    function drawPrism(x, y, cell) {
-      const { sx, sy } = worldToScreen(x, y, cell.h);
-      const tw = state.tileW * state.zoom;
-      const th = state.tileH * state.zoom;
-      const hh = 24 * state.zoom;
-      const c = colorForCell(cell);
-
-      ctx.beginPath();
-      ctx.moveTo(sx, sy - th / 2);
-      ctx.lineTo(sx + tw / 2, sy);
-      ctx.lineTo(sx, sy + th / 2);
-      ctx.lineTo(sx - tw / 2, sy);
-      ctx.closePath();
-      ctx.fillStyle = c.roof;
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.moveTo(sx - tw / 2, sy);
-      ctx.lineTo(sx, sy + th / 2);
-      ctx.lineTo(sx, sy + th / 2 + hh);
-      ctx.lineTo(sx - tw / 2, sy + hh);
-      ctx.closePath();
-      ctx.fillStyle = shade(c.wall, -16);
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.moveTo(sx + tw / 2, sy);
-      ctx.lineTo(sx, sy + th / 2);
-      ctx.lineTo(sx, sy + th / 2 + hh);
-      ctx.lineTo(sx + tw / 2, sy + hh);
-      ctx.closePath();
-      ctx.fillStyle = shade(c.wall, -34);
-      ctx.fill();
-
-      if (cell.h >= 4) {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
-        ctx.fillRect(sx - 2 * state.zoom, sy + 3 * state.zoom, 4 * state.zoom, 8 * state.zoom);
+  function makeTree() {
+    const tree = new THREE.Group();
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.36, 8), trunkMat);
+    trunk.position.y = 0.18;
+    const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(0.23, 1), new THREE.MeshStandardMaterial({ color: '#57a85f', roughness: 0.95 }));
+    crown.position.y = 0.45;
+    tree.add(trunk, crown);
+    tree.traverse(obj => {
+      if (obj.isMesh) {
+        obj.castShadow = true;
+        obj.receiveShadow = true;
       }
-    }
+    });
+    return tree;
+  }
 
-    function drawWaterTile(x, y) {
-      const { sx, sy } = worldToScreen(x, y, 0);
-      const tw = state.tileW * state.zoom;
-      const th = state.tileH * state.zoom;
-      ctx.beginPath();
-      ctx.moveTo(sx, sy - th / 2);
-      ctx.lineTo(sx + tw / 2, sy);
-      ctx.lineTo(sx, sy + th / 2);
-      ctx.lineTo(sx - tw / 2, sy);
-      ctx.closePath();
-      const hue = 205 + ((x * 13 + y * 7) % 12);
-      ctx.fillStyle = `hsla(${hue}, 62%, ${45 + ((x + y) % 3)}%, 0.9)`;
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(180,220,255,0.12)';
-      ctx.stroke();
-    }
+  function neighbors(q, r) {
+    return [[1,0],[-1,0],[0,1],[0,-1],[1,-1],[-1,1]].map(([dq, dr]) => [q + dq, r + dr]);
+  }
 
-    function shade(hex, amt) {
-      const n = hex.replace('#', '');
-      const num = parseInt(n, 16);
-      const r = Math.max(0, Math.min(255, (num >> 16) + amt));
-      const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00ff) + amt));
-      const b = Math.max(0, Math.min(255, (num & 0x0000ff) + amt));
-      return `rgb(${r},${g},${b})`;
-    }
+  function rebuildWorld() {
+    Object.values(groups).forEach(group => {
+      while (group.children.length) group.remove(group.children[0]);
+    });
 
-    function render() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let q = -state.radius; q <= state.radius; q++) {
+      for (let r = -state.radius; r <= state.radius; r++) {
+        const s = -q - r;
+        if (Math.max(Math.abs(q), Math.abs(r), Math.abs(s)) > state.radius) continue;
+        const pos = axialToWorld(q, r);
+        const cell = state.cells.get(key(q, r)) ?? { type: 'empty', level: state.groundLevel, roofIndex: state.roofIndex };
 
-      const range = 16;
-      for (let gy = -range; gy <= range; gy++) {
-        for (let gx = -range; gx <= range; gx++) drawWaterTile(gx, gy);
-      }
+        const level = Math.max(1, cell.level);
+        const ground = makeHex(level * 0.45, grassMat, dirtMat);
+        ground.position.copy(pos);
+        ground.position.y = level * 0.225;
+        ground.userData = { q, r };
+        groups.terrain.add(ground);
 
-      const entries = [...state.cells.entries()].map(([k, c]) => {
-        const [x, y] = k.split(',').map(Number);
-        return { x, y, c };
-      }).sort((a, b) => (a.x + a.y) - (b.x + b.y));
+        if (cell.type === 'river') {
+          const water = makeHex(0.24, waterMat, waterMat);
+          water.position.copy(pos);
+          water.position.y = Math.max(0.08, (level - state.riverDepth) * 0.2);
+          groups.water.add(water);
+        }
 
-      for (const entry of entries) drawPrism(entry.x, entry.y, entry.c);
+        if (cell.type === 'house') {
+          const house = makeHouse(cell);
+          house.position.copy(pos);
+          house.position.y = level * 0.45 + 0.02;
+          groups.houses.add(house);
 
-      if (state.hovered) {
-        const cell = getCell(state.hovered.x, state.hovered.y);
-        const mock = { h: Math.max(1, (cell?.h || 0) + 1), color: state.paintIndex };
-        const { sx, sy } = worldToScreen(state.hovered.x, state.hovered.y, mock.h);
-        const tw = state.tileW * state.zoom;
-        const th = state.tileH * state.zoom;
-        ctx.strokeStyle = 'rgba(255,255,255,0.8)';
-        ctx.beginPath();
-        ctx.moveTo(sx, sy - th / 2);
-        ctx.lineTo(sx + tw / 2, sy);
-        ctx.lineTo(sx, sy + th / 2);
-        ctx.lineTo(sx - tw / 2, sy);
-        ctx.closePath();
-        ctx.stroke();
-      }
-
-      requestAnimationFrame(render);
-    }
-
-    function ensureAudio() {
-      if (!window.audioCtx) window.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-
-    function playTone(freq, duration, type = 'sine', gain = 0.06) {
-      ensureAudio();
-      const t = window.audioCtx.currentTime;
-      const osc = window.audioCtx.createOscillator();
-      const g = window.audioCtx.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, t);
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(gain * state.volume, t + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + duration);
-      osc.connect(g).connect(window.audioCtx.destination);
-      osc.start(t);
-      osc.stop(t + duration + 0.03);
-    }
-
-    function place(x, y) {
-      const h = heightForBuild(x, y);
-      const color = state.randomStyle ? Math.floor(Math.random() * palette.length) : state.paintIndex;
-      setCell(x, y, { h, color });
-      playTone(180 + h * 35, 0.22, 'triangle', 0.08);
-      updateStats();
-    }
-
-    function remove(x, y) {
-      const cell = getCell(x, y);
-      if (!cell) return;
-      if (cell.h > 1) setCell(x, y, { ...cell, h: cell.h - 1 });
-      else setCell(x, y, null);
-      playTone(140, 0.16, 'sawtooth', 0.05);
-      updateStats();
-    }
-
-    function performAtPointer(e) {
-      const rect = canvas.getBoundingClientRect();
-      const p = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
-      state.hovered = p;
-      if (!state.dragPaint) return;
-      if (state.dragPaint === 'place') place(p.x, p.y);
-      else remove(p.x, p.y);
-    }
-
-    function resize() {
-      const ratio = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = Math.floor(rect.width * ratio);
-      canvas.height = Math.floor(rect.height * ratio);
-      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-    }
-
-    function makePalette() {
-      const holder = document.getElementById('palette');
-      holder.innerHTML = '';
-      palette.forEach((c, i) => {
-        const b = document.createElement('button');
-        b.className = `swatch ${i === state.paintIndex ? 'active' : ''}`;
-        b.style.background = c.wall;
-        b.title = c.name;
-        b.onclick = () => {
-          state.paintIndex = i;
-          document.getElementById('selectedColorName').textContent = c.name;
-          makePalette();
-        };
-        holder.appendChild(b);
-      });
-    }
-
-    function updateStats() {
-      let towers = 0;
-      for (const c of state.cells.values()) if (c.h >= 5) towers++;
-      document.getElementById('stats').textContent = `Клеток: ${state.cells.size} · Башен: ${towers}`;
-    }
-
-    function demoIsland() {
-      state.cells.clear();
-      for (let x = -6; x <= 6; x++) {
-        for (let y = -6; y <= 6; y++) {
-          const d = Math.hypot(x, y);
-          if (d < 5.6 && Math.random() > 0.12) {
-            const h = Math.max(1, Math.floor((5.7 - d) + Math.random() * 2));
-            setCell(x, y, { h: Math.min(h, 7), color: (x - y + palette.length * 3) % palette.length });
+          if (Math.random() > 0.6) {
+            const tree = makeTree();
+            tree.position.copy(pos).add(new THREE.Vector3(0.33, level * 0.45 + 0.02, -0.2));
+            groups.decor.add(tree);
           }
         }
+
+        if (cell.type === 'tree') {
+          const tree = makeTree();
+          tree.position.copy(pos);
+          tree.position.y = level * 0.45 + 0.02;
+          groups.decor.add(tree);
+        }
       }
-      updateStats();
     }
 
-    function smooth() {
-      const next = new Map();
-      for (const [k, cell] of state.cells.entries()) {
-        const [x, y] = k.split(',').map(Number);
-        const n = neighborHeights(x, y);
-        const avg = Math.round((cell.h + n.reduce((a, b) => a + b, 0) / n.length) / 2);
-        next.set(k, { ...cell, h: Math.max(1, Math.min(7, avg)) });
-      }
-      state.cells = next;
-      updateStats();
-      playTone(260, 0.3, 'triangle', 0.05);
+    updateStats();
+  }
+
+  function applyTool(q, r, remove = false) {
+    const k = key(q, r);
+    if (remove) {
+      state.cells.delete(k);
+      rebuildWorld();
+      return;
     }
 
-    canvas.addEventListener('mousemove', (e) => {
-      if (state.panning) {
-        const dx = e.clientX - state.lastPan.x;
-        const dy = e.clientY - state.lastPan.y;
-        state.cameraX += dx;
-        state.cameraY += dy;
-        state.lastPan = { x: e.clientX, y: e.clientY };
+    const current = state.cells.get(k) || { type: 'empty', level: state.groundLevel, roofIndex: state.roofIndex };
+    if (state.mode === 'terrainUp') current.level = Math.min(5, current.level + 1);
+    if (state.mode === 'terrainDown') current.level = Math.max(1, current.level - 1);
+    if (state.mode === 'house') current.type = 'house';
+    if (state.mode === 'tree') current.type = 'tree';
+    if (state.mode === 'river') current.type = 'river';
+    current.roofIndex = state.roofIndex;
+
+    const nearRiver = neighbors(q, r).some(([nq, nr]) => state.cells.get(key(nq, nr))?.type === 'river');
+    if (current.type === 'house' && nearRiver) current.level = Math.max(2, current.level);
+
+    state.cells.set(k, current);
+    rebuildWorld();
+  }
+
+  function pickCell(event) {
+    const rect = canvas.getBoundingClientRect();
+    pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(pointer, camera);
+    const intersects = raycaster.intersectObjects(groups.terrain.children);
+    if (!intersects.length) return null;
+    return intersects[0].object.userData;
+  }
+
+  function updateStats() {
+    let houses = 0;
+    let trees = 0;
+    let rivers = 0;
+    for (const cell of state.cells.values()) {
+      if (cell.type === 'house') houses++;
+      if (cell.type === 'tree') trees++;
+      if (cell.type === 'river') rivers++;
+    }
+    document.getElementById('stats').textContent = `Домиков: ${houses} · Деревьев: ${trees} · Водных клеток: ${rivers}`;
+  }
+
+  function generateVillage() {
+    state.cells.clear();
+    for (let q = -4; q <= 4; q++) {
+      for (let r = -4; r <= 4; r++) {
+        const s = -q - r;
+        if (Math.max(Math.abs(q), Math.abs(r), Math.abs(s)) > 4) continue;
+        const d = Math.hypot(q, r, s);
+        const k = key(q, r);
+        state.cells.set(k, {
+          type: d < 2.6 ? 'house' : (Math.random() > 0.72 ? 'tree' : 'empty'),
+          level: Math.max(1, Math.round(3 - d * 0.35)),
+          roofIndex: Math.floor(Math.random() * roofPalette.length)
+        });
       }
-      performAtPointer(e);
+    }
+    createRiver(false);
+    rebuildWorld();
+  }
+
+  function createRiver(rebuild = true) {
+    const wiggle = [-1, 0, 1];
+    let q = -state.radius;
+    let r = Math.floor((Math.random() - 0.5) * 4);
+
+    while (q <= state.radius) {
+      const k = key(q, r);
+      const existing = state.cells.get(k) || { level: state.groundLevel, roofIndex: state.roofIndex };
+      state.cells.set(k, { ...existing, type: 'river', level: Math.max(1, existing.level - 1) });
+      q += 1;
+      r += wiggle[Math.floor(Math.random() * wiggle.length)];
+      r = Math.max(-state.radius, Math.min(state.radius, r));
+    }
+
+    if (rebuild) rebuildWorld();
+  }
+
+  function setupUI() {
+    const toolDefs = [
+      { id: 'house', label: 'Домик' },
+      { id: 'tree', label: 'Дерево' },
+      { id: 'river', label: 'Речка' },
+      { id: 'terrainUp', label: 'Земля +' },
+      { id: 'terrainDown', label: 'Земля -' }
+    ];
+
+    const tools = document.getElementById('tools');
+    toolDefs.forEach(tool => {
+      const btn = document.createElement('button');
+      btn.textContent = tool.label;
+      btn.className = tool.id === state.mode ? 'active' : '';
+      btn.onclick = () => {
+        state.mode = tool.id;
+        document.getElementById('modeLabel').textContent = tool.label;
+        [...tools.children].forEach(child => child.classList.toggle('active', child === btn));
+      };
+      tools.appendChild(btn);
     });
 
-    canvas.addEventListener('mousedown', (e) => {
-      if (e.button === 2) {
-        state.panning = true;
-        state.lastPan = { x: e.clientX, y: e.clientY };
-        return;
-      }
-      const mode = e.shiftKey ? 'remove' : 'place';
-      state.dragPaint = mode;
-      performAtPointer(e);
+    const roofHolder = document.getElementById('roofColors');
+    roofPalette.forEach((roof, index) => {
+      const chip = document.createElement('button');
+      chip.className = `chip ${index === state.roofIndex ? 'active' : ''}`;
+      chip.style.background = roof.color;
+      chip.title = roof.name;
+      chip.onclick = () => {
+        state.roofIndex = index;
+        document.getElementById('roofLabel').textContent = roof.name;
+        [...roofHolder.children].forEach(child => child.classList.remove('active'));
+        chip.classList.add('active');
+      };
+      roofHolder.appendChild(chip);
     });
 
-    window.addEventListener('mouseup', () => {
-      state.dragPaint = null;
-      state.panning = false;
+    document.getElementById('groundLevel').addEventListener('input', (e) => {
+      state.groundLevel = Number(e.target.value);
+      document.getElementById('groundLevelText').textContent = e.target.value;
     });
 
-    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-    canvas.addEventListener('wheel', (e) => {
-      e.preventDefault();
-      const delta = Math.sign(e.deltaY) * -0.08;
-      state.zoom = Math.max(0.55, Math.min(1.8, state.zoom + delta));
-    }, { passive: false });
-
-    document.getElementById('volume').addEventListener('input', (e) => {
-      state.volume = Number(e.target.value) / 100;
-      document.getElementById('volumeLabel').textContent = `${e.target.value}%`;
+    document.getElementById('riverDepth').addEventListener('input', (e) => {
+      state.riverDepth = Number(e.target.value);
+      document.getElementById('riverDepthText').textContent = e.target.value;
+      rebuildWorld();
     });
 
-    document.getElementById('clear').onclick = () => { state.cells.clear(); updateStats(); };
-    document.getElementById('demo').onclick = demoIsland;
-    document.getElementById('flatten').onclick = smooth;
-    document.getElementById('rainbow').onclick = () => {
+    document.getElementById('presetVillage').onclick = generateVillage;
+    document.getElementById('presetRiver').onclick = () => createRiver(true);
+    document.getElementById('clear').onclick = () => { state.cells.clear(); rebuildWorld(); };
+    document.getElementById('randomize').onclick = () => {
       state.randomStyle = !state.randomStyle;
-      document.getElementById('rainbow').textContent = state.randomStyle ? 'Случайный стиль: ON' : 'Случайный стиль';
-      playTone(state.randomStyle ? 440 : 220, 0.18, 'square', 0.06);
+      document.getElementById('randomize').textContent = state.randomStyle ? 'Случайный стиль: ON' : 'Случайный стиль';
     };
+  }
 
-    window.addEventListener('resize', resize);
+  canvas.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    const cell = pickCell(e);
+    if (!cell) return;
+    applyTool(cell.q, cell.r, e.shiftKey);
+  });
 
-    resize();
-    makePalette();
-    demoIsland();
-    render();
-  </script>
+  function onResize() {
+    const rect = canvas.getBoundingClientRect();
+    renderer.setSize(rect.width, rect.height, false);
+    camera.aspect = rect.width / rect.height;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', onResize);
+
+  function animate() {
+    controls.update();
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+  }
+
+  setupUI();
+  generateVillage();
+  onResize();
+  animate();
+</script>
 </body>
 </html>
