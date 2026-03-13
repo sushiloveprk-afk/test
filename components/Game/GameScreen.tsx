@@ -384,15 +384,15 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
             </div>
             <div className="grid grid-cols-3 gap-2 text-xs uppercase tracking-[0.2em] text-[#9aa0a8]">
               <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-3 py-2">
-                Damage
+                Урон
                 <div className="text-base font-semibold text-white">{heroStats.damage}</div>
               </div>
               <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-3 py-2">
-                Armor
+                Броня
                 <div className="text-base font-semibold text-white">{heroStats.armor}</div>
               </div>
               <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-3 py-2">
-                Speed
+                Скорость
                 <div className="text-base font-semibold text-white">{heroStats.speed}</div>
               </div>
             </div>
@@ -428,17 +428,17 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
               className="flex items-center gap-2 rounded-md border border-[#454d59] bg-[#121419]/85 px-4 py-2 text-xs uppercase tracking-[0.2em] text-[#f7e7c0] shadow-[0_8px_20px_rgba(0,0,0,0.35)]"
             >
               <ShoppingBag className="h-4 w-4" />
-              Shop
+              Лавка
             </button>
             <div className="rounded-md border border-[#454d59] bg-[#121419]/85 px-4 py-2 text-xs uppercase tracking-[0.2em] text-[#c8ccd4] shadow-[0_8px_20px_rgba(0,0,0,0.35)]">
-              Gold: <span className="text-[#ffe39a]">{gold}</span>
+              Золото: <span className="text-[#ffe39a]">{gold}</span>
             </div>
             {onExit && (
               <button
                 onClick={onExit}
                 className="rounded-md border border-[#c23c2a] bg-[#4b1411]/80 px-4 py-2 text-xs uppercase tracking-[0.2em] text-white"
               >
-                Exit
+                Выход
               </button>
             )}
           </div>
@@ -465,7 +465,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
 
       {shopOpen && (
         <div className="absolute bottom-32 right-6 w-80 rounded-xl border border-[#2a2d33] bg-[#0c0e12]/95 p-4 text-white shadow-[0_0_30px_rgba(0,0,0,0.6)]">
-          <div className="mb-3 font-[Cinzel] text-sm uppercase tracking-[0.4em] text-[#f7e7c0]">Shop</div>
+          <div className="mb-3 font-[Cinzel] text-sm uppercase tracking-[0.4em] text-[#f7e7c0]">Лавка</div>
           <div className="grid grid-cols-2 gap-3 text-xs uppercase tracking-[0.2em]">
             {SHOP_ITEMS.map((item) => (
               <button
@@ -485,9 +485,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
         <div className="absolute inset-0 flex items-center justify-center bg-black/70 text-center text-white">
           <div className="rounded-xl border border-[#c23c2a] bg-[#1a0f0f]/90 px-8 py-6">
             <div className="font-[Cinzel] text-3xl uppercase tracking-[0.4em] text-[#f7e7c0]">
-              {victory === 'radiant' ? 'Radiant' : 'Dire'} Victory
+              {victory === 'radiant' ? 'Свет' : 'Тьма'} Победа
             </div>
-            <p className="mt-3 text-sm text-[#c8ccd4]">The Ancient has fallen.</p>
+            <p className="mt-3 text-sm text-[#c8ccd4]">Древний пал.</p>
           </div>
         </div>
       )}

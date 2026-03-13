@@ -13,6 +13,12 @@ type AttributeFilter = 'all' | 'str' | 'agi' | 'int';
 const RADIANT_SLOTS = 5;
 const DIRE_SLOTS = 5;
 
+const attributeLabel: Record<Exclude<AttributeFilter, 'all'>, string> = {
+  str: 'Сила',
+  agi: 'Ловкость',
+  int: 'Интеллект',
+};
+
 const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) => {
   const [selectedHero, setSelectedHero] = useState<HeroData | null>(null);
   const [lockedHero, setLockedHero] = useState<HeroData | null>(null);
@@ -137,7 +143,7 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
 
       <header className="relative z-10 flex items-center justify-between px-8 pt-6 font-[Cinzel] uppercase tracking-[0.3em] text-sm text-[#f5e7cf]">
         <div className="flex flex-col gap-3">
-          <div className="text-xs tracking-[0.6em] text-[#8c8f94]">RADIANT</div>
+          <div className="text-xs tracking-[0.6em] text-[#8c8f94]">СВЕТ</div>
           <div className="flex items-center gap-2">
             {radiantSlots.map((slot, index) => (
               <div
@@ -155,12 +161,12 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
         </div>
 
         <div className="text-center">
-          <div className="text-xs tracking-[0.6em] text-[#8c8f94]">PICK YOUR HERO</div>
+          <div className="text-xs tracking-[0.6em] text-[#8c8f94]">ВЫБЕРИТЕ ГЕРОЯ</div>
           <div className="mt-2 text-3xl font-bold text-[#c23c2a]">{timer}s</div>
         </div>
 
         <div className="flex flex-col items-end gap-3">
-          <div className="text-xs tracking-[0.6em] text-[#8c8f94]">DIRE</div>
+          <div className="text-xs tracking-[0.6em] text-[#8c8f94]">ТЬМА</div>
           <div className="flex items-center gap-2">
             {direSlots.map((slot, index) => (
               <div
@@ -181,7 +187,7 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
       <div className="relative z-10 mt-6 grid h-[calc(100%-8rem)] grid-cols-[1.4fr_2.2fr_1.4fr] gap-6 px-8 pb-8">
         <div className="flex flex-col gap-5">
           <div className="rounded-xl border border-[#343943] bg-[#14161b]/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.45)] backdrop-blur-sm">
-            <h2 className="mb-4 font-[Cinzel] text-xs uppercase tracking-[0.4em] text-[#d7c9ac]">Radiant</h2>
+            <h2 className="mb-4 font-[Cinzel] text-xs uppercase tracking-[0.4em] text-[#d7c9ac]">Свет</h2>
             <div className="space-y-3">
               {radiantSlots.map((slot, index) => (
                 <div
@@ -192,12 +198,12 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
                     {slot ? (
                       <img src={slot.image} alt={slot.name} className="h-full w-full object-cover grayscale" />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-xs text-[#4a4f57]">Empty</div>
+                      <div className="flex h-full w-full items-center justify-center text-xs text-[#4a4f57]">Пусто</div>
                     )}
                   </div>
                   <div>
-                    <div className="text-xs uppercase tracking-[0.3em] text-[#9aa0a8]">Slot {index + 1}</div>
-                    <div className="text-sm font-semibold text-white">{slot?.name ?? 'Waiting...'}</div>
+                    <div className="text-xs uppercase tracking-[0.3em] text-[#9aa0a8]">Слот {index + 1}</div>
+                    <div className="text-sm font-semibold text-white">{slot?.name ?? 'Ожидание...'}</div>
                   </div>
                 </div>
               ))}
@@ -222,7 +228,7 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
                       : 'bg-[#1b2c4b]/70'
                   }`}
                 >
-                  {attr === 'str' ? 'Strength' : attr === 'agi' ? 'Agility' : 'Intelligence'}
+                  {attributeLabel[attr]}
                 </button>
               ))}
               <button
@@ -231,7 +237,7 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
                   attributeFilter === 'all' ? 'border-white text-white' : 'border-[#2a2d33] text-[#9aa0a8]'
                 } bg-[#23252b]/70`}
               >
-                All
+                Все
               </button>
             </div>
             <div className="relative">
@@ -239,7 +245,7 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
               <input
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search hero or role"
+                placeholder="Поиск героя или роли"
                 className="w-64 rounded-md border border-[#2a2d33] bg-[#111318] py-2 pl-10 pr-3 text-xs uppercase tracking-[0.2em] text-[#c8ccd4] placeholder:text-[#4f545c]"
               />
             </div>
@@ -263,7 +269,7 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
                 />
                 <div className="relative z-10 w-full bg-gradient-to-t from-black/80 via-black/40 to-transparent p-2">
                   <div className="text-[10px] uppercase tracking-[0.3em] text-[#9aa0a8]">
-                    {hero.attribute === 'str' ? 'Strength' : hero.attribute === 'agi' ? 'Agility' : 'Intelligence'}
+                    {attributeLabel[hero.attribute]}
                   </div>
                   <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white">{hero.name}</div>
                 </div>
@@ -271,7 +277,7 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
             ))}
             {filteredHeroes.length === 0 && (
               <div className="col-span-4 rounded-md border border-dashed border-[#3b3f48] bg-[#101218]/70 p-6 text-center text-xs uppercase tracking-[0.25em] text-[#737983]">
-                No heroes found for this filter.
+                По этому фильтру герои не найдены.
               </div>
             )}
           </div>
@@ -280,7 +286,7 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
         <aside className="flex flex-col gap-6 rounded-xl border border-[#343943] bg-[#111318]/85 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.45)] backdrop-blur-sm">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-xs uppercase tracking-[0.3em] text-[#9aa0a8]">Hero Preview</div>
+              <div className="text-xs uppercase tracking-[0.3em] text-[#9aa0a8]">Просмотр героя</div>
               <div className="font-[Cinzel] text-2xl uppercase tracking-[0.3em] text-[#f7e7c0]">
                 {heroPreview.name}
               </div>
@@ -307,20 +313,20 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
           </div>
 
           <p className="text-sm italic text-[#b7bbc2]">
-            A legend forged in the eternal battlefield, {heroPreview.name} answers the call of the Ancients.
+            Легенда закалена вечной битвой: {heroPreview.name} откликается на зов Древних.
           </p>
 
           <div className="grid grid-cols-3 gap-3 text-xs uppercase tracking-[0.2em] text-[#9aa0a8]">
             <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-3 py-2">
-              Damage
+              Урон
               <div className="text-base font-semibold text-white">{heroPreview.stats.damage}</div>
             </div>
             <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-3 py-2">
-              Armor
+              Броня
               <div className="text-base font-semibold text-white">{heroPreview.stats.armor}</div>
             </div>
             <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-3 py-2">
-              Speed
+              Скорость
               <div className="text-base font-semibold text-white">{heroPreview.stats.speed}</div>
             </div>
           </div>
@@ -343,7 +349,7 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
             disabled={!selectedHero || lockedHero !== null}
             className="mt-auto w-full rounded-md border border-[#c23c2a] bg-gradient-to-r from-[#4b1411] via-[#8b2f24] to-[#c23c2a] py-3 text-xs font-semibold uppercase tracking-[0.3em] text-white transition hover:brightness-125 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Lock In
+            Подтвердить
           </button>
         </aside>
       </div>
