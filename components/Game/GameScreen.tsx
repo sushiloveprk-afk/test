@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { heroList, HeroData } from '../../data/heroList';
 import { ShoppingBag } from 'lucide-react';
+import { heroList, HeroData } from '../../data/heroList';
 
 interface GameScreenProps {
   selectedHero: HeroData;
@@ -21,6 +21,7 @@ interface GameUnit {
   hp: number;
   maxHp: number;
   damage: number;
+  armor: number;
   range: number;
   speed: number;
   targetId?: string;
@@ -32,6 +33,7 @@ interface GameUnit {
     tauntedBy?: string;
     spinUntil?: number;
     slowUntil?: number;
+    bonusArmorUntil?: number;
   };
 }
 
@@ -143,6 +145,18 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
   }, []);
 
   useEffect(() => {
+    if (!gameStateRef.current) return;
+    const player = gameStateRef.current.units.find((unit) => unit.id === gameStateRef.current?.playerId);
+    if (!player) return;
+    const hpRatio = player.hp / player.maxHp;
+    player.damage = heroStats.damage;
+    player.armor = heroStats.armor;
+    player.speed = heroStats.speed * 1.5;
+    player.maxHp = heroStats.baseStr * 20;
+    player.hp = Math.min(player.maxHp, player.maxHp * hpRatio);
+  }, [heroStats]);
+
+  useEffect(() => {
     if (!containerRef.current) return;
 
     const scene = new THREE.Scene();
@@ -186,7 +200,11 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
     scene.add(playerHero.mesh);
     units.push(playerHero);
 
-    const enemyHero = createHeroUnit(heroList.find((hero) => hero.id === 'pudge') ?? heroData, 'dire', new THREE.Vector3(600, 0, 600));
+    const enemyHero = createHeroUnit(
+      heroList.find((hero) => hero.id === 'pudge') ?? heroData,
+      'dire',
+      new THREE.Vector3(600, 0, 600)
+    );
     scene.add(enemyHero.mesh);
     units.push(enemyHero);
 
@@ -382,7 +400,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-2 text-xs uppercase tracking-[0.2em] text-[#9aa0a8]">
+            <div className="grid grid-cols-6 gap-2 text-xs uppercase tracking-[0.2em] text-[#9aa0a8]">
               <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-3 py-2">
                 Damage
                 <div className="text-base font-semibold text-white">{heroStats.damage}</div>
@@ -394,6 +412,18 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
               <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-3 py-2">
                 Speed
                 <div className="text-base font-semibold text-white">{heroStats.speed}</div>
+              </div>
+              <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-3 py-2">
+                STR
+                <div className="text-base font-semibold text-white">{heroStats.baseStr}</div>
+              </div>
+              <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-3 py-2">
+                AGI
+                <div className="text-base font-semibold text-white">{heroStats.baseAgi}</div>
+              </div>
+              <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-3 py-2">
+                INT
+                <div className="text-base font-semibold text-white">{heroStats.baseInt}</div>
               </div>
             </div>
           </div>
@@ -456,6 +486,20 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
               {inventory[index] && (
                 <div className="flex h-full w-full items-center justify-center text-[10px] text-white">
                   {SHOP_ITEMS.find((item) => item.id === inventory[index])?.name ?? ''}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div
+              key={`backpack-${index}`}
+              className="h-10 w-10 rounded-md border border-[#2a2d33] bg-[#101216]/80 text-[9px] uppercase text-[#6f7680]"
+            >
+              {backpack[index] && (
+                <div className="flex h-full w-full items-center justify-center text-[10px] text-white">
+                  {SHOP_ITEMS.find((item) => item.id === backpack[index])?.name ?? ''}
                 </div>
               )}
             </div>
@@ -648,9 +692,10 @@ const createHeroUnit = (hero: HeroData, team: Team, position: THREE.Vector3): Ga
     team,
     mesh: group,
     radius: 30,
-    hp: 1000,
-    maxHp: 1000,
+    hp: hero.stats.baseStr * 20,
+    maxHp: hero.stats.baseStr * 20,
     damage: hero.stats.damage,
+    armor: hero.stats.armor,
     range: hero.attackType === 'Ranged' ? 500 : 180,
     speed: hero.stats.speed * 1.5,
     attackCooldown: 1.2,
@@ -681,6 +726,7 @@ const createTower = (team: Team, position: THREE.Vector3): GameUnit => {
     hp: 2000,
     maxHp: 2000,
     damage: 120,
+    armor: 8,
     range: 700,
     speed: 0,
     attackCooldown: 1.5,
@@ -712,6 +758,7 @@ const createAncient = (team: Team, position: THREE.Vector3): GameUnit => {
     hp: 4000,
     maxHp: 4000,
     damage: 200,
+    armor: 12,
     range: 600,
     speed: 0,
     attackCooldown: 1.6,
@@ -735,6 +782,7 @@ const createFountain = (team: Team, position: THREE.Vector3): GameUnit => {
     hp: 9999,
     maxHp: 9999,
     damage: 0,
+    armor: 20,
     range: 0,
     speed: 0,
     attackCooldown: 0,
@@ -853,7 +901,7 @@ const castPrimaryAbility = (
         }
       }
     });
-    player.status = { ...(player.status ?? {}), spinUntil: now + 4000 };
+    player.status = { ...(player.status ?? {}), bonusArmorUntil: now + 4000 };
     return;
   }
 
@@ -876,7 +924,7 @@ const castPrimaryAbility = (
       if (unit.team !== player.team && !unit.isBuilding) {
         const distance = unit.mesh.position.distanceTo(nova.position);
         if (distance < 140) {
-          unit.hp -= 100;
+          applyDamage(unit, 100);
           unit.status = { ...(unit.status ?? {}), slowUntil: performance.now() + 4000 };
         }
       }
@@ -937,28 +985,29 @@ const updateCamera = (
   camera.lookAt(0, 0, 0);
 };
 
-const findClosestEnemy = (state: NonNullable<
-  React.MutableRefObject<
-    | {
-        scene: THREE.Scene;
-        camera: THREE.PerspectiveCamera;
-        renderer: THREE.WebGLRenderer;
-        ground: THREE.Mesh;
-        units: GameUnit[];
-        projectiles: Projectile[];
-        playerId: string;
-        mouse: { x: number; y: number; inBounds: boolean };
-        lastTime: number;
-        gold: number;
-        inventory: string[];
-        backpack: string[];
-        abilityCooldowns: Record<string, number>;
-      }
-    | null
-  >['current']
->,
-unit: GameUnit,
-range: number
+const findClosestEnemy = (
+  state: NonNullable<
+    React.MutableRefObject<
+      | {
+          scene: THREE.Scene;
+          camera: THREE.PerspectiveCamera;
+          renderer: THREE.WebGLRenderer;
+          ground: THREE.Mesh;
+          units: GameUnit[];
+          projectiles: Projectile[];
+          playerId: string;
+          mouse: { x: number; y: number; inBounds: boolean };
+          lastTime: number;
+          gold: number;
+          inventory: string[];
+          backpack: string[];
+          abilityCooldowns: Record<string, number>;
+        }
+      | null
+    >['current']
+  >,
+  unit: GameUnit,
+  range: number
 ) => {
   let closest: GameUnit | null = null;
   let closestDistance = Number.POSITIVE_INFINITY;
@@ -972,6 +1021,11 @@ range: number
     }
   });
   return closest;
+};
+
+const applyDamage = (unit: GameUnit, amount: number) => {
+  const armorMultiplier = 100 / (100 + unit.armor * 6);
+  unit.hp -= amount * armorMultiplier;
 };
 
 const updateUnits = (
@@ -1030,13 +1084,16 @@ const updateUnits = (
     const target = unit.targetId ? state.units.find((candidate) => candidate.id === unit.targetId) : null;
     const isMovingToTarget = target && target.hp > 0 && unit.mesh.position.distanceTo(target.mesh.position) > unit.range;
 
+    const slowMultiplier = unit.status?.slowUntil && unit.status.slowUntil > now ? 0.6 : 1;
+    const currentSpeed = unit.speed * slowMultiplier;
+
     if (unit.type === 'hero' && unit.moveTarget) {
       const direction = unit.moveTarget.clone().sub(unit.mesh.position);
       if (direction.length() < 10) {
         unit.moveTarget = undefined;
       } else {
         direction.normalize();
-        unit.mesh.position.add(direction.multiplyScalar(unit.speed * delta));
+        unit.mesh.position.add(direction.multiplyScalar(currentSpeed * delta));
       }
     }
 
@@ -1050,16 +1107,26 @@ const updateUnits = (
         }
       } else if (!unit.isBuilding) {
         const direction = target.mesh.position.clone().sub(unit.mesh.position).normalize();
-        unit.mesh.position.add(direction.multiplyScalar(unit.speed * delta));
+        unit.mesh.position.add(direction.multiplyScalar(currentSpeed * delta));
       }
     }
 
     if (unit.type === 'creep' && !target) {
       unit.mesh.position.add(
         unit.moveTarget
-          ? unit.moveTarget.clone().sub(unit.mesh.position).normalize().multiplyScalar(unit.speed * delta)
+          ? unit.moveTarget.clone().sub(unit.mesh.position).normalize().multiplyScalar(currentSpeed * delta)
           : new THREE.Vector3(0, 0, 0)
       );
+    }
+
+    if (unit.status?.spinUntil && unit.status.spinUntil > now) {
+      state.units.forEach((enemy) => {
+        if (enemy.team === unit.team || enemy.hp <= 0 || enemy.isBuilding) return;
+        const distance = enemy.mesh.position.distanceTo(unit.mesh.position);
+        if (distance < 200) {
+          applyDamage(enemy, 40 * delta);
+        }
+      });
     }
 
     const limbs = unit.mesh.userData.limbs as
@@ -1197,7 +1264,7 @@ const updateProjectiles = (
         hitCandidate.mesh.position.copy(projectile.origin.clone());
         hitCandidate.moveTarget = undefined;
       } else {
-        hitCandidate.hp -= projectile.damage;
+        applyDamage(hitCandidate, projectile.damage);
       }
       state.scene.remove(projectile.mesh);
       projectile.chain && state.scene.remove(projectile.chain);
@@ -1206,7 +1273,7 @@ const updateProjectiles = (
     }
 
     if (target && projectile.mesh.position.distanceTo(target.mesh.position) < target.radius) {
-      target.hp -= projectile.damage;
+      applyDamage(target, projectile.damage);
       state.scene.remove(projectile.mesh);
       state.projectiles.splice(i, 1);
       continue;
@@ -1258,6 +1325,7 @@ const spawnCreeps = (
       hp: 300,
       maxHp: 300,
       damage: 25,
+      armor: 1,
       range: 150,
       speed: 220,
       attackCooldown: 1.5,
