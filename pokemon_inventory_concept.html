@@ -82,7 +82,7 @@
       text-align: center;
       margin-left: 52px;
       font-weight: 900;
-      font-size: clamp(44px, 7vh, 76px);
+      font-size: clamp(30px, 5.2vh, 52px);
       line-height: 1;
       letter-spacing: .3px;
       color: #2f436a;
@@ -101,7 +101,7 @@
       padding: 0;
     }
 
-    .close { width: 56px; height: 56px; font-size: 42px; line-height: 1; }
+    .close { width: 52px; height: 52px; font-size: 34px; line-height: 1; }
 
     .search-row {
       display: grid;
@@ -128,7 +128,7 @@
       width: 100%;
       background: transparent;
       color: var(--text-main-2);
-      font-size: clamp(23px, 2.8vw, 36px);
+      font-size: clamp(17px, 2.2vw, 24px);
       font-weight: 700;
       min-width: 0;
     }
@@ -161,7 +161,7 @@
       align-items: center;
       gap: 8px;
       color: #5574a2;
-      font-size: clamp(18px, 2.2vw, 30px);
+      font-size: clamp(15px, 1.7vw, 20px);
       font-weight: 700;
       white-space: nowrap;
     }
@@ -172,7 +172,7 @@
       font-weight: 900;
     }
 
-    .plus-btn { width: 48px; height: 48px; font-size: 40px; }
+    .plus-btn { width: 44px; height: 44px; font-size: 32px; }
 
     .tabs {
       border: 1px solid #c8d6e8;
@@ -190,11 +190,11 @@
     .tab {
       border: 0;
       border-right: 1px solid #d3e0f1;
-      min-width: 122px;
-      height: 92px;
+      min-width: 112px;
+      height: 78px;
       background: transparent;
       color: #4f678f;
-      font-size: 20px;
+      font-size: 16px;
       font-weight: 800;
       cursor: pointer;
       display: grid;
@@ -204,7 +204,7 @@
     }
 
     .tab:last-child { border-right: 0; }
-    .tab .ico { font-size: 30px; line-height: 1; }
+    .tab .ico { font-size: 24px; line-height: 1; }
 
     .tab.active {
       border-right-color: transparent;
@@ -240,7 +240,7 @@
     .item {
       border: 1px solid #c9d7e8;
       border-radius: 18px;
-      min-height: 138px;
+      min-height: 112px;
       background: linear-gradient(180deg, #fafcff, #f1f6fd);
       box-shadow: inset 0 1px 0 rgba(255,255,255,.95);
       padding: 6px;
@@ -269,7 +269,9 @@
     }
 
     .item img {
-      width: min(86px, 100%);
+      width: min(62px, 72%);
+      max-height: 62px;
+      object-fit: contain;
       margin: auto;
       filter: drop-shadow(0 4px 5px rgba(60, 100, 150, .22));
     }
@@ -280,7 +282,7 @@
       gap: 6px;
       color: #47628e;
       font-weight: 900;
-      font-size: 18px;
+      font-size: 16px;
     }
 
     .qty-dot {
@@ -313,11 +315,11 @@
       box-shadow: inset 0 1px 0 rgba(255,255,255,.95);
     }
 
-    .selected-slot img { width: 84px; }
+    .selected-slot img { width: 72px; max-height: 72px; object-fit: contain; }
 
     h3 {
       margin: 0;
-      font-size: clamp(34px, 3vw, 42px);
+      font-size: clamp(24px, 2.2vw, 30px);
       font-weight: 900;
       line-height: 1;
       color: #2f456b;
@@ -330,7 +332,7 @@
       border: 1px solid #c3d7f2;
       background: #e8f2ff;
       color: #4f7db7;
-      font-size: 20px;
+      font-size: 14px;
       font-weight: 800;
       padding: 4px 12px;
       vertical-align: 10%;
@@ -338,7 +340,7 @@
 
     .description {
       margin-top: 10px;
-      font-size: 23px;
+      font-size: clamp(15px, 1.7vw, 18px);
       color: #657fa7;
       font-weight: 700;
     }
@@ -351,7 +353,7 @@
 
     .stepper-label {
       color: #5f7aa6;
-      font-size: 20px;
+      font-size: 16px;
       font-weight: 800;
       margin-bottom: 8px;
     }
@@ -374,7 +376,7 @@
       border-radius: 14px;
       background: linear-gradient(180deg, #f6fbff, #dce8f9);
       color: #48658f;
-      font-size: 42px;
+      font-size: 32px;
       line-height: 1;
       font-weight: 900;
       cursor: pointer;
@@ -382,7 +384,7 @@
 
     .stepper strong {
       text-align: center;
-      font-size: 42px;
+      font-size: 30px;
       color: #314a73;
       font-weight: 900;
     }
@@ -399,7 +401,7 @@
       border: 1px solid transparent;
       border-radius: 16px;
       color: #fff;
-      font-size: clamp(28px, 2.3vw, 38px);
+      font-size: clamp(18px, 1.8vw, 26px);
       height: 72px;
       font-weight: 900;
       cursor: pointer;
@@ -417,7 +419,7 @@
       border-radius: 16px;
       background: linear-gradient(180deg, #fbfdff, #e4ecf8);
       color: #4f6b96;
-      font-size: clamp(25px, 2vw, 30px);
+      font-size: clamp(16px, 1.4vw, 20px);
       font-weight: 900;
       height: 64px;
       cursor: pointer;
@@ -452,31 +454,31 @@
 
     @media (max-width: 1200px), (max-height: 1400px) {
       .inventory { width: min(100vw - 14px, 640px); height: min(100vh - 14px, 1120px); padding: 10px; gap: 8px; }
-      .title { font-size: clamp(28px, 7vw, 58px); margin-left: 40px; }
-      .close { width: 48px; height: 48px; font-size: 38px; }
+      .title { font-size: clamp(24px, 6.4vw, 40px); margin-left: 36px; }
+      .close { width: 44px; height: 44px; font-size: 30px; }
       .search { height: 48px; }
-      .search input { font-size: clamp(18px, 3.4vw, 28px); }
-      .capacity { font-size: clamp(14px, 2.5vw, 22px); }
+      .search input { font-size: clamp(15px, 3.1vw, 20px); }
+      .capacity { font-size: clamp(13px, 2.3vw, 17px); }
       .plus-btn { width: 40px; height: 40px; font-size: 32px; }
-      .tab { min-width: 100px; height: 72px; font-size: 16px; }
-      .tab .ico { font-size: 22px; }
+      .tab { min-width: 92px; height: 66px; font-size: 14px; }
+      .tab .ico { font-size: 19px; }
       .grid { gap: 6px; }
-      .item { min-height: 92px; border-radius: 16px; }
-      .item img { width: min(54px, 100%); }
-      .qty { font-size: 15px; }
+      .item { min-height: 82px; border-radius: 16px; }
+      .item img { width: min(44px, 72%); max-height: 44px; }
+      .qty { font-size: 13px; }
       .qty-dot { width: 10px; height: 10px; }
       .selected-slot { width: 76px; height: 76px; border-radius: 16px; }
-      .selected-slot img { width: 62px; }
-      h3 { font-size: clamp(24px, 5vw, 34px); }
+      .selected-slot img { width: 56px; max-height: 56px; }
+      h3 { font-size: clamp(20px, 4.4vw, 28px); }
       .badge { font-size: 14px; padding: 3px 9px; }
-      .description { margin-top: 6px; font-size: clamp(16px, 3.2vw, 22px); }
+      .description { margin-top: 6px; font-size: clamp(14px, 2.8vw, 17px); }
       .stepper-wrap { min-width: 170px; }
       .stepper-label { font-size: 16px; }
       .stepper { height: 46px; grid-template-columns: 42px minmax(0, 1fr) 42px; border-radius: 14px; }
-      .stepper button { height: 34px; border-radius: 10px; font-size: 30px; }
-      .stepper strong { font-size: 30px; }
-      .btn { height: 52px; border-radius: 14px; font-size: clamp(17px, 3vw, 24px); }
-      .service { height: 46px; border-radius: 14px; font-size: clamp(15px, 2.5vw, 19px); }
+      .stepper button { height: 34px; border-radius: 10px; font-size: 26px; }
+      .stepper strong { font-size: 26px; }
+      .btn { height: 52px; border-radius: 14px; font-size: clamp(15px, 2.8vw, 19px); }
+      .service { height: 46px; border-radius: 14px; font-size: clamp(13px, 2.2vw, 16px); }
       .service.settings { width: 46px; font-size: 20px; }
     }
 
