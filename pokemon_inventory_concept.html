@@ -3,16 +3,35 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>PokePark Inventory Concept</title>
+  <title>Инвентарь — mobile game UI</title>
   <style>
     :root {
-      --panel: #deebff;
-      --panel-soft: #f3f8ff;
-      --line: #bfd2f1;
-      --line-strong: #a8c0e6;
-      --text: #2d466e;
-      --muted: #6480ad;
-      --shadow: 0 18px 42px rgba(7, 25, 55, 0.34);
+      --panel-1: #f8fbff;
+      --panel-2: #eef4fb;
+      --panel-3: #e6eef8;
+      --panel-4: #d9e5f3;
+      --line: #c8d6e8;
+      --line-strong: #b8cae0;
+      --text-main: #31476d;
+      --text-main-2: #425980;
+      --text-muted: #6c84a8;
+      --text-muted-2: #7b8faa;
+      --blue-1: #59b7ff;
+      --blue-2: #3a96f0;
+      --blue-3: #2a77e6;
+      --green-1: #7ce84c;
+      --green-2: #44d335;
+      --green-3: #2dbe2f;
+      --orange-1: #ffc84a;
+      --orange-2: #f6a623;
+      --orange-3: #e08a12;
+      --red-1: #ff8e87;
+      --red-2: #f26a5f;
+      --red-3: #e05248;
+      --gold-1: #ffd76b;
+      --gold-2: #f4c44d;
+      --soft-shadow: 0 2px 6px rgba(80, 120, 170, 0.1), 0 6px 18px rgba(80, 120, 170, 0.1);
+      --rounded-window: 34px;
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -21,699 +40,725 @@
       margin: 0;
       width: 100%;
       height: 100%;
-      font-family: "Nunito", "Segoe UI", system-ui, sans-serif;
-      color: var(--text);
       overflow: hidden;
-      background: radial-gradient(120% 100% at 50% 0%, #8ad2ff 0%, #61aff1 45%, #4b8fdb 100%);
+      font-family: "Nunito Sans", "Inter", "Rubik", system-ui, sans-serif;
+      color: var(--text-main);
     }
 
     .scene {
       position: fixed;
       inset: 0;
-      background:
-        linear-gradient(180deg, rgba(255,255,255,.2) 0%, rgba(9,32,74,.26) 100%),
-        radial-gradient(120% 80% at 10% 0%, rgba(255,255,255,.35), transparent 60%),
-        url('https://castles-vk.ru/pokepark/img/location/1.png') center/cover no-repeat;
       display: grid;
       place-items: center;
-      padding: 8px;
-    }
-
-    .phone {
-      width: min(100vw, 520px);
-      height: min(100vh, calc(min(100vw, 520px) * 1.78));
-      aspect-ratio: 9/16;
-      border-radius: 32px;
-      overflow: hidden;
-      position: relative;
-      border: 2px solid rgba(255,255,255,.82);
-      box-shadow: var(--shadow);
-      background: transparent;
+      padding: 12px;
+      background: url('https://castles-vk.ru/pokepark/img/location/1.png') center/cover no-repeat;
     }
 
     .inventory {
-      position: absolute;
-      inset: 10px;
-      border-radius: 26px;
-      background: linear-gradient(180deg, #eef5ff 0%, #dce9fb 100%);
+      width: min(100vw - 16px, 980px);
+      height: min(100vh - 16px, 1660px);
+      border-radius: var(--rounded-window);
       border: 2px solid var(--line-strong);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.94), 0 10px 24px rgba(12, 43, 88, .22);
+      background: linear-gradient(180deg, #fdfeff 0%, #eaf2fb 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.95), var(--soft-shadow);
       display: grid;
-      grid-template-rows: auto auto auto 1fr auto auto;
-      gap: 8px;
-      padding: 10px;
+      grid-template-rows: auto auto auto 1fr auto auto auto;
+      gap: 10px;
+      padding: 14px;
+      backdrop-filter: blur(2px);
+      min-height: 0;
     }
 
-    .header {
+    .top {
       display: grid;
       grid-template-columns: 1fr auto;
       align-items: center;
-      border-bottom: 2px solid #c9d9f2;
-      padding-bottom: 8px;
+      border-bottom: 1px solid #c9d7e8;
+      padding: 2px 0 10px;
       min-width: 0;
     }
 
     .title {
       text-align: center;
-      margin-left: 40px;
+      margin-left: 52px;
       font-weight: 900;
-      font-size: clamp(26px, 7vw, 48px);
+      font-size: clamp(44px, 7vh, 76px);
       line-height: 1;
-      color: #2f4975;
-      letter-spacing: .2px;
+      letter-spacing: .3px;
+      color: #2f436a;
     }
 
-    .close {
-      width: 42px;
-      height: 42px;
-      border-radius: 14px;
-      border: 2px solid #b9cbea;
-      background: linear-gradient(180deg, #ffffff, #dde9fa);
-      color: #5573a4;
-      font-size: 28px;
-      font-weight: 900;
+    .icon-btn {
+      border: 1px solid #c9d7e8;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #ffffff 0%, #e5edf8 100%);
+      color: #3f5a86;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 3px 8px rgba(80,120,170,.12);
       cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      padding: 0;
     }
+
+    .close { width: 56px; height: 56px; font-size: 42px; line-height: 1; }
 
     .search-row {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
-      gap: 8px;
+      gap: 10px;
       align-items: center;
-      min-width: 0;
     }
 
-    .search-wrap {
+    .search {
+      height: 58px;
+      border-radius: 999px;
+      border: 1px solid #c8d6e8;
+      background: linear-gradient(180deg, #ffffff, #edf3fb);
       display: flex;
       align-items: center;
-      gap: 8px;
-      height: 42px;
-      background: var(--panel-soft);
-      border: 2px solid #c6d7ef;
-      border-radius: 999px;
-      padding: 0 12px;
+      gap: 12px;
+      padding: 0 18px;
+      box-shadow: inset 0 2px 4px rgba(168, 190, 219, .12);
+    }
+
+    .search input {
+      border: 0;
+      outline: none;
+      width: 100%;
+      background: transparent;
+      color: var(--text-main-2);
+      font-size: clamp(23px, 2.8vw, 36px);
+      font-weight: 700;
       min-width: 0;
     }
 
-    .search-icon {
-      width: 16px;
-      height: 16px;
-      border: 2px solid #7b97c3;
+    .search input::placeholder { color: #8ba0bf; }
+
+    .magnifier {
+      width: 22px;
+      height: 22px;
+      border: 3px solid #8ea5c7;
       border-radius: 50%;
       position: relative;
       flex: 0 0 auto;
     }
 
-    .search-icon::after {
-      content: '';
+    .magnifier::after {
+      content: "";
       position: absolute;
-      right: -6px;
-      bottom: -4px;
-      width: 8px;
-      height: 2px;
-      border-radius: 2px;
-      background: #7b97c3;
+      width: 12px;
+      height: 3px;
+      border-radius: 3px;
+      background: #8ea5c7;
+      right: -8px;
+      bottom: -5px;
       transform: rotate(40deg);
-    }
-
-    .search-wrap input {
-      border: 0;
-      background: transparent;
-      width: 100%;
-      min-width: 0;
-      outline: none;
-      font-size: clamp(15px, 3.7vw, 22px);
-      color: #37547e;
-      font-weight: 700;
     }
 
     .capacity {
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: clamp(12px, 2.9vw, 16px);
-      font-weight: 800;
-      color: #4d6b9b;
+      gap: 8px;
+      color: #5574a2;
+      font-size: clamp(18px, 2.2vw, 30px);
+      font-weight: 700;
       white-space: nowrap;
     }
 
-    .cap-btn {
-      width: 34px;
-      height: 34px;
-      border-radius: 11px;
-      border: 2px solid #c1d2ec;
-      background: linear-gradient(180deg, #ffffff, #dce8f9);
-      color: #5f7ca8;
-      font-size: 24px;
+    .capacity strong {
+      color: #334b73;
+      font-size: 1.25em;
       font-weight: 900;
-      line-height: 1;
-      cursor: pointer;
-      padding: 0;
     }
 
-    .categories {
+    .plus-btn { width: 48px; height: 48px; font-size: 40px; }
+
+    .tabs {
+      border: 1px solid #c8d6e8;
+      border-radius: 20px;
+      background: linear-gradient(180deg, #f9fcff, #e8f0fa);
       display: flex;
       overflow-x: auto;
       scrollbar-width: none;
-      border: 2px solid #c2d2ea;
-      border-radius: 16px;
-      background: #eff5ff;
-      padding: 2px;
-    }
-
-    .categories::-webkit-scrollbar { display: none; }
-
-    .cat {
-      border: 0;
-      background: transparent;
-      color: #4b678f;
-      min-width: 98px;
-      height: 56px;
-      font-size: clamp(13px, 3vw, 16px);
-      font-weight: 800;
-      display: grid;
-      align-items: center;
-      justify-items: center;
-      border-right: 1px solid #d6e3f5;
-      scroll-snap-align: start;
-      cursor: pointer;
-      flex-shrink: 0;
-      padding: 4px 8px;
-    }
-
-    .cat:last-child { border-right: 0; }
-
-    .cat .cat-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #90a9cf;
-      margin-bottom: 4px;
-    }
-
-    .cat.active {
-      color: #fff;
-      border-radius: 14px;
-      border-right-color: transparent;
-      background: linear-gradient(180deg, #5db3ff, #2f8de7);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.5);
-    }
-
-    .cat.active .cat-dot { background: #ffffff; }
-
-    .item-grid {
+      padding: 3px;
       min-height: 0;
-      overflow-y: auto;
-      padding-right: 2px;
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 6px;
-      align-content: start;
     }
+
+    .tabs::-webkit-scrollbar { display: none; }
+
+    .tab {
+      border: 0;
+      border-right: 1px solid #d3e0f1;
+      min-width: 122px;
+      height: 92px;
+      background: transparent;
+      color: #4f678f;
+      font-size: 20px;
+      font-weight: 800;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      padding: 8px;
+      flex-shrink: 0;
+    }
+
+    .tab:last-child { border-right: 0; }
+    .tab .ico { font-size: 30px; line-height: 1; }
+
+    .tab.active {
+      border-right-color: transparent;
+      border-radius: 18px;
+      color: white;
+      background: linear-gradient(180deg, #66c1ff 0%, #4fa9f8 45%, #2e84ea 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 6px 12px rgba(53, 120, 210, .24);
+    }
+
+    .grid-wrap {
+      border-radius: 22px;
+      border: 1px solid #c8d6e8;
+      background: linear-gradient(180deg, #f7fbff 0%, #edf4fc 100%);
+      padding: 8px;
+      min-height: 0;
+    }
+
+    .grid {
+      height: 100%;
+      overflow-y: auto;
+      padding-right: 6px;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+      align-content: start;
+      scrollbar-color: #bfd0e7 #eef4fb;
+    }
+
+    .grid::-webkit-scrollbar { width: 8px; }
+    .grid::-webkit-scrollbar-track { background: #eef4fb; border-radius: 999px; }
+    .grid::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #e8f1fd, #cfe0f4); border-radius: 999px; }
 
     .item {
-      border: 2px solid #cad9ee;
-      border-radius: 14px;
-      background: linear-gradient(180deg, #fdfefe, #e8f0fc);
-      min-height: 98px;
+      border: 1px solid #c9d7e8;
+      border-radius: 18px;
+      min-height: 138px;
+      background: linear-gradient(180deg, #fafcff, #f1f6fd);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.95);
       padding: 6px;
       display: grid;
       grid-template-rows: 1fr auto;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.95);
       cursor: pointer;
+      position: relative;
     }
 
     .item.active {
-      border-color: #f4c85a;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 0 0 2px rgba(245, 195, 70, .24);
-      background: linear-gradient(180deg, #fffef7, #edf4ff);
+      border-color: var(--gold-2);
+      background: linear-gradient(180deg, #fffef7, #f4f8ff);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 0 0 2px rgba(255,215,107,.25);
+    }
+
+    .item.active::after {
+      content: "";
+      position: absolute;
+      right: 8px;
+      top: 8px;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #ffb95c, #ff8a2a);
+      box-shadow: 0 0 0 2px #fff;
     }
 
     .item img {
-      width: 100%;
-      max-width: 64px;
+      width: min(86px, 100%);
       margin: auto;
-      filter: drop-shadow(0 4px 5px rgba(47,85,140,.2));
+      filter: drop-shadow(0 4px 5px rgba(60, 100, 150, .22));
     }
 
     .qty {
       display: flex;
       align-items: center;
-      gap: 5px;
-      font-size: clamp(14px, 3.1vw, 16px);
+      gap: 6px;
+      color: #47628e;
       font-weight: 900;
-      color: #4a678f;
+      font-size: 18px;
     }
 
     .qty-dot {
-      width: 7px;
-      height: 7px;
+      width: 13px;
+      height: 13px;
       border-radius: 50%;
-      background: #6ea0ff;
-      flex: 0 0 auto;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 1px 2px rgba(80,120,170,.18);
     }
 
     .details {
-      border-top: 2px solid #c8d8f0;
-      padding-top: 8px;
+      border: 1px solid #c9d7e8;
+      border-radius: 22px;
+      background: linear-gradient(180deg, #f7fbff, #eaf2fb);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
       display: grid;
       grid-template-columns: auto minmax(0, 1fr) auto;
-      gap: 8px;
+      gap: 12px;
       align-items: center;
-      min-width: 0;
+      padding: 10px;
     }
 
-    .selected-icon {
-      width: 66px;
-      height: 66px;
-      border-radius: 16px;
-      border: 2px solid #66abf2;
-      background: #f6faff;
-      padding: 6px;
+    .selected-slot {
+      width: 106px;
+      height: 106px;
+      border-radius: 20px;
+      border: 2px solid #6bb0f4;
+      background: linear-gradient(180deg, #ffffff, #edf4ff);
       display: grid;
       place-items: center;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.95);
     }
 
-    .selected-icon img { width: 50px; }
+    .selected-slot img { width: 84px; }
 
-    .meta { min-width: 0; }
-    .meta h3 {
+    h3 {
       margin: 0;
-      font-size: clamp(20px, 5.8vw, 32px);
-      line-height: 1.05;
-      overflow-wrap: anywhere;
+      font-size: clamp(34px, 3vw, 42px);
+      font-weight: 900;
+      line-height: 1;
+      color: #2f456b;
     }
 
-    .meta p {
-      margin: 6px 0 0;
-      font-size: clamp(13px, 3.3vw, 18px);
-      color: var(--muted);
-      line-height: 1.2;
-    }
-
-    .type-tag {
+    .badge {
       display: inline-block;
-      background: #eaf1ff;
-      color: #5f7bb0;
-      font-size: clamp(11px, 2.5vw, 14px);
-      font-weight: 800;
+      margin-left: 10px;
       border-radius: 999px;
-      padding: 2px 8px;
-      margin-left: 6px;
-      border: 1px solid #c5d8f5;
-      vertical-align: middle;
+      border: 1px solid #c3d7f2;
+      background: #e8f2ff;
+      color: #4f7db7;
+      font-size: 20px;
+      font-weight: 800;
+      padding: 4px 12px;
+      vertical-align: 10%;
+    }
+
+    .description {
+      margin-top: 10px;
+      font-size: 23px;
+      color: #657fa7;
+      font-weight: 700;
+    }
+
+    .stepper-wrap {
+      border-left: 1px solid #d8e2f0;
+      padding-left: 14px;
+      min-width: 240px;
     }
 
     .stepper-label {
-      font-size: 11px;
-      color: #6078a4;
+      color: #5f7aa6;
+      font-size: 20px;
       font-weight: 800;
-      margin-bottom: 4px;
-      text-align: right;
+      margin-bottom: 8px;
     }
 
     .stepper {
+      height: 58px;
+      border: 1px solid #c9d7e8;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #ffffff, #ebf2fb);
       display: grid;
-      grid-template-columns: 34px 44px 34px;
-      gap: 4px;
+      grid-template-columns: 56px minmax(0, 1fr) 56px;
       align-items: center;
+      gap: 6px;
+      padding: 0 8px;
     }
 
     .stepper button {
-      height: 34px;
-      border-radius: 11px;
-      border: 2px solid #c0cfe8;
-      background: linear-gradient(180deg, #fbfdff, #dde8fa);
-      color: #4f6998;
-      font-size: 26px;
+      border: 0;
+      height: 44px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #f6fbff, #dce8f9);
+      color: #48658f;
+      font-size: 42px;
+      line-height: 1;
       font-weight: 900;
       cursor: pointer;
-      padding: 0;
-      line-height: 1;
     }
 
     .stepper strong {
       text-align: center;
-      font-size: 18px;
-      color: #3b5785;
+      font-size: 42px;
+      color: #314a73;
+      font-weight: 900;
     }
 
-    .actions {
+    .actions, .bottom-actions {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 6px;
+      gap: 10px;
     }
+
+    .actions { grid-template-columns: repeat(4, minmax(0,1fr)); }
+    .bottom-actions { grid-template-columns: 1fr 1fr 1fr auto; }
 
     .btn {
-      border: 0;
-      border-radius: 12px;
+      border: 1px solid transparent;
+      border-radius: 16px;
       color: #fff;
+      font-size: clamp(28px, 2.3vw, 38px);
+      height: 72px;
       font-weight: 900;
-      font-size: clamp(13px, 3vw, 18px);
-      height: 42px;
       cursor: pointer;
-      text-shadow: 0 1px 1px rgba(0,0,0,.16);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 3px 7px rgba(34,59,95,.22);
-      padding: 0 8px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      text-shadow: 0 1px 1px rgba(0,0,0,.2);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 4px 10px rgba(80,120,170,.15);
     }
 
-    .btn.green { background: linear-gradient(180deg,#6ede60,#32bf35); }
-    .btn.blue { background: linear-gradient(180deg,#73abff,#4f7cff); }
-    .btn.orange { background: linear-gradient(180deg,#ffd166,#f2a727); }
-    .btn.red { background: linear-gradient(180deg,#ffa4a4,#e06363); }
+    .btn.green { background: linear-gradient(180deg, #91f25b, #36c932); border-color: #4fbf42; }
+    .btn.blue { background: linear-gradient(180deg, #66c1ff, #2e84ea); border-color: #4a98ea; }
+    .btn.orange { background: linear-gradient(180deg, #ffd45e, #f2a323); border-color: #e3a52e; }
+    .btn.red { background: linear-gradient(180deg, #ff9e98, #e95b51); border-color: #dc6c66; }
 
-    .footer-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr auto;
-      gap: 6px;
-    }
-
-    .small-btn {
-      border: 2px solid #becde7;
-      background: linear-gradient(180deg,#f8fcff,#dfe9f9);
-      border-radius: 12px;
-      color: #5b76a2;
-      font-size: clamp(12px, 2.7vw, 15px);
+    .service {
+      border: 1px solid #c2d2e8;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #fbfdff, #e4ecf8);
+      color: #4f6b96;
+      font-size: clamp(25px, 2vw, 30px);
       font-weight: 900;
-      height: 38px;
+      height: 64px;
       cursor: pointer;
-      padding: 0 8px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
 
-    .small-btn.primary {
-      background: linear-gradient(180deg,#5fb3ff,#3490e8);
-      border-color: #4699eb;
+    .service.sell {
+      background: linear-gradient(180deg, #5fb7ff, #3693ea);
       color: #fff;
+      border-color: #4b9cec;
     }
+
+    .service.settings { width: 64px; font-size: 30px; }
 
     .toast {
-      position: absolute;
+      position: fixed;
       left: 50%;
-      bottom: 14px;
+      bottom: 16px;
       transform: translateX(-50%) translateY(10px);
-      background: rgba(30, 61, 110, .92);
+      background: rgba(42, 72, 116, .92);
       color: #fff;
-      padding: 8px 12px;
-      border-radius: 12px;
+      border-radius: 16px;
+      padding: 10px 16px;
+      font-size: 15px;
       font-weight: 800;
-      font-size: 13px;
       opacity: 0;
+      transition: .2s;
       pointer-events: none;
-      transition: .25s ease;
-      max-width: calc(100% - 40px);
-      text-align: center;
+      z-index: 999;
     }
 
-    .toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 1200px), (max-height: 1400px) {
+      .inventory { width: min(100vw - 14px, 640px); height: min(100vh - 14px, 1120px); padding: 10px; gap: 8px; }
+      .title { font-size: clamp(28px, 7vw, 58px); margin-left: 40px; }
+      .close { width: 48px; height: 48px; font-size: 38px; }
+      .search { height: 48px; }
+      .search input { font-size: clamp(18px, 3.4vw, 28px); }
+      .capacity { font-size: clamp(14px, 2.5vw, 22px); }
+      .plus-btn { width: 40px; height: 40px; font-size: 32px; }
+      .tab { min-width: 100px; height: 72px; font-size: 16px; }
+      .tab .ico { font-size: 22px; }
+      .grid { gap: 6px; }
+      .item { min-height: 92px; border-radius: 16px; }
+      .item img { width: min(54px, 100%); }
+      .qty { font-size: 15px; }
+      .qty-dot { width: 10px; height: 10px; }
+      .selected-slot { width: 76px; height: 76px; border-radius: 16px; }
+      .selected-slot img { width: 62px; }
+      h3 { font-size: clamp(24px, 5vw, 34px); }
+      .badge { font-size: 14px; padding: 3px 9px; }
+      .description { margin-top: 6px; font-size: clamp(16px, 3.2vw, 22px); }
+      .stepper-wrap { min-width: 170px; }
+      .stepper-label { font-size: 16px; }
+      .stepper { height: 46px; grid-template-columns: 42px minmax(0, 1fr) 42px; border-radius: 14px; }
+      .stepper button { height: 34px; border-radius: 10px; font-size: 30px; }
+      .stepper strong { font-size: 30px; }
+      .btn { height: 52px; border-radius: 14px; font-size: clamp(17px, 3vw, 24px); }
+      .service { height: 46px; border-radius: 14px; font-size: clamp(15px, 2.5vw, 19px); }
+      .service.settings { width: 46px; font-size: 20px; }
     }
 
-    @media (max-width: 420px), (max-height: 760px) {
-      .inventory { inset: 6px; padding: 8px; gap: 6px; }
-      .header { padding-bottom: 6px; }
-      .title { margin-left: 30px; }
-      .item-grid { grid-template-columns: repeat(4, minmax(0,1fr)); gap: 5px; }
-      .item { min-height: 84px; padding: 4px; }
-      .item img { max-width: 52px; }
-      .selected-icon { width: 58px; height: 58px; padding: 4px; }
-      .selected-icon img { width: 44px; }
-      .actions { gap: 5px; }
-      .btn { height: 36px; border-radius: 10px; font-size: 12px; }
-      .small-btn { height: 34px; font-size: 11px; border-radius: 10px; }
-      .categories .cat { min-width: 88px; height: 52px; }
-    }
-
-    @media (max-width: 350px) {
+    @media (max-width: 520px) {
       .search-row { grid-template-columns: 1fr; }
-      .capacity { justify-content: space-between; width: 100%; }
       .details { grid-template-columns: auto 1fr; }
-      .details > :last-child { grid-column: 1 / -1; justify-self: end; }
-      .actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .footer-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .stepper-wrap { grid-column: 1 / -1; border-left: 0; border-top: 1px solid #d8e2f0; padding-left: 0; padding-top: 8px; min-width: 0; }
+      .actions { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .bottom-actions { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .service.settings { width: 100%; }
     }
   </style>
 </head>
 <body>
   <div class="scene">
-    <main class="phone">
-      <section class="inventory">
-        <div class="header">
-          <div class="title">Инвентарь</div>
-          <button class="close" id="closeBtn">×</button>
+    <section class="inventory">
+      <div class="top">
+        <div class="title">Инвентарь</div>
+        <button class="icon-btn close" id="closeBtn">×</button>
+      </div>
+
+      <div class="search-row">
+        <label class="search">
+          <span class="magnifier" aria-hidden="true"></span>
+          <input id="searchInput" type="search" placeholder="Поиск по предметам" />
+        </label>
+        <div class="capacity">Предметов: <strong id="capText">0 / 120</strong> <button class="icon-btn plus-btn" id="expandBtn">+</button></div>
+      </div>
+
+      <div class="tabs" id="tabs"></div>
+
+      <div class="grid-wrap">
+        <div class="grid" id="grid"></div>
+      </div>
+
+      <div class="details">
+        <div class="selected-slot"><img id="selectedImg" alt="Выбранный предмет" /></div>
+        <div>
+          <h3 id="selectedName"></h3>
+          <div class="description" id="selectedDescription"></div>
         </div>
-
-        <div class="search-row">
-          <label class="search-wrap">
-            <span class="search-icon" aria-hidden="true"></span>
-            <input id="searchInput" type="search" placeholder="Поиск по предметам" />
-          </label>
-          <div class="capacity">Предметов: <span id="capText">0 / 120</span> <button class="cap-btn" id="expandBtn">+</button></div>
-        </div>
-
-        <div class="categories" id="categories"></div>
-
-        <div class="item-grid" id="itemGrid"></div>
-
-        <div class="details">
-          <div class="selected-icon"><img id="selectedImg" alt="Предмет" /></div>
-          <div class="meta">
-            <h3 id="selectedName"></h3>
-            <p id="selectedDesc"></p>
+        <div class="stepper-wrap">
+          <div class="stepper-label">Количество:</div>
+          <div class="stepper">
+            <button id="minusBtn">−</button>
+            <strong id="amountText">1</strong>
+            <button id="plusBtn">+</button>
           </div>
-          <div>
-            <div class="stepper-label">Количество</div>
-            <div class="stepper">
-              <button id="minusBtn">−</button>
-              <strong id="amountText">1</strong>
-              <button id="plusBtn">+</button>
-            </div>
-          </div>
         </div>
+      </div>
 
-        <div class="actions">
-          <button class="btn green" id="useBtn">Использовать</button>
-          <button class="btn blue" id="splitBtn">Разделить</button>
-          <button class="btn orange" id="craftBtn">В крафт</button>
-          <button class="btn red" id="dropBtn">Выбросить</button>
-        </div>
+      <div class="actions">
+        <button class="btn green" id="useBtn">✅ Использовать</button>
+        <button class="btn blue" id="splitBtn">↕ Разделить</button>
+        <button class="btn orange" id="craftBtn">⚒ В крафт</button>
+        <button class="btn red" id="dropBtn">🗑 Выбросить</button>
+      </div>
 
-        <div class="footer-actions">
-          <button class="small-btn primary" id="sellBtn">Продать</button>
-          <button class="small-btn" id="sortBtn">Сортировка</button>
-          <button class="small-btn" id="filterBtn">Фильтр</button>
-          <button class="small-btn" id="settingsBtn">Параметры</button>
-        </div>
-      </section>
-      <div class="toast" id="toast"></div>
-    </main>
+      <div class="bottom-actions">
+        <button class="service sell" id="sellBtn">💰 Продать</button>
+        <button class="service" id="sortBtn">↕ Сортировка</button>
+        <button class="service" id="filterBtn">⚲ Фильтр</button>
+        <button class="service settings" id="settingsBtn">⚙</button>
+      </div>
+    </section>
   </div>
+  <div class="toast" id="toast"></div>
 
   <script>
     const categories = [
-      { key: 'all', label: 'Все' },
-      { key: 'resources', label: 'Ресурсы' },
-      { key: 'consumables', label: 'Расходники' },
-      { key: 'materials', label: 'Материалы' },
-      { key: 'food', label: 'Еда' },
-      { key: 'craft', label: 'Крафт' },
-      { key: 'keys', label: 'Ключи' }
+      { key: 'all', label: 'Все', icon: '▦' },
+      { key: 'resources', label: 'Ресурсы', icon: '🌿' },
+      { key: 'consumables', label: 'Расходники', icon: '🧪' },
+      { key: 'materials', label: 'Материалы', icon: '💎' },
+      { key: 'food', label: 'Еда', icon: '🍎' },
+      { key: 'craft', label: 'Крафт', icon: '⚒' },
+      { key: 'keys', label: 'Ключи', icon: '🗝' }
     ];
 
+    const rarityColors = ['#6fb0ff','#ff9b62','#ffd565','#8fd783','#d6a3ff','#78d8cc','#f294bf'];
+
     const items = [
-      { id:'pokeball',name:'Покебол',cat:'consumables',count:18,tag:'Ключевой предмет',desc:'Позволяет ловить монстров.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png' },
-      { id:'greatball',name:'Грейтбол',cat:'consumables',count:9,tag:'Расходник',desc:'Повышенный шанс поимки.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/great-ball.png' },
-      { id:'ultraball',name:'Ультрабол',cat:'consumables',count:4,tag:'Расходник',desc:'Для редких покемонов.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png' },
-      { id:'masterball',name:'Мастербол',cat:'keys',count:1,tag:'Легендарный',desc:'Ловит покемона без промаха.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png' },
-      { id:'potion',name:'Поушен',cat:'consumables',count:15,tag:'Лечение',desc:'Восстанавливает 20 HP.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/potion.png' },
-      { id:'super-potion',name:'Супер Поушен',cat:'consumables',count:6,tag:'Лечение',desc:'Восстанавливает 60 HP.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/super-potion.png' },
-      { id:'revive',name:'Ревайв',cat:'consumables',count:3,tag:'Поддержка',desc:'Поднимает покемона после нокаута.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/revive.png' },
-      { id:'razz',name:'Разз Берри',cat:'food',count:22,tag:'Еда',desc:'Слаще, чем обычная ягода.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/razz-berry.png' },
-      { id:'oran',name:'Оран Берри',cat:'food',count:17,tag:'Еда',desc:'Немного лечит в бою.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/oran-berry.png' },
-      { id:'pecha',name:'Пича Берри',cat:'food',count:12,tag:'Еда',desc:'Лечит отравление.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/pecha-berry.png' },
-      { id:'leaf-stone',name:'Листовой камень',cat:'materials',count:5,tag:'Эволюция',desc:'Эволюционный камень травы.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/leaf-stone.png' },
-      { id:'fire-stone',name:'Огненный камень',cat:'materials',count:4,tag:'Эволюция',desc:'Эволюционный камень огня.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/fire-stone.png' },
-      { id:'water-stone',name:'Водный камень',cat:'materials',count:4,tag:'Эволюция',desc:'Эволюционный камень воды.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/water-stone.png' },
-      { id:'thunder-stone',name:'Громовой камень',cat:'materials',count:3,tag:'Эволюция',desc:'Эволюционный камень молнии.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/thunder-stone.png' },
-      { id:'moon-stone',name:'Лунный камень',cat:'materials',count:2,tag:'Эволюция',desc:'Для редких эволюций.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/moon-stone.png' },
-      { id:'star-piece',name:'Звёздный осколок',cat:'resources',count:11,tag:'Ресурс',desc:'Сверкающий ресурс для обмена.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/star-piece.png' },
-      { id:'stardust',name:'Стардаст',cat:'resources',count:35,tag:'Ресурс',desc:'Пыль для усиления покемонов.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/stardust.png' },
-      { id:'honey',name:'Мёд',cat:'food',count:8,tag:'Еда',desc:'Приманивает диких покемонов.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/honey.png' },
-      { id:'silver-powder',name:'Серебряная пыль',cat:'materials',count:14,tag:'Материал',desc:'Редкий порошок насекомых.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/silver-powder.png' },
-      { id:'charcoal',name:'Уголь',cat:'materials',count:9,tag:'Материал',desc:'Усиливает огненные атаки.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/charcoal.png' },
-      { id:'mystic-water',name:'Мистическая вода',cat:'materials',count:13,tag:'Материал',desc:'Усиливает водные атаки.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/mystic-water.png' },
-      { id:'dragon-fang',name:'Клык дракона',cat:'materials',count:5,tag:'Материал',desc:'Редкий драконий трофей.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dragon-fang.png' },
-      { id:'rare-candy',name:'Редкая конфета',cat:'consumables',count:7,tag:'Прокачка',desc:'Повышает уровень на 1.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/rare-candy.png' },
-      { id:'escape-rope',name:'Канат побега',cat:'craft',count:10,tag:'Утилита',desc:'Мгновенно покинуть пещеру.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/escape-rope.png' },
-      { id:'old-amber',name:'Старый янтарь',cat:'keys',count:1,tag:'Ключевой',desc:'Ископаемый артефакт.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/old-amber.png' },
-      { id:'dome-fossil',name:'Купольный ископаемый',cat:'keys',count:1,tag:'Ключевой',desc:'Материал для воскрешения.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dome-fossil.png' },
-      { id:'helix-fossil',name:'Спиральный ископаемый',cat:'keys',count:1,tag:'Ключевой',desc:'Материал для воскрешения.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/helix-fossil.png' },
-      { id:'soft-sand',name:'Мягкий песок',cat:'resources',count:19,tag:'Ресурс',desc:'Сырьё для крафта.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/soft-sand.png' },
-      { id:'hard-stone',name:'Крепкий камень',cat:'resources',count:16,tag:'Ресурс',desc:'Сырьё для апгрейдов.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/hard-stone.png' },
-      { id:'tiny-mushroom',name:'Маленький гриб',cat:'food',count:20,tag:'Еда',desc:'Ингредиент для блюд.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/tiny-mushroom.png' }
-    ];
+      ['Покебол','consumables',8,'Ключевой предмет','Позволяет ловить монстров.'],
+      ['Эликсир сияния','consumables',5,'Редкость','Усиливает шанс критического броска.'],
+      ['Бутыль маны','consumables',3,'Расходник','Восстанавливает энергию навыков.'],
+      ['Мастерсфера','keys',1,'Ключевой предмет','Ловит редких монстров без промаха.'],
+      ['Небесное перо','resources',25,'Ресурс','Лёгкий материал для улучшений.'],
+      ['Карта руин','keys',4,'Ключ','Открывает скрытые руины.'],
+      ['Свиток ремесла','craft',4,'Крафт','Ускоряет изготовление вещей.'],
+      ['Элементальные сферы','resources',15,'Ресурс','Набор стихийных зарядов.'],
+      ['Ягоды леса','food',16,'Еда','Питательная закуска для питомцев.'],
+      ['Кристальный монокль','materials',12,'Материал','Оптический кристалл высокой чистоты.'],
+      ['Золотой ключ','keys',1,'Ключ','Открывает древние сундуки.'],
+      ['Звёздный осколок','resources',3,'Ресурс','Блестящий редкий осколок.'],
+      ['Сердце дружбы','food',7,'Еда','Поднимает настроение компаньона.'],
+      ['Призма эха','materials',9,'Материал','Резонирующий кристалл для крафта.'],
+      ['Старинный свиток','craft',2,'Крафт','Рецепт продвинутых предметов.'],
+      ['Доски сосны','materials',18,'Материал','Заготовка для постройки станков.'],
+      ['Глыба руды','materials',11,'Материал','Металл для ковки инструментов.'],
+      ['Ледяной кристалл','materials',6,'Материал','Холодный минерал для чар.'],
+      ['Лист целителя','food',30,'Еда','Снимает слабые дебаффы.'],
+      ['Янтарный мёд','food',5,'Еда','Редкий сладкий бафф к скорости.']
+    ].map((entry, index) => ({
+      id: `item-${index + 1}`,
+      name: entry[0],
+      cat: entry[1],
+      count: entry[2],
+      tag: entry[3],
+      desc: entry[4],
+      marker: rarityColors[index % rarityColors.length],
+      img: `https://castles-vk.ru/pokepark/item/${index + 1}.png`
+    }));
 
     const state = {
       category: 'all',
       search: '',
       selectedId: items[0].id,
-      amount: 1,
+      amount: items[0].count,
       maxCapacity: 120
     };
 
     const el = {
-      categories: document.getElementById('categories'),
+      tabs: document.getElementById('tabs'),
+      grid: document.getElementById('grid'),
       searchInput: document.getElementById('searchInput'),
-      itemGrid: document.getElementById('itemGrid'),
       selectedImg: document.getElementById('selectedImg'),
       selectedName: document.getElementById('selectedName'),
-      selectedDesc: document.getElementById('selectedDesc'),
+      selectedDescription: document.getElementById('selectedDescription'),
       amountText: document.getElementById('amountText'),
       capText: document.getElementById('capText'),
       toast: document.getElementById('toast')
     };
 
-    const getSelected = () => items.find(x => x.id === state.selectedId) || items[0];
+    const selectedItem = () => items.find((item) => item.id === state.selectedId) || items[0];
 
-    const filtered = () => items.filter(item => {
-      const categoryMatch = state.category === 'all' || item.cat === state.category;
-      const searchMatch = (item.name + ' ' + item.tag + ' ' + item.desc).toLowerCase().includes(state.search.toLowerCase());
-      return categoryMatch && searchMatch;
+    const filteredItems = () => items.filter((item) => {
+      const byCategory = state.category === 'all' || item.cat === state.category;
+      const query = `${item.name} ${item.tag} ${item.desc}`.toLowerCase();
+      const bySearch = query.includes(state.search.toLowerCase());
+      return byCategory && bySearch;
     });
 
-    function showToast(text) {
-      el.toast.textContent = text;
+    function showToast(message) {
+      el.toast.textContent = message;
       el.toast.classList.add('show');
       clearTimeout(showToast.timer);
-      showToast.timer = setTimeout(() => el.toast.classList.remove('show'), 1600);
+      showToast.timer = setTimeout(() => el.toast.classList.remove('show'), 1500);
     }
 
-    function renderCategories() {
-      el.categories.innerHTML = '';
-      categories.forEach(cat => {
+    function renderTabs() {
+      el.tabs.innerHTML = '';
+      categories.forEach((category) => {
         const btn = document.createElement('button');
-        btn.className = `cat ${cat.key === state.category ? 'active' : ''}`;
-        btn.innerHTML = `<span class="cat-dot" aria-hidden="true"></span><span>${cat.label}</span>`;
+        btn.className = `tab ${state.category === category.key ? 'active' : ''}`;
+        btn.innerHTML = `<span class="ico">${category.icon}</span><span>${category.label}</span>`;
         btn.onclick = () => {
-          state.category = cat.key;
+          state.category = category.key;
           render();
         };
-        el.categories.append(btn);
+        el.tabs.append(btn);
       });
     }
 
-    function renderItems() {
-      const list = filtered();
-      el.itemGrid.innerHTML = '';
-      if (!list.length) {
-        el.itemGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#6782ab;font-weight:800">Ничего не найдено. Попробуйте другой запрос.</div>';
+    function renderGrid() {
+      const view = filteredItems();
+      el.grid.innerHTML = '';
+
+      if (!view.length) {
+        el.grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#6d84a7; font-size:18px; font-weight:800; padding:24px 8px;">Ничего не найдено. Попробуйте изменить поиск.</div>';
         return;
       }
 
-      if (!list.some(i => i.id === state.selectedId)) state.selectedId = list[0].id;
+      if (!view.find((item) => item.id === state.selectedId)) {
+        state.selectedId = view[0].id;
+        state.amount = Math.min(state.amount, view[0].count) || view[0].count;
+      }
 
-      list.forEach(item => {
+      view.forEach((item) => {
         const card = document.createElement('button');
         card.className = `item ${item.id === state.selectedId ? 'active' : ''}`;
-        card.innerHTML = `<img src="${item.img}" alt="${item.name}" /><div class="qty"><span class="qty-dot" aria-hidden="true"></span>x${item.count}</div>`;
+        card.innerHTML = `
+          <img src="${item.img}" alt="${item.name}" />
+          <div class="qty"><span class="qty-dot" style="background:${item.marker}"></span>x${item.count}</div>
+        `;
         card.onclick = () => {
           state.selectedId = item.id;
-          state.amount = 1;
+          state.amount = item.count;
           render();
         };
-        el.itemGrid.append(card);
+        el.grid.append(card);
       });
     }
 
     function renderDetails() {
-      const item = getSelected();
+      const item = selectedItem();
       el.selectedImg.src = item.img;
-      el.selectedName.innerHTML = `${item.name} <span class="type-tag">${item.tag}</span>`;
-      el.selectedDesc.textContent = item.desc;
+      el.selectedName.innerHTML = `${item.name}<span class="badge">${item.tag}</span>`;
+      el.selectedDescription.textContent = item.desc;
       el.amountText.textContent = state.amount;
-      el.capText.textContent = `${items.reduce((sum, i) => sum + i.count, 0)} / ${state.maxCapacity}`;
+      const total = items.reduce((sum, itemData) => sum + itemData.count, 0);
+      el.capText.textContent = `${total} / ${state.maxCapacity}`;
     }
 
-    function updateAmount(delta) {
-      const item = getSelected();
-      state.amount = Math.max(1, Math.min(item.count, state.amount + delta));
+    function adjustAmount(delta) {
+      const item = selectedItem();
+      state.amount = Math.max(1, Math.min(item.count || 1, state.amount + delta));
       renderDetails();
     }
 
-    function action(type) {
-      const item = getSelected();
+    function doAction(actionKey) {
+      const item = selectedItem();
       if (!item) return;
-      if ((type === 'use' || type === 'drop' || type === 'sell' || type === 'split') && item.count < state.amount) {
+
+      if (['use', 'drop', 'sell'].includes(actionKey) && item.count < state.amount) {
         showToast('Недостаточно предметов.');
         return;
       }
-      if (type === 'use') {
-        item.count -= state.amount;
-        showToast(`Использовано: ${item.name} ×${state.amount}`);
+
+      if (actionKey === 'use') {
+        item.count = Math.max(0, item.count - state.amount);
+        showToast(`Использовано: ${item.name} x${state.amount}`);
       }
-      if (type === 'drop') {
-        item.count -= state.amount;
-        showToast(`Выброшено: ${item.name} ×${state.amount}`);
+      if (actionKey === 'drop') {
+        item.count = Math.max(0, item.count - state.amount);
+        showToast(`Выброшено: ${item.name} x${state.amount}`);
       }
-      if (type === 'sell') {
-        item.count -= state.amount;
-        showToast(`Продано: ${item.name} ×${state.amount}`);
+      if (actionKey === 'sell') {
+        item.count = Math.max(0, item.count - state.amount);
+        showToast(`Продано: ${item.name} x${state.amount}`);
       }
-      if (type === 'split') {
-        showToast(`Разделено: ${item.name} ×${state.amount}`);
+      if (actionKey === 'split') {
+        showToast(`Разделено: ${item.name} x${state.amount}`);
       }
-      if (type === 'craft') {
-        showToast(`${item.name} отправлен в крафт.`);
+      if (actionKey === 'craft') {
+        showToast(`Отправлено в крафт: ${item.name}.`);
       }
-      item.count = Math.max(0, item.count);
-      state.amount = 1;
+
+      state.amount = Math.max(1, item.count || 1);
       render();
     }
 
     function render() {
-      renderCategories();
-      renderItems();
+      renderTabs();
+      renderGrid();
       renderDetails();
     }
 
-    document.getElementById('plusBtn').onclick = () => updateAmount(1);
-    document.getElementById('minusBtn').onclick = () => updateAmount(-1);
+    document.getElementById('plusBtn').onclick = () => adjustAmount(1);
+    document.getElementById('minusBtn').onclick = () => adjustAmount(-1);
 
-    el.searchInput.addEventListener('input', e => {
-      state.search = e.target.value.trim();
+    el.searchInput.addEventListener('input', (event) => {
+      state.search = event.target.value.trim();
       render();
     });
 
     document.getElementById('expandBtn').onclick = () => {
       state.maxCapacity += 20;
-      showToast('Куплено +20 ячеек инвентаря.');
+      showToast('Куплено +20 слотов инвентаря.');
       renderDetails();
     };
 
-    document.getElementById('useBtn').onclick = () => action('use');
-    document.getElementById('dropBtn').onclick = () => action('drop');
-    document.getElementById('sellBtn').onclick = () => action('sell');
-    document.getElementById('splitBtn').onclick = () => action('split');
-    document.getElementById('craftBtn').onclick = () => action('craft');
+    document.getElementById('useBtn').onclick = () => doAction('use');
+    document.getElementById('splitBtn').onclick = () => doAction('split');
+    document.getElementById('craftBtn').onclick = () => doAction('craft');
+    document.getElementById('dropBtn').onclick = () => doAction('drop');
+    document.getElementById('sellBtn').onclick = () => doAction('sell');
+
     document.getElementById('sortBtn').onclick = () => {
       items.sort((a, b) => b.count - a.count);
-      showToast('Сортировка: сначала самые большие стаки.');
+      showToast('Сортировка: сначала большие стаки.');
       render();
     };
+
     document.getElementById('filterBtn').onclick = () => {
-      state.search = 'камень';
+      state.search = 'кристалл';
       el.searchInput.value = state.search;
-      showToast('Быстрый фильтр: камни.');
+      showToast('Фильтр: кристаллы.');
       render();
     };
-    document.getElementById('settingsBtn').onclick = () => showToast('Настройки инвентаря (демо).');
-    document.getElementById('closeBtn').onclick = () => showToast('Окно инвентаря нельзя закрыть в демо.');
+
+    document.getElementById('settingsBtn').onclick = () => showToast('Настройки (демо-режим).');
+    document.getElementById('closeBtn').onclick = () => showToast('Окно нельзя закрыть в демо.');
 
     render();
   </script>
