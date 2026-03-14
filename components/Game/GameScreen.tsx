@@ -359,41 +359,41 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
       <div className="pointer-events-none absolute left-[-140px] top-10 h-80 w-80 rounded-full bg-[#c23c2a]/20 blur-[120px]" />
       <div className="pointer-events-none absolute bottom-[-120px] right-[-100px] h-[24rem] w-[24rem] rounded-full bg-[#2f63c9]/15 blur-[130px]" />
 
-      <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between px-6 pb-4 text-white">
+      <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between px-4 pb-3 text-white">
         <div className="flex items-end gap-4">
-          <div className="h-24 w-24 overflow-hidden rounded-md border border-[#444b57] shadow-[0_12px_35px_rgba(0,0,0,0.55)]">
+          <div className="h-20 w-20 overflow-hidden rounded-md border border-[#444b57] shadow-[0_10px_28px_rgba(0,0,0,0.55)]">
             <img src={currentHeroImage} alt={heroData.name} className="h-full w-full object-cover" />
           </div>
-          <div className="space-y-3 rounded-lg border border-[#2a2d33] bg-[#090b10]/65 p-3 backdrop-blur-sm">
-            <div className="font-[Cinzel] text-lg uppercase tracking-[0.3em] text-[#f7e7c0]">
+          <div className="space-y-2 rounded-lg border border-[#2a2d33] bg-[#090b10]/65 p-2.5 backdrop-blur-sm">
+            <div className="font-[Cinzel] text-base uppercase tracking-[0.2em] text-[#f7e7c0]">
               {heroData.name}
             </div>
             <div className="space-y-2">
-              <div className="h-3 w-64 overflow-hidden rounded-full border border-[#2a2d33] bg-[#121419]">
+              <div className="h-2.5 w-56 overflow-hidden rounded-full border border-[#2a2d33] bg-[#121419]">
                 <div
                   className="h-full bg-gradient-to-r from-[#1d6b3a] to-[#4edb7c]"
                   style={{ width: `${(playerSnapshot.hp / playerSnapshot.maxHp) * 100}%` }}
                 />
               </div>
-              <div className="h-3 w-64 overflow-hidden rounded-full border border-[#2a2d33] bg-[#121419]">
+              <div className="h-2.5 w-56 overflow-hidden rounded-full border border-[#2a2d33] bg-[#121419]">
                 <div
                   className="h-full bg-gradient-to-r from-[#1a2f6b] to-[#3b74ff]"
                   style={{ width: `${(playerSnapshot.mana / playerSnapshot.maxMana) * 100}%` }}
                 />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-2 text-xs uppercase tracking-[0.2em] text-[#9aa0a8]">
-              <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-3 py-2">
+            <div className="grid grid-cols-3 gap-1.5 text-[10px] uppercase tracking-[0.14em] text-[#9aa0a8]">
+              <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-2 py-1.5">
                 Урон
-                <div className="text-base font-semibold text-white">{heroStats.damage}</div>
+                <div className="text-sm font-semibold text-white">{heroStats.damage}</div>
               </div>
-              <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-3 py-2">
+              <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-2 py-1.5">
                 Броня
-                <div className="text-base font-semibold text-white">{heroStats.armor}</div>
+                <div className="text-sm font-semibold text-white">{heroStats.armor}</div>
               </div>
-              <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-3 py-2">
+              <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-2 py-1.5">
                 Скорость
-                <div className="text-base font-semibold text-white">{heroStats.speed}</div>
+                <div className="text-sm font-semibold text-white">{heroStats.speed}</div>
               </div>
             </div>
           </div>
@@ -425,18 +425,18 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
           <div className="flex items-center gap-4">
             <button
               onClick={() => setShopOpen((prev) => !prev)}
-              className="flex items-center gap-2 rounded-md border border-[#454d59] bg-[#121419]/85 px-4 py-2 text-xs uppercase tracking-[0.2em] text-[#f7e7c0] shadow-[0_8px_20px_rgba(0,0,0,0.35)]"
+              className="flex items-center gap-1.5 rounded-md border border-[#454d59] bg-[#121419]/85 px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-[#f7e7c0] shadow-[0_8px_20px_rgba(0,0,0,0.35)]"
             >
-              <ShoppingBag className="h-4 w-4" />
+              <ShoppingBag className="h-3.5 w-3.5" />
               Лавка
             </button>
-            <div className="rounded-md border border-[#454d59] bg-[#121419]/85 px-4 py-2 text-xs uppercase tracking-[0.2em] text-[#c8ccd4] shadow-[0_8px_20px_rgba(0,0,0,0.35)]">
+            <div className="rounded-md border border-[#454d59] bg-[#121419]/85 px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-[#c8ccd4] shadow-[0_8px_20px_rgba(0,0,0,0.35)]">
               Золото: <span className="text-[#ffe39a]">{gold}</span>
             </div>
             {onExit && (
               <button
                 onClick={onExit}
-                className="rounded-md border border-[#c23c2a] bg-[#4b1411]/80 px-4 py-2 text-xs uppercase tracking-[0.2em] text-white"
+                className="rounded-md border border-[#c23c2a] bg-[#4b1411]/80 px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-white"
               >
                 Выход
               </button>
@@ -445,16 +445,16 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
         </div>
       </div>
 
-      <div className="absolute bottom-4 left-4 space-y-3 rounded-lg border border-[#2a2d33] bg-[#090b10]/65 p-3 backdrop-blur-sm">
-        <canvas ref={minimapRef} width={180} height={180} className="rounded-md border border-[#2a2d33]" />
-        <div className="grid grid-cols-6 gap-2">
+      <div className="absolute bottom-3 left-3 space-y-2 rounded-lg border border-[#2a2d33] bg-[#090b10]/65 p-2.5 backdrop-blur-sm">
+        <canvas ref={minimapRef} width={150} height={150} className="rounded-md border border-[#2a2d33]" />
+        <div className="grid grid-cols-6 gap-1.5">
           {Array.from({ length: 6 }).map((_, index) => (
             <div
               key={`inv-${index}`}
-              className="h-10 w-10 rounded-md border border-[#2a2d33] bg-[#121419]/80 text-[9px] uppercase text-[#9aa0a8]"
+              className="h-9 w-9 overflow-hidden rounded-md border border-[#2a2d33] bg-[#121419]/80 text-[8px] uppercase text-[#9aa0a8]"
             >
               {inventory[index] && (
-                <div className="flex h-full w-full items-center justify-center text-[10px] text-white">
+                <div className="flex h-full w-full items-center justify-center p-1 text-center text-[8px] leading-tight text-white">
                   {SHOP_ITEMS.find((item) => item.id === inventory[index])?.name ?? ''}
                 </div>
               )}
@@ -464,14 +464,14 @@ const GameScreen: React.FC<GameScreenProps> = ({ selectedHero, onExit }) => {
       </div>
 
       {shopOpen && (
-        <div className="absolute bottom-32 right-6 w-80 rounded-xl border border-[#2a2d33] bg-[#0c0e12]/95 p-4 text-white shadow-[0_0_30px_rgba(0,0,0,0.6)]">
-          <div className="mb-3 font-[Cinzel] text-sm uppercase tracking-[0.4em] text-[#f7e7c0]">Лавка</div>
-          <div className="grid grid-cols-2 gap-3 text-xs uppercase tracking-[0.2em]">
+        <div className="absolute bottom-28 right-4 w-72 rounded-xl border border-[#2a2d33] bg-[#0c0e12]/95 p-3 text-white shadow-[0_0_30px_rgba(0,0,0,0.6)]">
+          <div className="mb-2 font-[Cinzel] text-xs uppercase tracking-[0.28em] text-[#f7e7c0]">Лавка</div>
+          <div className="grid grid-cols-2 gap-2 text-[11px] uppercase tracking-[0.12em]">
             {SHOP_ITEMS.map((item) => (
               <button
                 key={item.id}
                 onClick={() => handlePurchase(item.id)}
-                className="rounded-md border border-[#2a2d33] bg-[#121419]/80 px-3 py-2 text-left transition hover:brightness-125"
+                className="rounded-md border border-[#2a2d33] bg-[#121419]/80 px-2.5 py-1.5 text-left transition hover:brightness-125"
               >
                 <div className="text-white">{item.name}</div>
                 <div className="text-[#9aa0a8]">{item.cost} gold</div>
