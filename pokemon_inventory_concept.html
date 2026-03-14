@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>PokePark Inventory Concept</title>
+  <style>
+    :root {
+      --panel: #dbe4f4;
+      --panel-2: #edf3ff;
+      --line: #b7c8e6;
+      --text: #32486e;
+      --accent: #59a9ff;
+      --shadow: 0 16px 40px rgba(8, 20, 50, 0.35);
+      --green: #4cd04f;
+      --blue: #5d8eff;
+      --orange: #f4b544;
+      --red: #ea6f6f;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      font-family: "Nunito", "Segoe UI", system-ui, sans-serif;
+      color: var(--text);
+      overflow: hidden;
+      background: #7ec2ff;
+    }
+
+    .scene {
+      position: fixed;
+      inset: 0;
+      background-image: linear-gradient(rgba(255,255,255,.08), rgba(7,25,60,.18)), url('https://castles-vk.ru/pokepark/img/location/1.png');
+      background-position: center;
+      background-size: cover;
+      display: grid;
+      place-items: center;
+      padding: 10px;
+    }
+
+    .phone {
+      width: min(100vw, 540px);
+      height: min(100vh, calc(min(100vw, 540px) * 1.7778));
+      aspect-ratio: 9/16;
+      border-radius: 34px;
+      overflow: hidden;
+      position: relative;
+      border: 2px solid rgba(255,255,255,.75);
+      box-shadow: var(--shadow);
+      background: transparent;
+    }
+
+    .inventory {
+      position: absolute;
+      inset: 12px;
+      border-radius: 28px;
+      background: linear-gradient(180deg, #ebf2ff 0%, #d6e2f6 100%);
+      border: 2px solid #b9cbea;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 8px 24px rgba(13, 44, 94, .24);
+      display: grid;
+      grid-template-rows: auto auto auto 1fr auto auto;
+      gap: 8px;
+      padding: 14px;
+    }
+
+    .header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      padding: 2px 2px 8px;
+      border-bottom: 2px solid #c4d3ec;
+    }
+
+    .title {
+      text-align: center;
+      font-weight: 900;
+      font-size: clamp(26px, 4.2vw, 44px);
+      color: #2f4672;
+      letter-spacing: .3px;
+      margin-left: 38px;
+    }
+
+    .close {
+      width: 46px; height: 46px;
+      border-radius: 16px;
+      border: 2px solid #b8c8e5;
+      background: linear-gradient(180deg, #f8fbff, #d6e2f5);
+      color: #5571a2;
+      font-size: 32px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .search-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .search-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #ecf2fe;
+      border: 2px solid #c6d5eb;
+      border-radius: 999px;
+      padding: 0 14px;
+      height: 48px;
+    }
+
+    .search-wrap input {
+      border: 0;
+      background: transparent;
+      width: 100%;
+      outline: none;
+      font-size: 27px;
+      color: #335079;
+      font-weight: 700;
+    }
+
+    .capacity {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 17px;
+      font-weight: 800;
+      color: #48659a;
+      white-space: nowrap;
+      padding-right: 4px;
+    }
+
+    .cap-btn {
+      width: 42px; height: 42px;
+      border-radius: 13px;
+      border: 2px solid #c2d2eb;
+      background: linear-gradient(180deg,#f8fbff,#dbe8f9);
+      color: #5f7da8;
+      font-weight: 900;
+      font-size: 30px;
+      cursor: pointer;
+    }
+
+    .categories {
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+      scroll-snap-type: x proximity;
+      border: 2px solid #c1d0e8;
+      border-radius: 18px;
+      background: #eff4ff;
+      padding: 2px;
+    }
+
+    .categories::-webkit-scrollbar { display:none; }
+
+    .cat {
+      border: 0;
+      background: transparent;
+      color: #49658f;
+      min-width: 110px;
+      height: 72px;
+      font-size: 17px;
+      font-weight: 800;
+      display: grid;
+      grid-template-rows: auto auto;
+      align-content: center;
+      justify-items: center;
+      border-right: 1px solid #d2def0;
+      scroll-snap-align: start;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .cat:last-child { border-right: 0; }
+
+    .cat.active {
+      color: #fff;
+      border-radius: 16px;
+      border-right-color: transparent;
+      background: linear-gradient(180deg, #54acff, #2f8de7);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.45);
+    }
+
+    .item-grid {
+      min-height: 0;
+      overflow-y: auto;
+      padding-right: 2px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      align-content: start;
+    }
+
+    .item {
+      border: 2px solid #cad7ec;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #fbfdff, #e8eefb);
+      min-height: 114px;
+      padding: 6px;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.95);
+      cursor: pointer;
+    }
+
+    .item.active {
+      border-color: #f6c858;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 0 0 2px rgba(245, 192, 46, .25);
+    }
+
+    .item img {
+      width: 100%;
+      max-width: 72px;
+      margin: auto;
+      image-rendering: auto;
+      filter: drop-shadow(0 4px 6px rgba(47,85,140,.25));
+    }
+
+    .qty {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 17px;
+      font-weight: 900;
+      color: #476594;
+    }
+
+    .details {
+      border-top: 2px solid #c5d3eb;
+      padding-top: 8px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .selected-icon {
+      width: 74px;
+      height: 74px;
+      border-radius: 18px;
+      border: 2px solid #65aaf2;
+      background: #f5f9ff;
+      padding: 6px;
+      display: grid;
+      place-items: center;
+    }
+
+    .selected-icon img { width: 58px; }
+
+    .meta h3 {
+      margin: 0;
+      font-size: 42px;
+      line-height: 1;
+    }
+
+    .meta p {
+      margin: 6px 0 0;
+      font-size: 33px;
+      color: #5d759d;
+      line-height: 1.1;
+    }
+
+    .type-tag {
+      display: inline-block;
+      background: #eaf1ff;
+      color: #5f7bb0;
+      font-size: 24px;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 2px 10px;
+      margin-left: 8px;
+      border: 1px solid #c5d8f5;
+      vertical-align: middle;
+    }
+
+    .stepper {
+      display: grid;
+      grid-template-columns: 38px 56px 38px;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .stepper button {
+      height: 38px;
+      border-radius: 12px;
+      border: 2px solid #c0cfe8;
+      background: linear-gradient(180deg, #fbfdff, #dde8fa);
+      color: #4f6998;
+      font-size: 30px;
+      font-weight: 900;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .stepper strong {
+      text-align: center;
+      font-size: 19px;
+      color: #3b5785;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 14px;
+      color: #fff;
+      font-weight: 900;
+      font-size: 35px;
+      height: 50px;
+      cursor: pointer;
+      text-shadow: 0 1px 1px rgba(0,0,0,.2);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 3px 7px rgba(34,59,95,.28);
+    }
+
+    .btn.green { background: linear-gradient(180deg,#68e25b,#2ebf30); }
+    .btn.blue { background: linear-gradient(180deg,#72a8ff,#527bff); }
+    .btn.orange { background: linear-gradient(180deg,#ffce64,#f2a524); }
+    .btn.red { background: linear-gradient(180deg,#ff9f9f,#e05f5f); }
+
+    .footer-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 8px;
+    }
+
+    .small-btn {
+      border: 2px solid #becde7;
+      background: linear-gradient(180deg,#f7fbff,#dee8f9);
+      border-radius: 13px;
+      color: #5b76a2;
+      font-size: 16px;
+      font-weight: 900;
+      height: 42px;
+      cursor: pointer;
+    }
+
+    .small-btn.primary {
+      background: linear-gradient(180deg,#5fb2ff,#3490e8);
+      border-color: #4598eb;
+      color: #fff;
+    }
+
+    .toast {
+      position: absolute;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%) translateY(12px);
+      background: rgba(30, 61, 110, .92);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-weight: 800;
+      font-size: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transition: .25s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <div class="scene">
+    <main class="phone">
+      <section class="inventory">
+        <div class="header">
+          <div class="title">Инвентарь</div>
+          <button class="close" id="closeBtn">×</button>
+        </div>
+
+        <div class="search-row">
+          <label class="search-wrap">
+            <span>🔍</span>
+            <input id="searchInput" type="search" placeholder="Поиск по предметам" />
+          </label>
+          <div class="capacity">Предметов: <span id="capText">0 / 120</span> <button class="cap-btn" id="expandBtn">+</button></div>
+        </div>
+
+        <div class="categories" id="categories"></div>
+
+        <div class="item-grid" id="itemGrid"></div>
+
+        <div class="details">
+          <div class="selected-icon"><img id="selectedImg" alt="Предмет" /></div>
+          <div class="meta">
+            <h3 id="selectedName"></h3>
+            <p id="selectedDesc"></p>
+          </div>
+          <div>
+            <div style="font-size:12px;color:#6078a4;font-weight:800;margin-bottom:4px;text-align:right">Количество</div>
+            <div class="stepper">
+              <button id="minusBtn">−</button>
+              <strong id="amountText">1</strong>
+              <button id="plusBtn">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn green" id="useBtn">✅ Использовать</button>
+          <button class="btn blue" id="splitBtn">↕ Разделить</button>
+          <button class="btn orange" id="craftBtn">🛠 В крафт</button>
+          <button class="btn red" id="dropBtn">🗑 Выбросить</button>
+        </div>
+
+        <div class="footer-actions">
+          <button class="small-btn primary" id="sellBtn">💰 Продать</button>
+          <button class="small-btn" id="sortBtn">↕ Сортировка</button>
+          <button class="small-btn" id="filterBtn">⏷ Фильтр</button>
+          <button class="small-btn" id="settingsBtn">⚙️</button>
+        </div>
+      </section>
+      <div class="toast" id="toast"></div>
+    </main>
+  </div>
+
+  <script>
+    const categories = [
+      { key: 'all', label: '📦\nВсе' },
+      { key: 'resources', label: '🌿\nРесурсы' },
+      { key: 'consumables', label: '🧪\nРасходники' },
+      { key: 'materials', label: '💎\nМатериалы' },
+      { key: 'food', label: '🍎\nЕда' },
+      { key: 'craft', label: '🛠\nКрафт' },
+      { key: 'keys', label: '🗝\nКлючи' }
+    ];
+
+    const items = [
+      { id:'pokeball',name:'Покебол',cat:'consumables',count:18,tag:'Ключевой предмет',desc:'Позволяет ловить монстров.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png' },
+      { id:'greatball',name:'Грейтбол',cat:'consumables',count:9,tag:'Расходник',desc:'Повышенный шанс поимки.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/great-ball.png' },
+      { id:'ultraball',name:'Ультрабол',cat:'consumables',count:4,tag:'Расходник',desc:'Для редких покемонов.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png' },
+      { id:'masterball',name:'Мастербол',cat:'keys',count:1,tag:'Легендарный',desc:'Ловит покемона без промаха.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png' },
+      { id:'potion',name:'Поушен',cat:'consumables',count:15,tag:'Лечение',desc:'Восстанавливает 20 HP.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/potion.png' },
+      { id:'super-potion',name:'Супер Поушен',cat:'consumables',count:6,tag:'Лечение',desc:'Восстанавливает 60 HP.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/super-potion.png' },
+      { id:'revive',name:'Ревайв',cat:'consumables',count:3,tag:'Поддержка',desc:'Поднимает покемона после нокаута.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/revive.png' },
+      { id:'razz',name:'Разз Берри',cat:'food',count:22,tag:'Еда',desc:'Слаще, чем обычная ягода.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/razz-berry.png' },
+      { id:'oran',name:'Оран Берри',cat:'food',count:17,tag:'Еда',desc:'Немного лечит в бою.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/oran-berry.png' },
+      { id:'pecha',name:'Пича Берри',cat:'food',count:12,tag:'Еда',desc:'Лечит отравление.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/pecha-berry.png' },
+      { id:'leaf-stone',name:'Листовой камень',cat:'materials',count:5,tag:'Эволюция',desc:'Эволюционный камень травы.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/leaf-stone.png' },
+      { id:'fire-stone',name:'Огненный камень',cat:'materials',count:4,tag:'Эволюция',desc:'Эволюционный камень огня.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/fire-stone.png' },
+      { id:'water-stone',name:'Водный камень',cat:'materials',count:4,tag:'Эволюция',desc:'Эволюционный камень воды.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/water-stone.png' },
+      { id:'thunder-stone',name:'Громовой камень',cat:'materials',count:3,tag:'Эволюция',desc:'Эволюционный камень молнии.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/thunder-stone.png' },
+      { id:'moon-stone',name:'Лунный камень',cat:'materials',count:2,tag:'Эволюция',desc:'Для редких эволюций.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/moon-stone.png' },
+      { id:'star-piece',name:'Звёздный осколок',cat:'resources',count:11,tag:'Ресурс',desc:'Сверкающий ресурс для обмена.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/star-piece.png' },
+      { id:'stardust',name:'Стардаст',cat:'resources',count:35,tag:'Ресурс',desc:'Пыль для усиления покемонов.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/stardust.png' },
+      { id:'honey',name:'Мёд',cat:'food',count:8,tag:'Еда',desc:'Приманивает диких покемонов.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/honey.png' },
+      { id:'silver-powder',name:'Серебряная пыль',cat:'materials',count:14,tag:'Материал',desc:'Редкий порошок насекомых.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/silver-powder.png' },
+      { id:'charcoal',name:'Уголь',cat:'materials',count:9,tag:'Материал',desc:'Усиливает огненные атаки.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/charcoal.png' },
+      { id:'mystic-water',name:'Мистическая вода',cat:'materials',count:13,tag:'Материал',desc:'Усиливает водные атаки.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/mystic-water.png' },
+      { id:'dragon-fang',name:'Клык дракона',cat:'materials',count:5,tag:'Материал',desc:'Редкий драконий трофей.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dragon-fang.png' },
+      { id:'rare-candy',name:'Редкая конфета',cat:'consumables',count:7,tag:'Прокачка',desc:'Повышает уровень на 1.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/rare-candy.png' },
+      { id:'escape-rope',name:'Канат побега',cat:'craft',count:10,tag:'Утилита',desc:'Мгновенно покинуть пещеру.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/escape-rope.png' },
+      { id:'old-amber',name:'Старый янтарь',cat:'keys',count:1,tag:'Ключевой',desc:'Ископаемый артефакт.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/old-amber.png' },
+      { id:'dome-fossil',name:'Купольный ископаемый',cat:'keys',count:1,tag:'Ключевой',desc:'Материал для воскрешения.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/dome-fossil.png' },
+      { id:'helix-fossil',name:'Спиральный ископаемый',cat:'keys',count:1,tag:'Ключевой',desc:'Материал для воскрешения.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/helix-fossil.png' },
+      { id:'soft-sand',name:'Мягкий песок',cat:'resources',count:19,tag:'Ресурс',desc:'Сырьё для крафта.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/soft-sand.png' },
+      { id:'hard-stone',name:'Крепкий камень',cat:'resources',count:16,tag:'Ресурс',desc:'Сырьё для апгрейдов.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/hard-stone.png' },
+      { id:'tiny-mushroom',name:'Маленький гриб',cat:'food',count:20,tag:'Еда',desc:'Ингредиент для блюд.',img:'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/tiny-mushroom.png' }
+    ];
+
+    const state = {
+      category: 'all',
+      search: '',
+      selectedId: items[0].id,
+      amount: 1,
+      maxCapacity: 120
+    };
+
+    const el = {
+      categories: document.getElementById('categories'),
+      searchInput: document.getElementById('searchInput'),
+      itemGrid: document.getElementById('itemGrid'),
+      selectedImg: document.getElementById('selectedImg'),
+      selectedName: document.getElementById('selectedName'),
+      selectedDesc: document.getElementById('selectedDesc'),
+      amountText: document.getElementById('amountText'),
+      capText: document.getElementById('capText'),
+      toast: document.getElementById('toast')
+    };
+
+    const getSelected = () => items.find(x => x.id === state.selectedId) || items[0];
+
+    const filtered = () => items.filter(item => {
+      const categoryMatch = state.category === 'all' || item.cat === state.category;
+      const searchMatch = (item.name + ' ' + item.tag + ' ' + item.desc).toLowerCase().includes(state.search.toLowerCase());
+      return categoryMatch && searchMatch;
+    });
+
+    function showToast(text) {
+      el.toast.textContent = text;
+      el.toast.classList.add('show');
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => el.toast.classList.remove('show'), 1600);
+    }
+
+    function renderCategories() {
+      el.categories.innerHTML = '';
+      categories.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = `cat ${cat.key === state.category ? 'active' : ''}`;
+        const [icon, label] = cat.label.split('\n');
+        btn.innerHTML = `<div style="font-size:22px;line-height:1">${icon}</div><div>${label}</div>`;
+        btn.onclick = () => {
+          state.category = cat.key;
+          render();
+        };
+        el.categories.append(btn);
+      });
+    }
+
+    function renderItems() {
+      const list = filtered();
+      el.itemGrid.innerHTML = '';
+      if (!list.length) {
+        el.itemGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:#6782ab;font-weight:800">Ничего не найдено. Попробуйте другой запрос.</div>';
+        return;
+      }
+
+      if (!list.some(i => i.id === state.selectedId)) state.selectedId = list[0].id;
+
+      list.forEach(item => {
+        const card = document.createElement('button');
+        card.className = `item ${item.id === state.selectedId ? 'active' : ''}`;
+        card.innerHTML = `<img src="${item.img}" alt="${item.name}" /><div class="qty">🔹 x${item.count}</div>`;
+        card.onclick = () => {
+          state.selectedId = item.id;
+          state.amount = 1;
+          render();
+        };
+        el.itemGrid.append(card);
+      });
+    }
+
+    function renderDetails() {
+      const item = getSelected();
+      el.selectedImg.src = item.img;
+      el.selectedName.innerHTML = `${item.name} <span class="type-tag">${item.tag}</span>`;
+      el.selectedDesc.textContent = item.desc;
+      el.amountText.textContent = state.amount;
+      el.capText.textContent = `${items.reduce((sum, i) => sum + i.count, 0)} / ${state.maxCapacity}`;
+    }
+
+    function updateAmount(delta) {
+      const item = getSelected();
+      state.amount = Math.max(1, Math.min(item.count, state.amount + delta));
+      renderDetails();
+    }
+
+    function action(type) {
+      const item = getSelected();
+      if (!item) return;
+      if ((type === 'use' || type === 'drop' || type === 'sell' || type === 'split') && item.count < state.amount) {
+        showToast('Недостаточно предметов.');
+        return;
+      }
+      if (type === 'use') {
+        item.count -= state.amount;
+        showToast(`Использовано: ${item.name} ×${state.amount}`);
+      }
+      if (type === 'drop') {
+        item.count -= state.amount;
+        showToast(`Выброшено: ${item.name} ×${state.amount}`);
+      }
+      if (type === 'sell') {
+        item.count -= state.amount;
+        showToast(`Продано: ${item.name} ×${state.amount}`);
+      }
+      if (type === 'split') {
+        showToast(`Разделено: ${item.name} ×${state.amount}`);
+      }
+      if (type === 'craft') {
+        showToast(`${item.name} отправлен в крафт.`);
+      }
+      item.count = Math.max(0, item.count);
+      state.amount = 1;
+      render();
+    }
+
+    function render() {
+      renderCategories();
+      renderItems();
+      renderDetails();
+    }
+
+    document.getElementById('plusBtn').onclick = () => updateAmount(1);
+    document.getElementById('minusBtn').onclick = () => updateAmount(-1);
+
+    el.searchInput.addEventListener('input', e => {
+      state.search = e.target.value.trim();
+      render();
+    });
+
+    document.getElementById('expandBtn').onclick = () => {
+      state.maxCapacity += 20;
+      showToast('Куплено +20 ячеек инвентаря.');
+      renderDetails();
+    };
+
+    document.getElementById('useBtn').onclick = () => action('use');
+    document.getElementById('dropBtn').onclick = () => action('drop');
+    document.getElementById('sellBtn').onclick = () => action('sell');
+    document.getElementById('splitBtn').onclick = () => action('split');
+    document.getElementById('craftBtn').onclick = () => action('craft');
+    document.getElementById('sortBtn').onclick = () => {
+      items.sort((a, b) => b.count - a.count);
+      showToast('Сортировка: сначала самые большие стаки.');
+      render();
+    };
+    document.getElementById('filterBtn').onclick = () => {
+      state.search = 'камень';
+      el.searchInput.value = state.search;
+      showToast('Быстрый фильтр: камни.');
+      render();
+    };
+    document.getElementById('settingsBtn').onclick = () => showToast('Настройки инвентаря (демо).');
+    document.getElementById('closeBtn').onclick = () => showToast('Окно инвентаря нельзя закрыть в демо.');
+
+    render();
+  </script>
+</body>
+</html>
