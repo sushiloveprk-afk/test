@@ -41,7 +41,7 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      font-family: "Nunito Sans", "Inter", "Rubik", system-ui, sans-serif;
+      font-family: "Inter", "Nunito Sans", "Rubik", system-ui, sans-serif;
       color: var(--text-main);
     }
 
@@ -82,7 +82,7 @@
       text-align: center;
       margin-left: 52px;
       font-weight: 900;
-      font-size: clamp(30px, 5.2vh, 52px);
+      font-size: clamp(24px, 4.1vh, 44px);
       line-height: 1;
       letter-spacing: .3px;
       color: #2f436a;
@@ -128,7 +128,7 @@
       width: 100%;
       background: transparent;
       color: var(--text-main-2);
-      font-size: clamp(17px, 2.2vw, 24px);
+      font-size: clamp(14px, 1.6vw, 18px);
       font-weight: 700;
       min-width: 0;
     }
@@ -161,7 +161,7 @@
       align-items: center;
       gap: 8px;
       color: #5574a2;
-      font-size: clamp(15px, 1.7vw, 20px);
+      font-size: clamp(13px, 1.45vw, 16px);
       font-weight: 700;
       white-space: nowrap;
     }
@@ -194,8 +194,8 @@
       height: 78px;
       background: transparent;
       color: #4f678f;
-      font-size: 16px;
-      font-weight: 800;
+      font-size: 14px;
+      font-weight: 700;
       cursor: pointer;
       display: grid;
       place-items: center;
@@ -240,14 +240,27 @@
     .item {
       border: 1px solid #c9d7e8;
       border-radius: 18px;
-      min-height: 112px;
+      min-height: 126px;
       background: linear-gradient(180deg, #fafcff, #f1f6fd);
       box-shadow: inset 0 1px 0 rgba(255,255,255,.95);
-      padding: 6px;
+      padding: 7px;
       display: grid;
       grid-template-rows: 1fr auto;
+      gap: 6px;
       cursor: pointer;
       position: relative;
+    }
+
+    .item-media {
+      width: 100%;
+      min-height: 0;
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(255,255,255,.88), rgba(236, 244, 254, .96));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.95);
+      overflow: hidden;
+      padding: 4px;
+      display: grid;
+      place-items: center;
     }
 
     .item.active {
@@ -269,10 +282,10 @@
     }
 
     .item img {
-      width: min(62px, 72%);
-      max-height: 62px;
+      width: 100%;
+      height: 100%;
       object-fit: contain;
-      margin: auto;
+      margin: 0;
       filter: drop-shadow(0 4px 5px rgba(60, 100, 150, .22));
     }
 
@@ -281,8 +294,9 @@
       align-items: center;
       gap: 6px;
       color: #47628e;
-      font-weight: 900;
-      font-size: 16px;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: .1px;
     }
 
     .qty-dot {
@@ -315,11 +329,11 @@
       box-shadow: inset 0 1px 0 rgba(255,255,255,.95);
     }
 
-    .selected-slot img { width: 72px; max-height: 72px; object-fit: contain; }
+    .selected-slot img { width: 100%; height: 100%; object-fit: contain; padding: 10px; }
 
     h3 {
       margin: 0;
-      font-size: clamp(24px, 2.2vw, 30px);
+      font-size: clamp(20px, 1.8vw, 26px);
       font-weight: 900;
       line-height: 1;
       color: #2f456b;
@@ -340,7 +354,7 @@
 
     .description {
       margin-top: 10px;
-      font-size: clamp(15px, 1.7vw, 18px);
+      font-size: clamp(13px, 1.4vw, 16px);
       color: #657fa7;
       font-weight: 700;
     }
@@ -384,7 +398,7 @@
 
     .stepper strong {
       text-align: center;
-      font-size: 30px;
+      font-size: 24px;
       color: #314a73;
       font-weight: 900;
     }
@@ -401,8 +415,8 @@
       border: 1px solid transparent;
       border-radius: 16px;
       color: #fff;
-      font-size: clamp(18px, 1.8vw, 26px);
-      height: 72px;
+      font-size: clamp(15px, 1.35vw, 19px);
+      height: 62px;
       font-weight: 900;
       cursor: pointer;
       text-shadow: 0 1px 1px rgba(0,0,0,.2);
@@ -419,9 +433,9 @@
       border-radius: 16px;
       background: linear-gradient(180deg, #fbfdff, #e4ecf8);
       color: #4f6b96;
-      font-size: clamp(16px, 1.4vw, 20px);
+      font-size: clamp(14px, 1.2vw, 17px);
       font-weight: 900;
-      height: 64px;
+      height: 56px;
       cursor: pointer;
     }
 
@@ -463,12 +477,12 @@
       .tab { min-width: 92px; height: 66px; font-size: 14px; }
       .tab .ico { font-size: 19px; }
       .grid { gap: 6px; }
-      .item { min-height: 82px; border-radius: 16px; }
-      .item img { width: min(44px, 72%); max-height: 44px; }
-      .qty { font-size: 13px; }
+      .item { min-height: 92px; border-radius: 16px; }
+      .item-media { border-radius: 12px; padding: 3px; }
+      .qty { font-size: 12px; }
       .qty-dot { width: 10px; height: 10px; }
       .selected-slot { width: 76px; height: 76px; border-radius: 16px; }
-      .selected-slot img { width: 56px; max-height: 56px; }
+      .selected-slot img { padding: 8px; }
       h3 { font-size: clamp(20px, 4.4vw, 28px); }
       .badge { font-size: 14px; padding: 3px 9px; }
       .description { margin-top: 6px; font-size: clamp(14px, 2.8vw, 17px); }
@@ -660,8 +674,8 @@
         const card = document.createElement('button');
         card.className = `item ${item.id === state.selectedId ? 'active' : ''}`;
         card.innerHTML = `
-          <img src="${item.img}" alt="${item.name}" />
-          <div class="qty"><span class="qty-dot" style="background:${item.marker}"></span>x${item.count}</div>
+          <div class="item-media"><img src="${item.img}" alt="${item.name}" /></div>
+          <div class="qty"><span class="qty-dot" style="background:${item.marker}"></span><span>x${item.count}</span></div>
         `;
         card.onclick = () => {
           state.selectedId = item.id;
