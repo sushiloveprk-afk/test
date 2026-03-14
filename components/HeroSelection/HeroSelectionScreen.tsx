@@ -141,14 +141,14 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
       <div className="pointer-events-none absolute -left-28 top-14 h-72 w-72 rounded-full bg-[#c23c2a]/20 blur-[120px]" />
       <div className="pointer-events-none absolute -right-20 bottom-24 h-80 w-80 rounded-full bg-[#4b74d4]/20 blur-[130px]" />
 
-      <header className="relative z-10 flex items-center justify-between px-8 pt-6 font-[Cinzel] uppercase tracking-[0.3em] text-sm text-[#f5e7cf]">
+      <header className="relative z-10 flex items-center justify-between px-5 pt-4 font-[Cinzel] uppercase tracking-[0.22em] text-xs text-[#f5e7cf]">
         <div className="flex flex-col gap-3">
           <div className="text-xs tracking-[0.6em] text-[#8c8f94]">СВЕТ</div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {radiantSlots.map((slot, index) => (
               <div
                 key={`radiant-top-${index}`}
-                className="relative h-10 w-16 -skew-x-12 overflow-hidden rounded-md border border-[#2a2d33] bg-[#111318]/80"
+                className="relative h-8 w-12 -skew-x-12 overflow-hidden rounded-sm border border-[#2a2d33] bg-[#111318]/80"
               >
                 {slot ? (
                   <img src={slot.image} alt={slot.name} className="h-full w-full object-cover grayscale" />
@@ -162,16 +162,16 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
 
         <div className="text-center">
           <div className="text-xs tracking-[0.6em] text-[#8c8f94]">ВЫБЕРИТЕ ГЕРОЯ</div>
-          <div className="mt-2 text-3xl font-bold text-[#c23c2a]">{timer}s</div>
+          <div className="mt-1 text-2xl font-bold text-[#c23c2a]">{timer}s</div>
         </div>
 
         <div className="flex flex-col items-end gap-3">
           <div className="text-xs tracking-[0.6em] text-[#8c8f94]">ТЬМА</div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {direSlots.map((slot, index) => (
               <div
                 key={`dire-top-${index}`}
-                className="relative h-10 w-16 -skew-x-12 overflow-hidden rounded-md border border-[#2a2d33] bg-[#111318]/80"
+                className="relative h-8 w-12 -skew-x-12 overflow-hidden rounded-sm border border-[#2a2d33] bg-[#111318]/80"
               >
                 {slot ? (
                   <img src={slot.image} alt={slot.name} className="h-full w-full object-cover grayscale" />
@@ -184,17 +184,17 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
         </div>
       </header>
 
-      <div className="relative z-10 mt-6 grid h-[calc(100%-8rem)] grid-cols-[1.4fr_2.2fr_1.4fr] gap-6 px-8 pb-8">
-        <div className="flex flex-col gap-5">
-          <div className="rounded-xl border border-[#343943] bg-[#14161b]/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.45)] backdrop-blur-sm">
-            <h2 className="mb-4 font-[Cinzel] text-xs uppercase tracking-[0.4em] text-[#d7c9ac]">Свет</h2>
-            <div className="space-y-3">
+      <div className="relative z-10 mt-4 grid h-[calc(100%-6.4rem)] grid-cols-[1.15fr_2.5fr_1.15fr] gap-4 px-5 pb-5">
+        <div className="flex flex-col gap-4">
+          <div className="rounded-xl border border-[#343943] bg-[#14161b]/80 p-3 shadow-[0_14px_36px_rgba(0,0,0,0.45)] backdrop-blur-sm">
+            <h2 className="mb-3 font-[Cinzel] text-[11px] uppercase tracking-[0.32em] text-[#d7c9ac]">Свет</h2>
+            <div className="space-y-2">
               {radiantSlots.map((slot, index) => (
                 <div
                   key={`radiant-${index}`}
-                  className="flex items-center gap-3 rounded-md border border-[#2a2d33] bg-[#101215]/85 px-3 py-2"
+                  className="flex items-center gap-2 rounded-md border border-[#2a2d33] bg-[#101215]/85 px-2 py-1.5"
                 >
-                  <div className="h-12 w-12 -skew-x-12 overflow-hidden rounded-sm border border-[#2f3238]">
+                  <div className="h-10 w-10 -skew-x-12 overflow-hidden rounded-sm border border-[#2f3238]">
                     {slot ? (
                       <img src={slot.image} alt={slot.name} className="h-full w-full object-cover grayscale" />
                     ) : (
@@ -202,8 +202,8 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
                     )}
                   </div>
                   <div>
-                    <div className="text-xs uppercase tracking-[0.3em] text-[#9aa0a8]">Слот {index + 1}</div>
-                    <div className="text-sm font-semibold text-white">{slot?.name ?? 'Ожидание...'}</div>
+                    <div className="text-[10px] uppercase tracking-[0.2em] text-[#9aa0a8]">Слот {index + 1}</div>
+                    <div className="text-xs font-semibold text-white">{slot?.name ?? 'Ожидание...'}</div>
                   </div>
                 </div>
               ))}
@@ -211,14 +211,14 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
           </div>
         </div>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {(['str', 'agi', 'int'] as const).map((attr) => (
                 <button
                   key={attr}
                   onClick={() => setAttributeFilter(attr)}
-                  className={`rounded-md border px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition hover:brightness-125 ${
+                  className={`rounded-md border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] transition hover:brightness-125 ${
                     attributeFilter === attr ? 'border-white text-white' : 'border-[#2a2d33] text-[#9aa0a8]'
                   } ${
                     attr === 'str'
@@ -233,7 +233,7 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
               ))}
               <button
                 onClick={() => setAttributeFilter('all')}
-                className={`rounded-md border px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition hover:brightness-125 ${
+                className={`rounded-md border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] transition hover:brightness-125 ${
                   attributeFilter === 'all' ? 'border-white text-white' : 'border-[#2a2d33] text-[#9aa0a8]'
                 } bg-[#23252b]/70`}
               >
@@ -241,24 +241,24 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
               </button>
             </div>
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6d7179]" />
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#6d7179]" />
               <input
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Поиск героя или роли"
-                className="w-64 rounded-md border border-[#2a2d33] bg-[#111318] py-2 pl-10 pr-3 text-xs uppercase tracking-[0.2em] text-[#c8ccd4] placeholder:text-[#4f545c]"
+                className="w-52 rounded-md border border-[#2a2d33] bg-[#111318] py-1.5 pl-8 pr-3 text-[11px] uppercase tracking-[0.12em] text-[#c8ccd4] placeholder:text-[#4f545c]"
               />
             </div>
           </div>
 
-          <div className="grid flex-1 grid-cols-4 gap-3 overflow-y-auto rounded-xl border border-[#343943] bg-[#14161b]/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+          <div className="grid flex-1 grid-cols-5 gap-2 overflow-y-auto rounded-xl border border-[#343943] bg-[#14161b]/85 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
             {filteredHeroes.map((hero) => (
               <button
                 key={hero.id}
                 onClick={() => handleSelectHero(hero)}
                 onDoubleClick={() => handleLockIn(hero)}
                 disabled={pickedIds.has(hero.id)}
-                className={`group relative flex h-28 flex-col items-start justify-end overflow-hidden rounded-md border border-transparent bg-[#0f1116] text-left transition hover:border-[#c23c2a] hover:brightness-125 disabled:cursor-not-allowed disabled:opacity-50 ${
+                className={`group relative flex h-24 flex-col items-start justify-end overflow-hidden rounded-md border border-transparent bg-[#0f1116] text-left transition hover:border-[#c23c2a] hover:brightness-125 disabled:cursor-not-allowed disabled:opacity-50 ${
                   selectedHero?.id === hero.id ? 'border-[#c23c2a] ring-2 ring-[#c23c2a]/40' : ''
                 }`}
               >
@@ -268,31 +268,31 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
                   className={`absolute inset-0 h-full w-full object-cover ${pickedIds.has(hero.id) ? 'grayscale' : ''}`}
                 />
                 <div className="relative z-10 w-full bg-gradient-to-t from-black/80 via-black/40 to-transparent p-2">
-                  <div className="text-[10px] uppercase tracking-[0.3em] text-[#9aa0a8]">
+                  <div className="text-[9px] uppercase tracking-[0.2em] text-[#9aa0a8]">
                     {attributeLabel[hero.attribute]}
                   </div>
-                  <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white">{hero.name}</div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white">{hero.name}</div>
                 </div>
               </button>
             ))}
             {filteredHeroes.length === 0 && (
-              <div className="col-span-4 rounded-md border border-dashed border-[#3b3f48] bg-[#101218]/70 p-6 text-center text-xs uppercase tracking-[0.25em] text-[#737983]">
+              <div className="col-span-5 rounded-md border border-dashed border-[#3b3f48] bg-[#101218]/70 p-6 text-center text-xs uppercase tracking-[0.25em] text-[#737983]">
                 По этому фильтру герои не найдены.
               </div>
             )}
           </div>
         </div>
 
-        <aside className="flex flex-col gap-6 rounded-xl border border-[#343943] bg-[#111318]/85 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.45)] backdrop-blur-sm">
+        <aside className="flex flex-col gap-4 rounded-xl border border-[#343943] bg-[#111318]/85 p-4 shadow-[0_16px_40px_rgba(0,0,0,0.45)] backdrop-blur-sm">
           <div className="flex items-center justify-between">
             <div>
               <div className="text-xs uppercase tracking-[0.3em] text-[#9aa0a8]">Просмотр героя</div>
-              <div className="font-[Cinzel] text-2xl uppercase tracking-[0.3em] text-[#f7e7c0]">
+              <div className="font-[Cinzel] text-xl uppercase tracking-[0.2em] text-[#f7e7c0]">
                 {heroPreview.name}
               </div>
             </div>
             <div
-              className={`rounded-md border px-3 py-1 text-xs uppercase tracking-[0.3em] ${
+              className={`rounded-md border px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] ${
                 heroPreview.attribute === 'str'
                   ? 'border-[#8b2f2f] text-[#f2c2c2]'
                   : heroPreview.attribute === 'agi'
@@ -304,7 +304,7 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
             </div>
           </div>
 
-          <div className="relative h-64 overflow-hidden rounded-lg border border-[#2a2d33] bg-gradient-to-b from-black/10 to-black/50">
+          <div className="relative h-52 overflow-hidden rounded-lg border border-[#2a2d33] bg-gradient-to-b from-black/10 to-black/50">
             <img
               src={heroPreview.render}
               alt={heroPreview.name}
@@ -312,34 +312,34 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
             />
           </div>
 
-          <p className="text-sm italic text-[#b7bbc2]">
+          <p className="text-xs italic text-[#b7bbc2]">
             Легенда закалена вечной битвой: {heroPreview.name} откликается на зов Древних.
           </p>
 
-          <div className="grid grid-cols-3 gap-3 text-xs uppercase tracking-[0.2em] text-[#9aa0a8]">
-            <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-3 py-2">
+          <div className="grid grid-cols-3 gap-2 text-[10px] uppercase tracking-[0.14em] text-[#9aa0a8]">
+            <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-2.5 py-2">
               Урон
-              <div className="text-base font-semibold text-white">{heroPreview.stats.damage}</div>
+              <div className="text-sm font-semibold text-white">{heroPreview.stats.damage}</div>
             </div>
-            <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-3 py-2">
+            <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-2.5 py-2">
               Броня
-              <div className="text-base font-semibold text-white">{heroPreview.stats.armor}</div>
+              <div className="text-sm font-semibold text-white">{heroPreview.stats.armor}</div>
             </div>
-            <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-3 py-2">
+            <div className="rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 px-2.5 py-2">
               Скорость
-              <div className="text-base font-semibold text-white">{heroPreview.stats.speed}</div>
+              <div className="text-sm font-semibold text-white">{heroPreview.stats.speed}</div>
             </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-4 gap-2">
             {heroPreview.abilities.map((ability) => (
               <div
                 key={ability.name}
-                className="relative rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 p-3 text-[10px] uppercase tracking-[0.2em] text-[#c8ccd4]"
+                className="relative rounded-md border border-[#2a2d33] bg-[#0c0e12]/80 p-2 text-[9px] uppercase tracking-[0.12em] text-[#c8ccd4]"
                 title={`${ability.name} - ${ability.cooldown}s`}
               >
                 <div className="font-semibold text-white">{ability.name}</div>
-                <div className="text-[9px] text-[#7f848c]">CD {ability.cooldown}s</div>
+                <div className="text-[8px] text-[#7f848c]">CD {ability.cooldown}s</div>
               </div>
             ))}
           </div>
@@ -347,7 +347,7 @@ const HeroSelectionScreen: React.FC<HeroSelectionScreenProps> = ({ onLockIn }) =
           <button
             onClick={handleLockIn}
             disabled={!selectedHero || lockedHero !== null}
-            className="mt-auto w-full rounded-md border border-[#c23c2a] bg-gradient-to-r from-[#4b1411] via-[#8b2f24] to-[#c23c2a] py-3 text-xs font-semibold uppercase tracking-[0.3em] text-white transition hover:brightness-125 disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-auto w-full rounded-md border border-[#c23c2a] bg-gradient-to-r from-[#4b1411] via-[#8b2f24] to-[#c23c2a] py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white transition hover:brightness-125 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Подтвердить
           </button>
