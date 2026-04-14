@@ -591,6 +591,21 @@
       padding: 0 10px;
     }
 
+    .fishing-help {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: calc(var(--safe-bottom) + 34px);
+      font-size: 12px;
+      color: #d8ebff;
+      text-align: center;
+      background: rgba(6, 12, 20, 0.6);
+      border: 1px solid rgba(143, 194, 255, 0.35);
+      border-radius: 999px;
+      padding: 6px 10px;
+      max-width: min(92vw, 580px);
+    }
+
     @keyframes floatY {
       50% { transform: translate(-50%, calc(-50% - 3px)); }
     }
@@ -698,6 +713,7 @@
         <div class="fishing-controls">
           <button class="dialog-btn primary" id="fishingPull">Тянуть леску</button>
         </div>
+        <div class="fishing-help">Нажми на воду, чтобы закинуть крючок. Зажми «Тянуть леску», чтобы подтягивать рыбу к берегу.</div>
       </section>
     </section>
   </main>
@@ -798,7 +814,8 @@
       userActivated: false,
       dialogMessages: [],
       fishScore: 0,
-      fishingActive: false
+      fishingActive: false,
+      fishCaught: 0
     };
 
     const audioState = {
@@ -820,8 +837,16 @@
       fishVX: 2.8,
       fishVY: 1.2,
       hooked: false,
-      tension: 0
+      tension: 0,
+      reelActive: false
     };
+
+    const fishingAssets = {
+      hand: new Image(),
+      fish: new Image()
+    };
+    fishingAssets.hand.src = 'http://castles-vk.ru/pokepark/fish/1.png';
+    fishingAssets.fish.src = 'http://castles-vk.ru/pokepark/fish/2.png';
 
     const showToast = (text) => {
       toast.textContent = text;
@@ -840,7 +865,7 @@
       const value = Math.max(0, Math.min(state.xpTotal, target));
       state.xpCurrent = value;
       xpFill.style.width = `${(value / state.xpTotal) * 100}%`;
-      xpText.textContent = `${value} / ${state.xpTotal} XP`;
+      xpText.textContent = `${value} / ${state.xpTotal} XP · Рыба: ${state.fishCaught}`;
     };
 
     const resolveTrackByScene = (sceneId) => {
@@ -909,7 +934,7 @@
       row.className = `chat-row ${you ? 'you' : ''}`;
       row.innerHTML = you
         ? `<div class="chat-bubble">${text}</div><div class="chat-icon you">🧢</div>`
-        : `<div class="chat-icon">🧪</div><div class="chat-bubble"><strong>${author}:</strong> ${text}</div>`;
+        : `<div class="chat-icon" style="background:url('http://castles-vk.ru/pokepark/img/nps/1.png') center 22% / 172% no-repeat, rgba(120, 172, 255, 0.26);border-color:rgba(154, 204, 255, 0.5);"></div><div class="chat-bubble"><strong>${author}:</strong> ${text}</div>`;
       dialogFeed.appendChild(row);
       dialogFeed.scrollTop = dialogFeed.scrollHeight;
     };
@@ -919,6 +944,7 @@
       state.dialogMessages = [];
       addDialogMessage('Профессор Oak', 'Привет! Это формат квестового чата: мягко, как мессенджер.');
       addDialogMessage('Профессор Oak', 'На причале в главной локации есть рыбалка. Попробуешь?');
+      addDialogMessage('Профессор Oak', 'Собирай улов — каждая рыба попадает в инвентарь и даёт очки.');
       npcDialog.classList.add('show');
     };
 
@@ -947,6 +973,7 @@
       fishingState.fishVY = (Math.random() - 0.5) * 2;
       fishingState.hooked = false;
       fishingState.tension = 0;
+      fishingState.reelActive = false;
     };
 
     const resizeFishingCanvas = () => {
@@ -979,26 +1006,37 @@
       if (fishingState.fishX > fishingState.width - 30 || fishingState.fishX < 30) fishingState.fishVX *= -1;
       if (fishingState.fishY > fishingState.height - 80 || fishingState.fishY < fishingState.height * 0.25) fishingState.fishVY *= -1;
 
+      if (fishingState.reelActive) {
+        fishingState.lineY = Math.max(60, fishingState.lineY - (fishingState.hooked ? 4.2 : 2.4));
+      }
+
       ctx.strokeStyle = '#dbefff';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(fishingState.lineX, 0);
+      ctx.moveTo(42, 84);
       ctx.lineTo(fishingState.lineX, fishingState.lineY);
       ctx.stroke();
 
-      ctx.fillStyle = '#ffdc76';
+      if (fishingAssets.hand.complete) {
+        ctx.drawImage(fishingAssets.hand, -30, 18, 210, 210);
+      } else {
+        ctx.fillStyle = '#f2d7b8';
+        ctx.fillRect(0, 22, 120, 95);
+      }
+
+      ctx.fillStyle = '#ffd261';
       ctx.beginPath();
-      ctx.arc(fishingState.lineX, fishingState.lineY, 7, 0, Math.PI * 2);
+      ctx.arc(fishingState.lineX, fishingState.lineY, 8, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.fillStyle = '#ff8a7a';
-      ctx.beginPath();
-      ctx.ellipse(fishingState.fishX, fishingState.fishY, 24, 13, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#fff';
-      ctx.beginPath();
-      ctx.arc(fishingState.fishX + 8, fishingState.fishY - 3, 2, 0, Math.PI * 2);
-      ctx.fill();
+      if (fishingAssets.fish.complete) {
+        ctx.drawImage(fishingAssets.fish, fishingState.fishX - 28, fishingState.fishY - 20, 58, 40);
+      } else {
+        ctx.fillStyle = '#ff8a7a';
+        ctx.beginPath();
+        ctx.ellipse(fishingState.fishX, fishingState.fishY, 24, 13, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       const dx = fishingState.fishX - fishingState.lineX;
       const dy = fishingState.fishY - fishingState.lineY;
@@ -1009,9 +1047,10 @@
       }
       if (fishingState.hooked && fishingState.lineY < 95) {
         state.fishScore += 10;
+        state.fishCaught += 1;
         fishingScore.textContent = `Очки: ${state.fishScore}`;
         animateXpTo(state.xpCurrent + 15);
-        showToast('Улов +10');
+        showToast(`Улов +10 · Рыба в инвентаре: ${state.fishCaught}`);
         fishingState.lineY = 150;
         resetFish();
       }
@@ -1107,12 +1146,21 @@
     fishingClose.addEventListener('click', closeFishingGame);
     fishingPull.addEventListener('pointerdown', () => {
       if (!state.fishingActive) return;
-      fishingState.lineY = Math.max(64, fishingState.lineY - (fishingState.hooked ? 40 : 20));
+      fishingState.reelActive = true;
     });
+    fishingPull.addEventListener('pointerup', () => { fishingState.reelActive = false; });
+    fishingPull.addEventListener('pointerleave', () => { fishingState.reelActive = false; });
+    fishingPull.addEventListener('pointercancel', () => { fishingState.reelActive = false; });
     fishingCanvas.addEventListener('pointermove', (event) => {
       if (!state.fishingActive) return;
       fishingState.lineX = event.clientX;
       fishingState.lineY = Math.min(fishingState.height - 80, Math.max(90, event.clientY));
+    });
+    fishingCanvas.addEventListener('pointerdown', (event) => {
+      if (!state.fishingActive) return;
+      fishingState.lineX = event.clientX;
+      fishingState.lineY = Math.min(fishingState.height - 90, Math.max(120, event.clientY));
+      fishingState.hooked = false;
     });
 
     window.addEventListener('resize', () => {
