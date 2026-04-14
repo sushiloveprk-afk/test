@@ -427,38 +427,102 @@
     .dialog-wrap.show { opacity: 1; }
 
     .dialog {
-      width: min(700px, 100%);
-      background: linear-gradient(160deg, rgba(11, 19, 31, 0.97), rgba(11, 15, 23, 0.97));
+      width: min(760px, 100%);
+      background: linear-gradient(160deg, rgba(11, 19, 31, 0.98), rgba(11, 15, 23, 0.98));
       border: 1px solid rgba(131, 177, 255, 0.35);
-      border-radius: 16px;
-      padding: 12px;
+      border-radius: 20px;
+      padding: 14px;
       box-shadow: var(--shadow);
       display: flex;
-      gap: 10px;
-      align-items: flex-start;
+      flex-direction: column;
+      gap: 12px;
       transform: translateY(12px) scale(0.98);
       transition: transform 240ms ease;
     }
 
     .dialog-wrap.show .dialog { transform: translateY(0) scale(1); }
 
-    .npc-avatar {
-      width: 72px;
-      height: 72px;
-      border-radius: 12px;
-      background: url('http://castles-vk.ru/pokepark/img/nps/1.png') center / cover no-repeat;
-      border: 1px solid rgba(168, 214, 255, 0.5);
-      flex-shrink: 0;
+    .dialog-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
     }
 
-    .dialog h3 { margin: 0 0 6px; }
-    .dialog p { margin: 0; color: #d6e4f8; font-size: 14px; line-height: 1.4; }
+    .dialog-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+    }
+
+    .npc-avatar {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: url('http://castles-vk.ru/pokepark/img/nps/1.png') center top / 155% no-repeat;
+      border: 1px solid rgba(168, 214, 255, 0.65);
+      flex-shrink: 0;
+      box-shadow: inset 0 0 20px rgba(7, 12, 19, 0.5);
+    }
+
+    .chat-feed {
+      max-height: 42vh;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-right: 2px;
+    }
+
+    .chat-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .chat-row.you {
+      justify-content: flex-end;
+    }
+
+    .chat-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 15px;
+      flex-shrink: 0;
+      background: rgba(120, 172, 255, 0.26);
+      border: 1px solid rgba(154, 204, 255, 0.5);
+    }
+
+    .chat-icon.you {
+      background: rgba(125, 245, 209, 0.24);
+      border-color: rgba(145, 240, 220, 0.56);
+    }
+
+    .chat-bubble {
+      max-width: min(78%, 430px);
+      border-radius: 14px;
+      padding: 9px 11px;
+      font-size: 14px;
+      line-height: 1.38;
+      background: rgba(83, 132, 220, 0.22);
+      border: 1px solid rgba(152, 198, 255, 0.3);
+    }
+
+    .chat-row.you .chat-bubble {
+      background: rgba(112, 216, 194, 0.23);
+      border-color: rgba(140, 247, 224, 0.35);
+      color: #e8fff8;
+    }
 
     .dialog-actions {
-      margin-top: 10px;
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
     .dialog-btn {
@@ -472,6 +536,60 @@
 
     .dialog-btn.primary { background: var(--accent); color: #031120; }
     .dialog-btn.secondary { background: rgba(130, 164, 224, 0.2); color: #f2f7ff; }
+
+    .fishing-wrap {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 220ms ease;
+      background: rgba(3, 9, 18, 0.72);
+    }
+
+    .fishing-wrap.show {
+      pointer-events: auto;
+      opacity: 1;
+    }
+
+    .fishing-stage {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .fishing-ui {
+      position: absolute;
+      top: var(--safe-top);
+      left: 10px;
+      right: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .fishing-pill {
+      padding: 9px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      background: rgba(8, 13, 20, 0.8);
+      border: 1px solid rgba(137, 196, 255, 0.4);
+    }
+
+    .fishing-controls {
+      position: absolute;
+      bottom: calc(var(--safe-bottom) + 88px);
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      padding: 0 10px;
+    }
 
     @keyframes floatY {
       50% { transform: translate(-50%, calc(-50% - 3px)); }
@@ -551,16 +669,34 @@
       <section class="dialogs">
         <div class="dialog-wrap" id="npcDialog">
           <article class="dialog">
-            <div class="npc-avatar"></div>
-            <div>
-              <h3>Профессор</h3>
-              <p>Добро пожаловать в лабораторию! Здесь ты узнаешь о мире, героях и путешествиях. Готов начать приключение?</p>
-              <div class="dialog-actions">
-                <button class="dialog-btn primary" id="dialogTalk">Поговорить</button>
-                <button class="dialog-btn secondary" id="dialogClose">Закрыть</button>
+            <div class="dialog-head">
+              <div class="dialog-title">
+                <div class="npc-avatar"></div>
+                <div>
+                  <h3 style="margin:0;">Профессор Oak</h3>
+                  <div style="font-size:12px;color:#9db9d8;">Квестовый чат</div>
+                </div>
               </div>
+              <button class="dialog-btn secondary" id="dialogClose">Закрыть</button>
+            </div>
+            <div class="chat-feed" id="dialogFeed"></div>
+            <div class="dialog-actions">
+              <button class="dialog-btn primary" id="dialogTalk">Ответить</button>
+              <button class="dialog-btn secondary" id="dialogQuest">Взять квест</button>
+              <button class="dialog-btn secondary" id="dialogLater">Позже</button>
             </div>
           </article>
+        </div>
+      </section>
+
+      <section class="fishing-wrap" id="fishingWrap">
+        <canvas class="fishing-stage" id="fishingCanvas"></canvas>
+        <div class="fishing-ui">
+          <div class="fishing-pill" id="fishingScore">Очки: 0</div>
+          <button class="dialog-btn secondary" id="fishingClose">Закрыть рыбалку</button>
+        </div>
+        <div class="fishing-controls">
+          <button class="dialog-btn primary" id="fishingPull">Тянуть леску</button>
         </div>
       </section>
     </section>
@@ -570,6 +706,14 @@
     const DESIGN_WIDTH = 1920;
     const DESIGN_HEIGHT = 1080;
 
+    const musicTracks = {
+      main: 'http://castles-vk.ru/park_music/1.mp3',
+      road: 'http://castles-vk.ru/park_music/2.mp3',
+      'lab-city': 'http://castles-vk.ru/park_music/3.mp3',
+      default: 'http://castles-vk.ru/park_music/4.mp3',
+      fishing: 'http://castles-vk.ru/park_music/5.mp3'
+    };
+
     const scenes = {
       main: {
         bg: 'http://castles-vk.ru/pokepark/img/location/1.png',
@@ -577,7 +721,15 @@
           { id: 'lab', x: 760, y: 330, width: 420, height: 360, marker: '🧪', markerClass: 'lab', markerX: 980, markerY: 350, action: { type: 'scene', to: 'lab-entry', toast: 'Переход в лабораторию...' } },
           { id: 'house-a', x: 280, y: 300, width: 320, height: 320, marker: '⌂', markerClass: 'home', markerX: 430, markerY: 300, action: { type: 'scene', to: 'house-6', toast: 'Входим в дом №1' } },
           { id: 'house-b', x: 1160, y: 350, width: 300, height: 300, marker: '⌂', markerClass: 'home', markerX: 1300, markerY: 330, action: { type: 'scene', to: 'house-4', toast: 'Входим в дом №2' } },
-          { id: 'house-c', x: 1190, y: 680, width: 340, height: 300, marker: '⌂', markerClass: 'home', markerX: 1360, markerY: 670, action: { type: 'scene', to: 'house-5', toast: 'Входим в дом №3' } }
+          { id: 'house-c', x: 1190, y: 680, width: 340, height: 300, marker: '⌂', markerClass: 'home', markerX: 1360, markerY: 670, action: { type: 'scene', to: 'house-5', toast: 'Входим в дом №3' } },
+          { id: 'to-road', x: 820, y: 90, width: 280, height: 210, marker: '🛤️', markerClass: 'exit', markerX: 960, markerY: 120, action: { type: 'scene', to: 'road', toast: 'Выход на тропу' } },
+          { id: 'dock-fishing', x: 1550, y: 610, width: 330, height: 280, marker: '🎣', markerClass: 'npc', markerX: 1700, markerY: 620, action: { type: 'fishing', toast: 'Причал: мини-игра "Рыбалка"' } }
+        ]
+      },
+      road: {
+        bg: 'http://castles-vk.ru/pokepark/img/location/7.png',
+        hotspots: [
+          { id: 'road-back', x: 40, y: 380, width: 220, height: 300, marker: '⇦', markerClass: 'exit', markerX: 170, markerY: 350, action: { type: 'scene', to: 'main', toast: 'Возврат в главную локацию' } }
         ]
       },
       'house-6': {
@@ -608,7 +760,7 @@
       'lab-city': {
         bg: 'http://castles-vk.ru/pokepark/img/location/3.png',
         hotspots: [
-          { id: 'npc-professor', x: 875, y: 390, width: 220, height: 430, marker: 'NPC', markerClass: 'npc', markerX: 995, markerY: 370, action: { type: 'dialog', toast: 'Профессор готов к разговору' } },
+          { id: 'npc-professor', x: 875, y: 390, width: 220, height: 430, marker: '💬', markerClass: 'npc', markerX: 995, markerY: 370, action: { type: 'dialog', toast: 'Профессор готов к разговору' } },
           { id: 'exit-lab-city', x: 32, y: 390, width: 220, height: 300, marker: '⇦', markerClass: 'exit', markerX: 165, markerY: 360, action: { type: 'scene', to: 'main', toast: 'Вы покинули лабораторию' } }
         ]
       }
@@ -629,12 +781,46 @@
     const npcDialog = document.getElementById('npcDialog');
     const dialogClose = document.getElementById('dialogClose');
     const dialogTalk = document.getElementById('dialogTalk');
+    const dialogQuest = document.getElementById('dialogQuest');
+    const dialogLater = document.getElementById('dialogLater');
+    const dialogFeed = document.getElementById('dialogFeed');
+    const fishingWrap = document.getElementById('fishingWrap');
+    const fishingCanvas = document.getElementById('fishingCanvas');
+    const fishingClose = document.getElementById('fishingClose');
+    const fishingPull = document.getElementById('fishingPull');
+    const fishingScore = document.getElementById('fishingScore');
 
     const state = {
       scene: 'main',
       xpCurrent: 450,
       xpTotal: 1000,
-      toastTimer: null
+      toastTimer: null,
+      userActivated: false,
+      dialogMessages: [],
+      fishScore: 0,
+      fishingActive: false
+    };
+
+    const audioState = {
+      channels: [new Audio(), new Audio()],
+      activeChannel: 0
+    };
+    audioState.channels.forEach((audio) => {
+      audio.loop = true;
+      audio.volume = 0;
+    });
+
+    const fishingState = {
+      width: 0,
+      height: 0,
+      lineX: 0,
+      lineY: 110,
+      fishX: 0,
+      fishY: 0,
+      fishVX: 2.8,
+      fishVY: 1.2,
+      hooked: false,
+      tension: 0
     };
 
     const showToast = (text) => {
@@ -657,6 +843,47 @@
       xpText.textContent = `${value} / ${state.xpTotal} XP`;
     };
 
+    const resolveTrackByScene = (sceneId) => {
+      if (sceneId === 'main') return musicTracks.main;
+      if (sceneId === 'road') return musicTracks.road;
+      if (sceneId === 'lab-city') return musicTracks['lab-city'];
+      return musicTracks.default;
+    };
+
+    const crossFadeTo = async (src, duration = 900) => {
+      if (!state.userActivated) return;
+      const nextIndex = 1 - audioState.activeChannel;
+      const current = audioState.channels[audioState.activeChannel];
+      const next = audioState.channels[nextIndex];
+      if (!src) return;
+      if (current.src.includes(src) && !current.paused) return;
+      next.src = src;
+      next.currentTime = 0;
+      next.volume = 0;
+      try { await next.play(); } catch (error) { return; }
+      const steps = 18;
+      const interval = duration / steps;
+      let tick = 0;
+      clearInterval(audioState.fadeTimer);
+      audioState.fadeTimer = setInterval(() => {
+        tick += 1;
+        const ratio = Math.min(1, tick / steps);
+        next.volume = 0.45 * ratio;
+        current.volume = 0.45 * (1 - ratio);
+        if (ratio >= 1) {
+          clearInterval(audioState.fadeTimer);
+          current.pause();
+          current.currentTime = 0;
+          audioState.activeChannel = nextIndex;
+        }
+      }, interval);
+    };
+
+    const ensureAudioReady = () => {
+      if (state.userActivated) return;
+      state.userActivated = true;
+      crossFadeTo(resolveTrackByScene(state.scene), 500);
+    };
 
     const updateSceneCharacter = (sceneId) => {
       const show = sceneId === 'lab-city';
@@ -673,6 +900,122 @@
       npcDialog.classList.remove('show');
       updateSceneCharacter(sceneId);
       renderHotspots();
+      crossFadeTo(resolveTrackByScene(sceneId));
+    };
+
+    const addDialogMessage = (author, text, you = false) => {
+      state.dialogMessages.push({ author, text, you });
+      const row = document.createElement('div');
+      row.className = `chat-row ${you ? 'you' : ''}`;
+      row.innerHTML = you
+        ? `<div class="chat-bubble">${text}</div><div class="chat-icon you">🧢</div>`
+        : `<div class="chat-icon">🧪</div><div class="chat-bubble"><strong>${author}:</strong> ${text}</div>`;
+      dialogFeed.appendChild(row);
+      dialogFeed.scrollTop = dialogFeed.scrollHeight;
+    };
+
+    const openProfessorDialog = () => {
+      dialogFeed.innerHTML = '';
+      state.dialogMessages = [];
+      addDialogMessage('Профессор Oak', 'Привет! Это формат квестового чата: мягко, как мессенджер.');
+      addDialogMessage('Профессор Oak', 'На причале в главной локации есть рыбалка. Попробуешь?');
+      npcDialog.classList.add('show');
+    };
+
+    const openFishing = () => {
+      state.fishingActive = true;
+      fishingWrap.classList.add('show');
+      state.fishScore = 0;
+      fishingScore.textContent = 'Очки: 0';
+      resizeFishingCanvas();
+      resetFish();
+      crossFadeTo(musicTracks.fishing, 800);
+      showToast('Рыбалка началась');
+      requestAnimationFrame(fishingLoop);
+    };
+
+    const closeFishingGame = () => {
+      state.fishingActive = false;
+      fishingWrap.classList.remove('show');
+      crossFadeTo(resolveTrackByScene(state.scene), 800);
+    };
+
+    const resetFish = () => {
+      fishingState.fishX = fishingState.width * 0.66;
+      fishingState.fishY = fishingState.height * 0.6;
+      fishingState.fishVX = 2 + Math.random() * 2;
+      fishingState.fishVY = (Math.random() - 0.5) * 2;
+      fishingState.hooked = false;
+      fishingState.tension = 0;
+    };
+
+    const resizeFishingCanvas = () => {
+      fishingState.width = fishingCanvas.width = window.innerWidth;
+      fishingState.height = fishingCanvas.height = window.innerHeight;
+      fishingState.lineX = fishingState.width * 0.5;
+      fishingState.lineY = Math.min(fishingState.height - 160, Math.max(130, fishingState.height * 0.45));
+    };
+
+    const fishingLoop = () => {
+      if (!state.fishingActive) return;
+      const ctx = fishingCanvas.getContext('2d');
+      ctx.clearRect(0, 0, fishingState.width, fishingState.height);
+      ctx.fillStyle = '#0e2138';
+      ctx.fillRect(0, 0, fishingState.width, fishingState.height);
+      const gradient = ctx.createLinearGradient(0, fishingState.height * 0.2, 0, fishingState.height);
+      gradient.addColorStop(0, '#2e7bc4');
+      gradient.addColorStop(1, '#0b2748');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, fishingState.height * 0.2, fishingState.width, fishingState.height * 0.8);
+
+      if (!fishingState.hooked) {
+        fishingState.fishX += fishingState.fishVX;
+        fishingState.fishY += fishingState.fishVY;
+      } else {
+        fishingState.fishX += (fishingState.lineX - fishingState.fishX) * 0.08;
+        fishingState.fishY += (fishingState.lineY - fishingState.fishY) * 0.08;
+        fishingState.tension += 0.5;
+      }
+      if (fishingState.fishX > fishingState.width - 30 || fishingState.fishX < 30) fishingState.fishVX *= -1;
+      if (fishingState.fishY > fishingState.height - 80 || fishingState.fishY < fishingState.height * 0.25) fishingState.fishVY *= -1;
+
+      ctx.strokeStyle = '#dbefff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(fishingState.lineX, 0);
+      ctx.lineTo(fishingState.lineX, fishingState.lineY);
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffdc76';
+      ctx.beginPath();
+      ctx.arc(fishingState.lineX, fishingState.lineY, 7, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ff8a7a';
+      ctx.beginPath();
+      ctx.ellipse(fishingState.fishX, fishingState.fishY, 24, 13, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(fishingState.fishX + 8, fishingState.fishY - 3, 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      const dx = fishingState.fishX - fishingState.lineX;
+      const dy = fishingState.fishY - fishingState.lineY;
+      const dist = Math.hypot(dx, dy);
+      if (!fishingState.hooked && dist < 28) {
+        fishingState.hooked = true;
+        showToast('Рыба на крючке! Тяни леску');
+      }
+      if (fishingState.hooked && fishingState.lineY < 95) {
+        state.fishScore += 10;
+        fishingScore.textContent = `Очки: ${state.fishScore}`;
+        animateXpTo(state.xpCurrent + 15);
+        showToast('Улов +10');
+        fishingState.lineY = 150;
+        resetFish();
+      }
+      requestAnimationFrame(fishingLoop);
     };
 
     const actionByHotspot = (spot) => {
@@ -686,15 +1029,13 @@
         setTimeout(() => transitionFade.classList.remove('active'), 320);
       }
 
-      if (spot.action.type === 'dialog') {
-        npcDialog.classList.add('show');
-      }
+      if (spot.action.type === 'dialog') openProfessorDialog();
+      if (spot.action.type === 'fishing') openFishing();
     };
 
     const renderHotspots = () => {
       const current = scenes[state.scene];
       if (!current) return;
-
       const rect = gameRoot.getBoundingClientRect();
       const sx = rect.width / DESIGN_WIDTH;
       const sy = rect.height / DESIGN_HEIGHT;
@@ -722,42 +1063,64 @@
 
     document.querySelectorAll('.nav-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
+        ensureAudioReady();
         const nav = btn.dataset.nav;
         setActiveNav(nav);
-        if (nav === 'menu') {
-          menuOverlay.classList.add('open');
-        } else {
-          menuOverlay.classList.remove('open');
-        }
+        if (nav === 'menu') menuOverlay.classList.add('open');
+        else menuOverlay.classList.remove('open');
       });
     });
 
+    window.addEventListener('pointerdown', ensureAudioReady, { once: true });
     searchBtn.addEventListener('click', () => {
       showToast('Сканирование мира...');
       animateXpTo(state.xpCurrent + 12);
     });
-
     menuBtn.addEventListener('click', () => {
       menuOverlay.classList.add('open');
       setActiveNav('menu');
     });
-
     closeMenu.addEventListener('click', () => {
       menuOverlay.classList.remove('open');
       setActiveNav('home');
     });
-
     menuOverlay.addEventListener('click', (event) => {
       if (event.target === menuOverlay) {
         menuOverlay.classList.remove('open');
         setActiveNav('home');
       }
     });
-
     dialogClose.addEventListener('click', () => npcDialog.classList.remove('show'));
-    dialogTalk.addEventListener('click', () => showToast('Профессор рассказал о мире и квестах.'));
+    dialogTalk.addEventListener('click', () => {
+      addDialogMessage('Вы', 'Готов начать!', true);
+      setTimeout(() => addDialogMessage('Профессор Oak', 'Отлично! Изучи локации и набирай очки.'), 250);
+    });
+    dialogQuest.addEventListener('click', () => {
+      addDialogMessage('Вы', 'Беру квест на изучение мира.', true);
+      setTimeout(() => addDialogMessage('Профессор Oak', 'Квест принят: пройди тропу и поймай хотя бы одну рыбу.'), 280);
+    });
+    dialogLater.addEventListener('click', () => {
+      addDialogMessage('Вы', 'Вернусь чуть позже.', true);
+      setTimeout(() => addDialogMessage('Профессор Oak', 'Хорошо, я буду в лаборатории.'), 250);
+    });
 
-    window.addEventListener('resize', () => window.requestAnimationFrame(renderHotspots), { passive: true });
+    fishingClose.addEventListener('click', closeFishingGame);
+    fishingPull.addEventListener('pointerdown', () => {
+      if (!state.fishingActive) return;
+      fishingState.lineY = Math.max(64, fishingState.lineY - (fishingState.hooked ? 40 : 20));
+    });
+    fishingCanvas.addEventListener('pointermove', (event) => {
+      if (!state.fishingActive) return;
+      fishingState.lineX = event.clientX;
+      fishingState.lineY = Math.min(fishingState.height - 80, Math.max(90, event.clientY));
+    });
+
+    window.addEventListener('resize', () => {
+      window.requestAnimationFrame(() => {
+        renderHotspots();
+        if (state.fishingActive) resizeFishingCanvas();
+      });
+    }, { passive: true });
 
     setScene('main');
     updateSceneCharacter('main');
